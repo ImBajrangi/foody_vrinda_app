@@ -1,0 +1,601 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../config/theme.dart';
+import '../../models/order_model.dart';
+import '../../models/user_model.dart';
+import '../../models/shop_model.dart';
+import '../../providers/auth_provider.dart';
+import '../../services/order_service.dart';
+import '../../services/shop_service.dart';
+import '../../services/notification_service.dart';
+import '../../widgets/order_widgets.dart';
+import '../../widgets/animations.dart';
+
+class DeliveryView extends StatefulWidget {
+  final String? shopId;
+  final List<String>? shopIds;
+
+  const DeliveryView({super.key, this.shopId, this.shopIds});
+
+  @override
+  State<DeliveryView> createState() => _DeliveryViewState();
+}
+
+class _DeliveryViewState extends State<DeliveryView> {
+  final OrderService _orderService = OrderService();
+  final ShopService _shopService = ShopService();
+  final NotificationService _notificationService = NotificationService();
+  String? _selectedShopId;
+  bool _showAllShops = true; // Default to showing all shops
+  Set<String> _previousOrderIds = {};
+  bool _isFirstLoad = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedShopId = widget.shopId;
+    _initNotifications();
+  }
+
+  Future<void> _initNotifications() async {
+    await _notificationService.initialize();
+    await _notificationService.requestPermissions();
+  }
+
+  /// Check for new orders and show notifications
+  void _checkForNewOrders(List<OrderModel> orders) {
+    if (_isFirstLoad) {
+      // On first load, just record existing order IDs
+      _previousOrderIds = orders.map((o) => o.id).toSet();
+      _isFirstLoad = false;
+      return;
+    }
+
+    final currentOrderIds = orders.map((o) => o.id).toSet();
+    final newOrderIds = currentOrderIds.difference(_previousOrderIds);
+
+    // Show notification for each new order
+    for (final orderId in newOrderIds) {
+      final order = orders.firstWhere((o) => o.id == orderId);
+      _notificationService.showReadyForDeliveryNotification(
+        orderId: order.id,
+        customerName: order.customerName,
+        address: order.deliveryAddress,
+      );
+    }
+
+    _previousOrderIds = currentOrderIds;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context);
+    final userData = authProvider.userData;
+
+    // Get shop ID(s)
+    String? shopId = widget.shopId ?? userData?.shopId;
+    List<String>? shopIds = widget.shopIds ?? userData?.shopIds;
+    final isDeveloper = userData?.role == UserRole.developer;
+    final isDelivery = userData?.role == UserRole.delivery;
+
+    // Use selected shop or fall back to user's assigned shop
+    final activeShopId = _selectedShopId ?? shopId;
+
+    // Delivery staff can now see ALL shops' orders
+    if (isDelivery && _showAllShops) {
+      return _buildAllShopsDelivery();
+    } else if (shopIds != null && shopIds.isNotEmpty && !isDeveloper) {
+      return _buildMultiShopDelivery(shopIds);
+    } else if (activeShopId != null) {
+      return _buildSingleShopDelivery(activeShopId);
+    } else if (isDeveloper || isDelivery) {
+      // Developers and delivery staff can see all shops
+      return _buildAllShopsDelivery();
+    } else {
+      return const Center(
+        child: EmptyState(
+          title: 'No Shop Assigned',
+          subtitle: 'You are not assigned to any shop for deliveries.',
+          animationType: 'box',
+        ),
+      );
+    }
+  }
+
+  Widget _buildAllShopsDelivery() {
+    return Column(
+      children: [
+        _buildHeader(),
+        Expanded(
+          child: StreamBuilder<List<OrderModel>>(
+            stream: _orderService.getDeliveryOrders(null), // null = all shops
+            builder: (context, snapshot) => _buildOrdersList(snapshot),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSingleShopDelivery(String? shopId) {
+    return Column(
+      children: [
+        _buildHeader(),
+        Expanded(
+          child: shopId == null
+              ? const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(24),
+                    child: Text(
+                      'Select a shop to view deliveries.',
+                      style: TextStyle(color: AppTheme.textSecondary),
+                    ),
+                  ),
+                )
+              : StreamBuilder<List<OrderModel>>(
+                  stream: _orderService.getDeliveryOrders(shopId),
+                  builder: (context, snapshot) => _buildOrdersList(snapshot),
+                ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMultiShopDelivery(List<String> shopIds) {
+    return Column(
+      children: [
+        _buildHeader(),
+        Expanded(
+          child: StreamBuilder<List<OrderModel>>(
+            stream: _orderService.getDeliveryOrdersMultiShop(shopIds),
+            builder: (context, snapshot) => _buildOrdersList(snapshot),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildHeader() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: Colors.black,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(Icons.delivery_dining, color: Colors.white),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Delivery',
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+                StreamBuilder<List<ShopModel>>(
+                  stream: _shopService.getShops(),
+                  builder: (context, snapshot) {
+                    final shops = snapshot.data ?? [];
+                    final shopName = _selectedShopId == null
+                        ? 'All Shops'
+                        : shops
+                              .firstWhere(
+                                (s) => s.id == _selectedShopId,
+                                orElse: () =>
+                                    ShopModel(id: '', name: 'Unknown Shop'),
+                              )
+                              .name;
+                    return Text(
+                      'Orders for $shopName',
+                      style: const TextStyle(
+                        color: AppTheme.textSecondary,
+                        fontSize: 13,
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+          // Shop selector for developers
+          Consumer<AuthProvider>(
+            builder: (context, auth, _) {
+              if (auth.userData?.role == UserRole.developer) {
+                return StreamBuilder<List<ShopModel>>(
+                  stream: _shopService.getShops(),
+                  builder: (context, snapshot) {
+                    final shops = snapshot.data ?? [];
+                    return Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: AppTheme.background,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppTheme.border),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: _selectedShopId,
+                          hint: const Text('Select Shop'),
+                          items: [
+                            const DropdownMenuItem(
+                              value: null,
+                              child: Text('All Shops'),
+                            ),
+                            ...shops.map(
+                              (s) => DropdownMenuItem(
+                                value: s.id,
+                                child: Text(s.name),
+                              ),
+                            ),
+                          ],
+                          onChanged: (val) {
+                            setState(() => _selectedShopId = val);
+                          },
+                        ),
+                      ),
+                    );
+                  },
+                );
+              }
+              return const SizedBox.shrink();
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOrdersList(AsyncSnapshot<List<OrderModel>> snapshot) {
+    if (snapshot.connectionState == ConnectionState.waiting) {
+      return const Center(
+        child: AnimatedLoader(message: 'Loading deliveries...'),
+      );
+    }
+
+    if (snapshot.hasError) {
+      return Center(child: Text('Error: ${snapshot.error}'));
+    }
+
+    final orders = snapshot.data ?? [];
+
+    // Check for new orders and trigger notifications
+    _checkForNewOrders(orders);
+
+    if (orders.isEmpty) {
+      return const EmptyState(
+        title: 'No Deliveries',
+        subtitle: 'Orders ready for delivery will appear here.',
+        animationType: 'delivery',
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: () async => setState(() {}),
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: orders.length,
+        itemBuilder: (context, index) {
+          final order = orders[index];
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: _DeliveryOrderCard(
+              order: order,
+              onStatusUpdate: (status) => _updateOrderStatus(order.id, status),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _updateOrderStatus(String orderId, OrderStatus status) async {
+    try {
+      await _orderService.updateOrderStatus(orderId, status);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Order updated to ${status.displayName}'),
+            backgroundColor: AppTheme.success,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to update order: $e'),
+            backgroundColor: AppTheme.error,
+          ),
+        );
+      }
+    }
+  }
+}
+
+class _DeliveryOrderCard extends StatelessWidget {
+  final OrderModel order;
+  final Function(OrderStatus) onStatusUpdate;
+
+  const _DeliveryOrderCard({required this.order, required this.onStatusUpdate});
+
+  @override
+  Widget build(BuildContext context) {
+    final isReady = order.status == OrderStatus.readyForPickup;
+    final isOutForDelivery = order.status == OrderStatus.outForDelivery;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.cardBackground,
+        borderRadius: BorderRadius.circular(16),
+        border: isReady ? Border.all(color: AppTheme.success, width: 2) : null,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Header
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isReady
+                  ? AppTheme.success.withValues(alpha: 0.1)
+                  : AppTheme.primaryBlue.withValues(alpha: 0.05),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(16),
+              ),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        order.orderNumber,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        order.timeAgo,
+                        style: const TextStyle(
+                          color: AppTheme.textSecondary,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                OrderStatusTag(status: order.status),
+              ],
+            ),
+          ),
+
+          // Customer & delivery info
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Customer name
+                Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryBlue.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child: Text(
+                          order.customerName.isNotEmpty
+                              ? order.customerName[0].toUpperCase()
+                              : 'C',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.primaryBlue,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            order.customerName,
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                          Text(
+                            order.customerPhone,
+                            style: const TextStyle(
+                              color: AppTheme.textSecondary,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Call button
+                    IconButton(
+                      onPressed: () => _callCustomer(order.customerPhone),
+                      icon: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppTheme.success.withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.phone,
+                          color: AppTheme.success,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 16),
+
+                // Delivery address
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppTheme.background,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(
+                        Icons.location_on,
+                        color: AppTheme.error,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          order.deliveryAddress,
+                          style: const TextStyle(fontSize: 14),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => _openMaps(order.deliveryAddress),
+                        icon: const Icon(
+                          Icons.directions,
+                          color: AppTheme.primaryBlue,
+                        ),
+                        tooltip: 'Get directions',
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // Items summary
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppTheme.background,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Order Items',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        order.itemsSummary,
+                        style: const TextStyle(
+                          color: AppTheme.textSecondary,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // Total
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Amount to Collect',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    Text(
+                      order.formattedTotal,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 22,
+                        color: AppTheme.success,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          // Actions
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: const BoxDecoration(
+              border: Border(top: BorderSide(color: AppTheme.border)),
+            ),
+            child: Row(
+              children: [
+                if (isReady) ...[
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () =>
+                          onStatusUpdate(OrderStatus.outForDelivery),
+                      icon: const Icon(Icons.delivery_dining, size: 20),
+                      label: const Text('Start Delivery'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryBlue,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                    ),
+                  ),
+                ] else if (isOutForDelivery) ...[
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () => onStatusUpdate(OrderStatus.completed),
+                      icon: const Icon(Icons.check_circle, size: 20),
+                      label: const Text('Complete Delivery'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.success,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _callCustomer(String phone) async {
+    final uri = Uri.parse('tel:$phone');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    }
+  }
+
+  Future<void> _openMaps(String address) async {
+    final uri = Uri.parse(
+      'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(address)}',
+    );
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+}

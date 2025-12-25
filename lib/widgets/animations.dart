@@ -4,39 +4,70 @@ import '../config/lottie_assets.dart';
 import '../config/theme.dart';
 
 /// Animated loading indicator with Lottie
-class AnimatedLoader extends StatelessWidget {
+/// Animated loading indicator with Lottie
+class AnimatedLoader extends StatefulWidget {
   final double size;
   final String? message;
 
   const AnimatedLoader({super.key, this.size = 150, this.message});
 
   @override
+  State<AnimatedLoader> createState() => _AnimatedLoaderState();
+}
+
+class _AnimatedLoaderState extends State<AnimatedLoader> {
+  bool _showAnimation = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Only show animation if loading takes longer than 500ms
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (mounted) {
+        setState(() => _showAnimation = true);
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Lottie.network(
-          LottieAssets.foodLoading,
-          width: size,
-          height: size,
-          fit: BoxFit.contain,
-          errorBuilder: (context, error, stackTrace) => SizedBox(
-            width: size,
-            height: size,
-            child: const Center(
-              child: CircularProgressIndicator(color: AppTheme.primaryBlue),
+    return AnimatedOpacity(
+      duration: const Duration(milliseconds: 300),
+      opacity: _showAnimation ? 1.0 : 0.0,
+      child: Column(
+        key: ValueKey(widget.message),
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (_showAnimation)
+            Lottie.network(
+              LottieAssets.foodLoading,
+              width: widget.size,
+              height: widget.size,
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) => Container(
+                width: widget.size,
+                height: widget.size,
+                padding: const EdgeInsets.all(32),
+                child: const CircularProgressIndicator(
+                  strokeWidth: 3,
+                  color: AppTheme.primaryBlue,
+                ),
+              ),
             ),
-          ),
-        ),
-        if (message != null) ...[
-          const SizedBox(height: 16),
-          Text(
-            message!,
-            style: const TextStyle(color: AppTheme.textSecondary, fontSize: 14),
-          ),
+          if (widget.message != null && _showAnimation) ...[
+            const SizedBox(height: 16),
+            Text(
+              widget.message!,
+              style: const TextStyle(
+                color: AppTheme.textSecondary,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
         ],
-      ],
+      ),
     );
   }
 }
@@ -68,6 +99,8 @@ class EmptyState extends StatelessWidget {
         return LottieAssets.emptyBox;
       case 'data':
         return LottieAssets.noData;
+      case 'profile':
+        return LottieAssets.profile;
       default:
         return LottieAssets.emptyCart;
     }

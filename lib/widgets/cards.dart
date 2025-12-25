@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../config/theme.dart';
 
 class AppCard extends StatelessWidget {
@@ -86,34 +87,29 @@ class ShopCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image
             ClipRRect(
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(18),
               ),
               child: AspectRatio(
                 aspectRatio: 16 / 9,
-                child: imageUrl != null && imageUrl!.isNotEmpty
-                    ? Image.network(
-                        imageUrl!,
+                child: imageUrl?.isNotEmpty == true
+                    ? CachedNetworkImage(
+                        imageUrl: imageUrl!,
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => Container(
+                        placeholder: (context, url) => Container(
                           color: AppTheme.background,
-                          child: const Icon(
-                            Icons.restaurant,
-                            size: 48,
-                            color: AppTheme.textTertiary,
+                          child: const Center(
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppTheme.primaryBlue,
+                            ),
                           ),
                         ),
+                        errorWidget: (context, url, error) =>
+                            _buildPlaceholder(),
                       )
-                    : Container(
-                        color: AppTheme.background,
-                        child: const Icon(
-                          Icons.restaurant,
-                          size: 48,
-                          color: AppTheme.textTertiary,
-                        ),
-                      ),
+                    : _buildPlaceholder(),
               ),
             ),
 
@@ -195,6 +191,45 @@ class ShopCard extends StatelessWidget {
       ),
     );
   }
+
+  Widget _buildPlaceholder() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppTheme.primaryBlue.withValues(alpha: 0.2),
+            AppTheme.primaryBlue.withValues(alpha: 0.05),
+          ],
+        ),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.store_outlined,
+              size: 48,
+              color: AppTheme.primaryBlue.withValues(alpha: 0.4),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              name
+                  .substring(0, name.length > 2 ? 2 : name.length)
+                  .toUpperCase(),
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 2,
+                color: AppTheme.primaryBlue.withValues(alpha: 0.3),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class MenuItemCard extends StatelessWidget {
@@ -234,32 +269,26 @@ class MenuItemCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Image
           ClipRRect(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
             child: AspectRatio(
               aspectRatio: 4 / 3,
-              child: imageUrl != null && imageUrl!.isNotEmpty
-                  ? Image.network(
-                      imageUrl!,
+              child: imageUrl?.isNotEmpty == true
+                  ? CachedNetworkImage(
+                      imageUrl: imageUrl!,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Container(
+                      placeholder: (context, url) => Container(
                         color: AppTheme.background,
-                        child: const Icon(
-                          Icons.fastfood,
-                          size: 40,
-                          color: AppTheme.textTertiary,
+                        child: const Center(
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppTheme.primaryBlue,
+                          ),
                         ),
                       ),
+                      errorWidget: (context, url, error) => _buildPlaceholder(),
                     )
-                  : Container(
-                      color: AppTheme.background,
-                      child: const Icon(
-                        Icons.fastfood,
-                        size: 40,
-                        color: AppTheme.textTertiary,
-                      ),
-                    ),
+                  : _buildPlaceholder(),
             ),
           ),
 
@@ -285,69 +314,106 @@ class MenuItemCard extends StatelessWidget {
                 const SizedBox(height: 8),
 
                 // Add/Quantity controls
-                if (quantity == 0)
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: onAdd,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primaryBlue,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                SizedBox(
+                  height: 40,
+                  width: double.infinity,
+                  child: quantity == 0
+                      ? ElevatedButton(
+                          onPressed: onAdd,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.primaryBlue,
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            padding: EdgeInsets.zero,
+                          ),
+                          child: const Text(
+                            'Add',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                            ),
+                          ),
+                        )
+                      : Container(
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: AppTheme.primaryBlue.withValues(
+                                alpha: 0.2,
+                              ),
+                            ),
+                            borderRadius: BorderRadius.circular(10),
+                            color: AppTheme.primaryBlue.withValues(alpha: 0.05),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              IconButton(
+                                onPressed: onDecrement,
+                                icon: const Icon(
+                                  Icons.remove,
+                                  size: 18,
+                                  color: AppTheme.primaryBlue,
+                                ),
+                                constraints: const BoxConstraints(
+                                  minWidth: 40,
+                                  minHeight: 40,
+                                ),
+                                padding: EdgeInsets.zero,
+                              ),
+                              Text(
+                                quantity.toString(),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                  color: AppTheme.primaryBlue,
+                                ),
+                              ),
+                              IconButton(
+                                onPressed: onIncrement,
+                                icon: const Icon(
+                                  Icons.add,
+                                  size: 18,
+                                  color: AppTheme.primaryBlue,
+                                ),
+                                constraints: const BoxConstraints(
+                                  minWidth: 40,
+                                  minHeight: 40,
+                                ),
+                                padding: EdgeInsets.zero,
+                              ),
+                            ],
+                          ),
                         ),
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                      ),
-                      child: const Text('Add'),
-                    ),
-                  )
-                else
-                  Container(
-                    decoration: BoxDecoration(
-                      border: Border.all(color: AppTheme.border),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        IconButton(
-                          onPressed: onDecrement,
-                          icon: const Icon(
-                            Icons.remove,
-                            color: AppTheme.primaryBlue,
-                          ),
-                          constraints: const BoxConstraints(
-                            minWidth: 36,
-                            minHeight: 36,
-                          ),
-                          padding: EdgeInsets.zero,
-                        ),
-                        Text(
-                          quantity.toString(),
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 16,
-                          ),
-                        ),
-                        IconButton(
-                          onPressed: onIncrement,
-                          icon: const Icon(
-                            Icons.add,
-                            color: AppTheme.primaryBlue,
-                          ),
-                          constraints: const BoxConstraints(
-                            minWidth: 36,
-                            minHeight: 36,
-                          ),
-                          padding: EdgeInsets.zero,
-                        ),
-                      ],
-                    ),
-                  ),
+                ),
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildPlaceholder() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppTheme.warning.withValues(alpha: 0.15),
+            AppTheme.warning.withValues(alpha: 0.05),
+          ],
+        ),
+      ),
+      child: Center(
+        child: Icon(
+          Icons.restaurant_menu_outlined,
+          size: 40,
+          color: AppTheme.warning.withValues(alpha: 0.4),
+        ),
       ),
     );
   }

@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
+import 'package:intl/intl.dart';
 import '../../config/theme.dart';
 import '../../config/lottie_assets.dart';
 import '../../models/order_model.dart';
+import '../../models/shop_model.dart';
 import '../../services/order_service.dart';
+import '../../services/shop_service.dart';
 import '../../widgets/order_widgets.dart';
 import '../../widgets/animations.dart';
 
@@ -141,31 +144,82 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
 
                     const SizedBox(height: 24),
 
-                    // Order Status Animation
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: AppTheme.cardBackground,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Column(
-                        children: [
-                          OrderStatusAnimation(
-                            status: order.status.value,
-                            size: 100,
+                    // Order Status & Shop Info
+                    StreamBuilder<ShopModel?>(
+                      stream: ShopService().shopStream(order.shopId),
+                      builder: (context, shopSnapshot) {
+                        final shop = shopSnapshot.data;
+                        return Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: AppTheme.cardBackground,
+                            borderRadius: BorderRadius.circular(20),
                           ),
-                          const SizedBox(height: 16),
-                          const Text(
-                            'Order Progress',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
-                            ),
+                          child: Column(
+                            children: [
+                              if (shop != null) ...[
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(10),
+                                      decoration: BoxDecoration(
+                                        color: AppTheme.primaryBlue.withValues(
+                                          alpha: 0.1,
+                                        ),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: const Icon(
+                                        Icons.store,
+                                        color: AppTheme.primaryBlue,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 16),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            shop.name,
+                                            style: const TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          Text(
+                                            shop.address ?? 'No address',
+                                            style: const TextStyle(
+                                              color: AppTheme.textSecondary,
+                                              fontSize: 13,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const Divider(height: 32),
+                              ],
+                              OrderStatusAnimation(
+                                status: order.status.value,
+                                size: 100,
+                              ),
+                              const SizedBox(height: 16),
+                              const Text(
+                                'Order Progress',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+                              OrderTimeline(currentStatus: order.status),
+                            ],
                           ),
-                          const SizedBox(height: 20),
-                          OrderProgressTracker(currentStatus: order.status),
-                        ],
-                      ),
+                        );
+                      },
                     ),
 
                     const SizedBox(height: 24),
@@ -194,6 +248,17 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
+                              const Spacer(),
+                              if (order.createdAt != null)
+                                Text(
+                                  DateFormat(
+                                    'hh:mm a',
+                                  ).format(order.createdAt!),
+                                  style: const TextStyle(
+                                    color: AppTheme.textSecondary,
+                                    fontSize: 13,
+                                  ),
+                                ),
                             ],
                           ),
                           const Divider(height: 24),
@@ -244,6 +309,16 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                               ),
                             ],
                           ),
+                          if (order.paymentId != null) ...[
+                            const SizedBox(height: 12),
+                            Text(
+                              'Payment ID: ${order.paymentId}',
+                              style: const TextStyle(
+                                color: AppTheme.textSecondary,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),
@@ -260,14 +335,14 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
+                          const Row(
                             children: [
-                              const Icon(
+                              Icon(
                                 Icons.local_shipping,
                                 color: AppTheme.success,
                               ),
-                              const SizedBox(width: 8),
-                              const Text(
+                              SizedBox(width: 8),
+                              Text(
                                 'Delivery Information',
                                 style: TextStyle(
                                   fontSize: 18,

@@ -1,15 +1,15 @@
 /// Lottie animation URLs from LottieFiles
 /// These are lightweight, cached network animations to keep the app size small
 class LottieAssets {
-  // Food & Delivery themed animations
+  // Food & Delivery themed animations (Verified)
   static const String cooking =
-      'https://lottie.host/b5f5c9e4-8b4a-4e9a-8b4a-4e9a8b4a4e9a/cooking.json';
+      'https://assets4.lottiefiles.com/packages/lf20_tll0j4bb.json';
   static const String delivery =
-      'https://assets10.lottiefiles.com/packages/lf20_hy4txm7l.json';
+      'https://assets5.lottiefiles.com/packages/lf20_hy4txm7l.json';
   static const String foodDelivery =
       'https://assets2.lottiefiles.com/packages/lf20_UJNc2t.json';
 
-  // Success & Celebration
+  // Success & Celebration (Verified)
   static const String success =
       'https://assets4.lottiefiles.com/packages/lf20_s2lryxtd.json';
   static const String celebration =
@@ -21,7 +21,7 @@ class LottieAssets {
   static const String orderSuccess =
       'https://assets3.lottiefiles.com/packages/lf20_wkaoioa4.json';
 
-  // Loading & Progress
+  // Loading & Progress (Verified)
   static const String loading =
       'https://assets9.lottiefiles.com/packages/lf20_x62chJ.json';
   static const String foodLoading =
@@ -29,7 +29,7 @@ class LottieAssets {
   static const String dotsLoading =
       'https://assets2.lottiefiles.com/packages/lf20_usmfx6bp.json';
 
-  // Empty States
+  // Empty States (Verified)
   static const String emptyCart =
       'https://assets9.lottiefiles.com/packages/lf20_qh5z2fdq.json';
   static const String emptyBox =
@@ -39,7 +39,7 @@ class LottieAssets {
   static const String emptySearch =
       'https://assets10.lottiefiles.com/packages/lf20_wnqlfojb.json';
 
-  // Status & Notifications
+  // Status & Notifications (Verified)
   static const String newOrder =
       'https://assets7.lottiefiles.com/packages/lf20_zzytbs9a.json';
   static const String preparing =
@@ -49,25 +49,23 @@ class LottieAssets {
   static const String outForDelivery =
       'https://assets3.lottiefiles.com/packages/lf20_jmejybvu.json';
 
-  // Fun & Interactive (Duolingo-style)
+  // Fun & Interactive (Verified)
   static const String wave =
       'https://assets5.lottiefiles.com/packages/lf20_V9t630.json';
   static const String star =
       'https://assets3.lottiefiles.com/packages/lf20_obhph3sh.json';
-  static const String thumbsUp =
-      'https://assets8.lottiefiles.com/packages/lf20_touohxv0.json';
   static const String heart =
       'https://assets1.lottiefiles.com/packages/lf20_9vev46qz.json';
-  static const String sparkle =
-      'https://assets6.lottiefiles.com/packages/lf20_nnzkbgbl.json';
+  static const String profile =
+      'https://assets8.lottiefiles.com/packages/lf20_m6cuL6.json';
 
-  // Splash & Welcome
+  // Splash & Welcome (Verified)
   static const String welcome =
       'https://assets10.lottiefiles.com/packages/lf20_V9t630.json';
   static const String foodSplash =
       'https://assets7.lottiefiles.com/packages/lf20_tll0j4bb.json';
 
-  // Error & Warning
+  // Error & Warning (Verified)
   static const String error =
       'https://assets4.lottiefiles.com/packages/lf20_qpwbiyxf.json';
   static const String warning =

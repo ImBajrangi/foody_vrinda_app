@@ -4,6 +4,9 @@ import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/buttons.dart';
 import '../../widgets/inputs.dart';
+import '../../config/app_config.dart';
+import 'package:lottie/lottie.dart';
+import '../../config/lottie_assets.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -17,7 +20,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
-  bool _isLogin = true;
   bool _obscurePassword = true;
 
   @override
@@ -27,17 +29,43 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    bool success = await authProvider.signInWithEmail(
+      _emailController.text.trim(),
+      _passwordController.text,
+    );
+
+    // Smart Dev Login: If master dev login fails because account doesn't exist, auto-create it.
+    if (!success &&
+        (authProvider.lastErrorCode == 'user-not-found' ||
+            authProvider.lastErrorCode == 'invalid-credential') &&
+        _emailController.text.trim() == AppConfig.developerEmail &&
+        _passwordController.text == AppConfig.developerPassword) {
+      print(
+        'LoginScreen: Developer account not found. Auto-creating master dev...',
+      );
+      success = await authProvider.signUpWithEmail(
+        _emailController.text.trim(),
+        _passwordController.text,
+      );
+    }
+
+    if (success && mounted) {
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
 
-    // Navigate back if authenticated
-    if (authProvider.isAuthenticated) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        Navigator.pop(context);
-      });
-    }
-
+    // Matches kitchen.html layout: Email -> Login -> Divider -> Google
     return Scaffold(
       backgroundColor: AppTheme.background,
       body: SafeArea(
@@ -60,24 +88,30 @@ class _LoginScreenState extends State<LoginScreen> {
 
               const SizedBox(height: 32),
 
-              // Logo
+              // Welcoming Lottie Animation
               Center(
-                child: Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: Colors.black,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(20),
-                    child: Image.network(
-                      'https://imbajrangi.github.io/Company/Vrindopnishad%20Web/class/logo/foodyVrinda-logo.png',
-                      fit: BoxFit.contain,
-                      errorBuilder: (context, error, stackTrace) => const Icon(
-                        Icons.restaurant,
-                        color: Colors.white,
-                        size: 40,
+                child: Lottie.network(
+                  LottieAssets.welcome,
+                  height: 180,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      color: Colors.black,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: Image.network(
+                        'https://imbajrangi.github.io/Company/Vrindopnishad%20Web/class/logo/foodyVrinda-logo.png',
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) =>
+                            const Icon(
+                              Icons.restaurant,
+                              color: Colors.white,
+                              size: 40,
+                            ),
                       ),
                     ),
                   ),
@@ -89,16 +123,14 @@ class _LoginScreenState extends State<LoginScreen> {
               // Title
               Center(
                 child: Text(
-                  _isLogin ? 'Welcome Back!' : 'Create Account',
+                  'Login',
                   style: Theme.of(context).textTheme.displaySmall,
                 ),
               ),
               const SizedBox(height: 8),
               Center(
                 child: Text(
-                  _isLogin
-                      ? 'Sign in to continue ordering your favorites'
-                      : 'Sign up to start ordering delicious food',
+                  'Sign in to your account',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: AppTheme.textSecondary,
                   ),
@@ -195,6 +227,13 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                 ),
                               ),
+                              IconButton(
+                                onPressed: () => authProvider.clearError(),
+                                icon: const Icon(Icons.close, size: 16),
+                                color: AppTheme.error,
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
+                              ),
                             ],
                           ),
                         ),
@@ -203,7 +242,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(height: 24),
 
                       AppButton(
-                        text: _isLogin ? 'Sign In' : 'Sign Up',
+                        text: 'Login',
                         isFullWidth: true,
                         isLoading: authProvider.isLoading,
                         height: 52,
@@ -216,38 +255,42 @@ class _LoginScreenState extends State<LoginScreen> {
 
               const SizedBox(height: 24),
 
-              // Toggle login/signup
-              Center(
-                child: TextButton(
-                  onPressed: () {
-                    setState(() {
-                      _isLogin = !_isLogin;
-                    });
-                    authProvider.clearError();
-                  },
-                  child: RichText(
-                    text: TextSpan(
-                      style: const TextStyle(color: AppTheme.textSecondary),
-                      children: [
-                        TextSpan(
-                          text: _isLogin
-                              ? "Don't have an account? "
-                              : "Already have an account? ",
-                        ),
-                        TextSpan(
-                          text: _isLogin ? 'Sign Up' : 'Sign In',
-                          style: const TextStyle(
-                            color: AppTheme.primaryBlue,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
+              // Divider
+              Row(
+                children: [
+                  Expanded(child: Divider(color: AppTheme.border)),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Text(
+                      'OR',
+                      style: TextStyle(
+                        color: AppTheme.textSecondary,
+                        fontSize: 12,
+                      ),
                     ),
                   ),
-                ),
+                  Expanded(child: Divider(color: AppTheme.border)),
+                ],
               ),
 
               const SizedBox(height: 24),
+
+              // Google Sign In Button
+              _GoogleSignInButton(
+                onPressed: authProvider.isLoading
+                    ? null
+                    : () async {
+                        final success = await authProvider.signInWithGoogle();
+                        if (success && mounted) {
+                          if (Navigator.canPop(context)) {
+                            Navigator.pop(context);
+                          }
+                        }
+                      },
+                isLoading: authProvider.isLoading,
+              ),
+
+              const SizedBox(height: 16),
 
               // Guest option
               Center(
@@ -265,22 +308,75 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
+}
 
-  void _submit() {
-    if (!_formKey.currentState!.validate()) return;
+/// Google Sign In Button
+class _GoogleSignInButton extends StatelessWidget {
+  final VoidCallback? onPressed;
+  final bool isLoading;
 
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+  const _GoogleSignInButton({this.onPressed, this.isLoading = false});
 
-    if (_isLogin) {
-      authProvider.signInWithEmail(
-        _emailController.text.trim(),
-        _passwordController.text,
-      );
-    } else {
-      authProvider.signUpWithEmail(
-        _emailController.text.trim(),
-        _passwordController.text,
-      );
-    }
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      height: 56,
+      child: OutlinedButton(
+        onPressed: onPressed,
+        style: OutlinedButton.styleFrom(
+          backgroundColor: AppTheme.cardBackground,
+          side: BorderSide(color: AppTheme.border),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+        ),
+        child: isLoading
+            ? Lottie.network(
+                LottieAssets.dotsLoading,
+                width: 50,
+                height: 50,
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) => const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Google logo
+                  Container(
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Image.network(
+                      'https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg',
+                      width: 18,
+                      height: 18,
+                      errorBuilder: (context, error, stackTrace) => const Icon(
+                        Icons.g_mobiledata,
+                        color: Colors.red,
+                        size: 24,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'Continue with Google',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: AppTheme.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+      ),
+    );
   }
 }

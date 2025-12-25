@@ -2,44 +2,179 @@ import 'package:flutter/material.dart';
 import '../config/theme.dart';
 import '../models/order_model.dart';
 
-class StatusTag extends StatelessWidget {
-  final String status;
+/// Order status tag widget
+class OrderStatusTag extends StatelessWidget {
+  final OrderStatus status;
 
-  const StatusTag({super.key, required this.status});
+  const OrderStatusTag({super.key, required this.status});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: AppTheme.getStatusBackgroundColor(status),
+        color: _getColor().withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _getColor(), width: 1),
       ),
-      child: Text(
-        AppTheme.getStatusDisplayName(status),
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          color: AppTheme.getStatusTextColor(status),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              color: _getColor(),
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            status.displayName,
+            style: TextStyle(
+              color: _getColor(),
+              fontWeight: FontWeight.w600,
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _getColor() {
+    switch (status) {
+      case OrderStatus.newOrder:
+        return AppTheme.warning;
+      case OrderStatus.preparing:
+        return AppTheme.primaryBlue;
+      case OrderStatus.readyForPickup:
+        return AppTheme.success;
+      case OrderStatus.outForDelivery:
+        return AppTheme.ownerColor;
+      case OrderStatus.completed:
+        return AppTheme.success;
+    }
+  }
+}
+
+/// Order timeline widget
+class OrderTimeline extends StatelessWidget {
+  final OrderStatus currentStatus;
+
+  const OrderTimeline({super.key, required this.currentStatus});
+
+  @override
+  Widget build(BuildContext context) {
+    final statuses = [
+      OrderStatus.newOrder,
+      OrderStatus.preparing,
+      OrderStatus.readyForPickup,
+      OrderStatus.outForDelivery,
+      OrderStatus.completed,
+    ];
+
+    final currentIndex = statuses.indexOf(currentStatus);
+
+    return Row(
+      children: List.generate(statuses.length * 2 - 1, (index) {
+        if (index.isOdd) {
+          // Connector line
+          final stepIndex = (index - 1) ~/ 2;
+          final isCompleted = stepIndex < currentIndex;
+          return Expanded(
+            child: Container(
+              height: 3,
+              color: isCompleted ? AppTheme.success : AppTheme.border,
+            ),
+          );
+        } else {
+          // Step circle
+          final stepIndex = index ~/ 2;
+          final status = statuses[stepIndex];
+          final isCompleted = stepIndex <= currentIndex;
+          final isCurrent = stepIndex == currentIndex;
+
+          return _TimelineStep(
+            icon: _getIcon(status),
+            label: status.displayName,
+            isCompleted: isCompleted,
+            isCurrent: isCurrent,
+          );
+        }
+      }),
+    );
+  }
+
+  IconData _getIcon(OrderStatus status) {
+    switch (status) {
+      case OrderStatus.newOrder:
+        return Icons.receipt_long;
+      case OrderStatus.preparing:
+        return Icons.restaurant;
+      case OrderStatus.readyForPickup:
+        return Icons.inventory_2;
+      case OrderStatus.outForDelivery:
+        return Icons.delivery_dining;
+      case OrderStatus.completed:
+        return Icons.check_circle;
+    }
+  }
+}
+
+class _TimelineStep extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool isCompleted;
+  final bool isCurrent;
+
+  const _TimelineStep({
+    required this.icon,
+    required this.label,
+    required this.isCompleted,
+    required this.isCurrent,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = isCompleted ? AppTheme.success : AppTheme.textTertiary;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: isCurrent ? 44 : 36,
+          height: isCurrent ? 44 : 36,
+          decoration: BoxDecoration(
+            color: isCompleted
+                ? color.withValues(alpha: 0.1)
+                : AppTheme.background,
+            shape: BoxShape.circle,
+            border: Border.all(color: color, width: isCurrent ? 2 : 1),
+          ),
+          child: Icon(icon, color: color, size: isCurrent ? 22 : 18),
         ),
-      ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 9,
+            color: color,
+            fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ],
     );
   }
 }
 
-class OrderCard extends StatelessWidget {
+/// Order summary card
+class OrderSummaryCard extends StatelessWidget {
   final OrderModel order;
-  final String? shopName;
   final VoidCallback? onTap;
-  final Widget? actionButton;
 
-  const OrderCard({
-    super.key,
-    required this.order,
-    this.shopName,
-    this.onTap,
-    this.actionButton,
-  });
+  const OrderSummaryCard({super.key, required this.order, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -49,7 +184,7 @@ class OrderCard extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: AppTheme.cardBackground,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.04),
@@ -59,159 +194,58 @@ class OrderCard extends StatelessWidget {
           ],
         ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      order.orderNumber,
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      order.timeAgo,
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ],
-                ),
-                StatusTag(status: order.status.value),
-              ],
-            ),
-
-            const Divider(height: 24),
-
-            // Customer info
             Row(
               children: [
-                const Icon(
-                  Icons.person_outline,
-                  size: 18,
-                  color: AppTheme.textSecondary,
-                ),
-                const SizedBox(width: 8),
                 Expanded(
-                  child: Text(
-                    order.customerName,
-                    style: const TextStyle(fontWeight: FontWeight.w500),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-
-            Row(
-              children: [
-                const Icon(
-                  Icons.phone_outlined,
-                  size: 18,
-                  color: AppTheme.textSecondary,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  order.customerPhone,
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Icon(
-                  Icons.location_on_outlined,
-                  size: 18,
-                  color: AppTheme.textSecondary,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    order.deliveryAddress,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-
-            const Divider(height: 24),
-
-            // Items
-            ...order.items.map(
-              (item) => Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        '${item.quantity}x ${item.name}',
-                        style: Theme.of(context).textTheme.bodyMedium,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        order.orderNumber,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        order.itemsSummary,
+                        style: const TextStyle(
+                          color: AppTheme.textSecondary,
+                          fontSize: 13,
+                        ),
+                        maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                    ),
+                    ],
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
                     Text(
-                      item.formattedTotal,
-                      style: const TextStyle(fontWeight: FontWeight.w500),
+                      order.formattedTotal,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                        color: AppTheme.primaryBlue,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      order.timeAgo,
+                      style: const TextStyle(
+                        color: AppTheme.textSecondary,
+                        fontSize: 12,
+                      ),
                     ),
                   ],
                 ),
-              ),
-            ),
-
-            const Divider(height: 16),
-
-            // Total
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Total',
-                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-                ),
-                Text(
-                  order.formattedTotal,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 18,
-                    color: AppTheme.primaryBlue,
-                  ),
-                ),
               ],
             ),
-
-            // Action button
-            if (actionButton != null) ...[
-              const SizedBox(height: 16),
-              actionButton!,
-            ],
-
-            // Test order badge
-            if (order.isTestOrder) ...[
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppTheme.statusPreparing,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: const Text(
-                  'TEST ORDER',
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    color: AppTheme.statusPreparingText,
-                  ),
-                ),
-              ),
-            ],
+            const SizedBox(height: 12),
+            OrderStatusTag(status: order.status),
           ],
         ),
       ),
@@ -219,105 +253,55 @@ class OrderCard extends StatelessWidget {
   }
 }
 
-class OrderProgressTracker extends StatelessWidget {
-  final OrderStatus currentStatus;
+/// Order items list
+class OrderItemsList extends StatelessWidget {
+  final List<OrderItem> items;
 
-  const OrderProgressTracker({super.key, required this.currentStatus});
-
-  int get _currentStep {
-    switch (currentStatus) {
-      case OrderStatus.newOrder:
-        return 0;
-      case OrderStatus.preparing:
-        return 1;
-      case OrderStatus.readyForPickup:
-        return 2;
-      case OrderStatus.outForDelivery:
-        return 3;
-      case OrderStatus.completed:
-        return 4;
-    }
-  }
+  const OrderItemsList({super.key, required this.items});
 
   @override
   Widget build(BuildContext context) {
-    final steps = ['New', 'Preparing', 'Ready', 'Delivery', 'Done'];
-
     return Column(
-      children: [
-        Row(
-          children: List.generate(steps.length, (index) {
-            final isActive = index <= _currentStep;
-            return Expanded(
-              child: Column(
+      children: items
+          .map(
+            (item) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Row(
                 children: [
                   Container(
-                    width: 36,
-                    height: 36,
+                    width: 32,
+                    height: 32,
                     decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: isActive
-                          ? AppTheme.primaryBlue
-                          : const Color(0xFFE0E0E0),
+                      color: AppTheme.primaryBlue.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
                     ),
                     child: Center(
-                      child: isActive
-                          ? const Icon(
-                              Icons.check,
-                              color: Colors.white,
-                              size: 18,
-                            )
-                          : Text(
-                              '${index + 1}',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
+                      child: Text(
+                        '${item.quantity}x',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                          color: AppTheme.primaryBlue,
+                        ),
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    steps[index],
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
-                      color: isActive
-                          ? AppTheme.textPrimary
-                          : AppTheme.textTertiary,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      item.name,
+                      style: const TextStyle(fontWeight: FontWeight.w500),
                     ),
-                    textAlign: TextAlign.center,
+                  ),
+                  Text(
+                    item.formattedTotal,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
                   ),
                 ],
               ),
-            );
-          }),
-        ),
-        const SizedBox(height: 8),
-        Stack(
-          children: [
-            Container(
-              height: 4,
-              margin: const EdgeInsets.symmetric(horizontal: 24),
-              decoration: BoxDecoration(
-                color: const Color(0xFFE0E0E0),
-                borderRadius: BorderRadius.circular(2),
-              ),
             ),
-            FractionallySizedBox(
-              widthFactor: _currentStep / (steps.length - 1),
-              child: Container(
-                height: 4,
-                margin: const EdgeInsets.only(left: 24),
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryBlue,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ],
+          )
+          .toList(),
     );
   }
 }

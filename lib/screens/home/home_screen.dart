@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../config/theme.dart';
+import 'package:lottie/lottie.dart';
+import '../../config/lottie_assets.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/cart_provider.dart';
 import '../../models/user_model.dart';
@@ -8,7 +10,13 @@ import '../../models/shop_model.dart';
 import '../../services/shop_service.dart';
 import '../../widgets/cards.dart';
 import '../menu/menu_screen.dart';
+import '../cart/cart_screen.dart';
 import '../auth/login_screen.dart';
+import '../kitchen/kitchen_view.dart';
+import '../delivery/delivery_view.dart';
+import '../dashboard/dashboard_view.dart';
+import '../developer/developer_panel.dart';
+import '../../widgets/animations.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -120,7 +128,12 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: [
                       IconButton(
                         onPressed: () {
-                          // Show cart
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const CartScreen(),
+                            ),
+                          );
                         },
                         icon: const Icon(Icons.shopping_bag_outlined),
                       ),
@@ -313,20 +326,35 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildContent() {
-    switch (_selectedViewIndex) {
-      case 0:
-        return _buildCustomerView();
-      case 1:
-        return _buildKitchenView();
-      case 2:
-        return _buildDeliveryView();
-      case 3:
-        return _buildDashboardView();
-      case 4:
-        return _buildDevPanel();
-      default:
-        return _buildCustomerView();
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final userData = authProvider.userData;
+    final role = userData?.role ?? UserRole.customer;
+
+    // We must ensure the children here exactly match the views structure
+    // defined in _buildViewSwitcher to maintain consistent indexing.
+    List<Widget> views = [_buildCustomerView()];
+
+    if (role == UserRole.kitchen ||
+        role == UserRole.owner ||
+        role == UserRole.developer) {
+      views.add(_buildKitchenView());
     }
+
+    if (role == UserRole.delivery ||
+        role == UserRole.owner ||
+        role == UserRole.developer) {
+      views.add(_buildDeliveryView());
+    }
+
+    if (role == UserRole.owner || role == UserRole.developer) {
+      views.add(_buildDashboardView());
+    }
+
+    if (role == UserRole.developer) {
+      views.add(_buildDevPanel());
+    }
+
+    return IndexedStack(index: _selectedViewIndex, children: views);
   }
 
   Widget _buildCustomerView() {
@@ -346,17 +374,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                CircularProgressIndicator(color: AppTheme.primaryBlue),
-                SizedBox(height: 16),
-                Text(
-                  'Loading shops...',
-                  style: TextStyle(color: AppTheme.textSecondary),
-                ),
-              ],
-            ),
+            child: AnimatedLoader(message: 'Loading shops...'),
           );
         }
 
@@ -433,7 +451,11 @@ class _HomeScreenState extends State<HomeScreen> {
               'Shop Now 🍽️',
               style: Theme.of(context).textTheme.displaySmall,
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 16),
+
+            // Welcome Card with Animation
+            _buildWelcomeCard(),
+            const SizedBox(height: 24),
             Text(
               "Choose where you'd like to order from.",
               style: Theme.of(
@@ -469,88 +491,100 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildKitchenView() {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.kitchen, size: 64, color: AppTheme.textTertiary),
-          SizedBox(height: 16),
-          Text(
-            'Kitchen View',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+  Widget _buildWelcomeCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AppTheme.primaryBlue,
+            AppTheme.primaryBlue.withValues(alpha: 0.8),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.primaryBlue.withValues(alpha: 0.3),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
           ),
-          SizedBox(height: 8),
-          Text(
-            'Manage pending orders for your shop',
-            style: TextStyle(color: AppTheme.textSecondary),
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Enjoy Free Delivery! 🛵',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'On your first 3 orders today.',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.9),
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () {},
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: AppTheme.primaryBlue,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 10,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    'Order Now',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(
+            width: 100,
+            height: 100,
+            child: Lottie.network(
+              LottieAssets.foodDelivery,
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) => const SizedBox(),
+            ),
           ),
         ],
       ),
     );
+  }
+
+  Widget _buildKitchenView() {
+    return const KitchenView();
   }
 
   Widget _buildDeliveryView() {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.delivery_dining, size: 64, color: AppTheme.textTertiary),
-          SizedBox(height: 16),
-          Text(
-            'Delivery View',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-          ),
-          SizedBox(height: 8),
-          Text(
-            'Ready for delivery from your shop',
-            style: TextStyle(color: AppTheme.textSecondary),
-          ),
-        ],
-      ),
-    );
+    return const DeliveryView();
   }
 
   Widget _buildDashboardView() {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.dashboard, size: 64, color: AppTheme.ownerColor),
-          SizedBox(height: 16),
-          Text(
-            'Owner Dashboard',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-          ),
-          SizedBox(height: 8),
-          Text(
-            'Overview of your kitchen\'s performance',
-            style: TextStyle(color: AppTheme.textSecondary),
-          ),
-        ],
-      ),
-    );
+    return const DashboardView();
   }
 
   Widget _buildDevPanel() {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.code, size: 64, color: AppTheme.developerColor),
-          SizedBox(height: 16),
-          Text(
-            'Developer Panel',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-          ),
-          SizedBox(height: 8),
-          Text(
-            'System testing & debugging',
-            style: TextStyle(color: AppTheme.textSecondary),
-          ),
-        ],
-      ),
-    );
+    return const DeveloperPanel();
   }
 
   void _showProfileModal(BuildContext context, AuthProvider authProvider) {
@@ -581,21 +615,28 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 24),
 
             if (authProvider.isAuthenticated) ...[
-              // User info
-              Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryBlue.withValues(alpha: 0.2),
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: Text(
-                    authProvider.userData?.initials ?? 'U',
-                    style: const TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.primaryBlue,
+              // Animated Profile Icon
+              SizedBox(
+                height: 120,
+                child: Lottie.network(
+                  LottieAssets.profile,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryBlue.withValues(alpha: 0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text(
+                        authProvider.userData?.initials ?? 'U',
+                        style: const TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.primaryBlue,
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -639,9 +680,21 @@ class _HomeScreenState extends State<HomeScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {
-                    authProvider.signOut();
-                    Navigator.pop(context);
+                  onPressed: () async {
+                    Navigator.pop(context); // Close modal first
+                    await authProvider.signOut();
+                    if (mounted) {
+                      setState(() {
+                        _selectedViewIndex = 0; // Reset to Customer view
+                      });
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Signed out successfully'),
+                          backgroundColor: AppTheme.success,
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                    }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.error,

@@ -8,6 +8,8 @@ import 'config/theme.dart';
 import 'providers/auth_provider.dart';
 import 'providers/cart_provider.dart';
 import 'screens/home/home_screen.dart';
+import 'package:lottie/lottie.dart';
+import 'config/lottie_assets.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -229,14 +231,24 @@ class _SplashScreenState extends State<SplashScreen>
                   opacity: _fadeAnimation,
                   child: Column(
                     children: [
-                      // Animated loading dots
-                      _AnimatedLoadingDots(),
+                      // Premium Lottie Splash Loader
+                      Lottie.network(
+                        LottieAssets.foodSplash,
+                        width: 200,
+                        height: 200,
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) =>
+                            const CircularProgressIndicator(
+                              color: Colors.white,
+                            ),
+                      ),
                       const SizedBox(height: 16),
                       Text(
-                        'Preparing something delicious...',
+                        'Cooking up the best experience...',
                         style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.6),
-                          fontSize: 13,
+                          color: Colors.white.withValues(alpha: 0.8),
+                          fontSize: 14,
+                          fontStyle: FontStyle.italic,
                         ),
                       ),
                     ],
@@ -249,96 +261,6 @@ class _SplashScreenState extends State<SplashScreen>
           ),
         ),
       ),
-    );
-  }
-}
-
-/// Animated loading dots like Duolingo
-class _AnimatedLoadingDots extends StatefulWidget {
-  @override
-  State<_AnimatedLoadingDots> createState() => _AnimatedLoadingDotsState();
-}
-
-class _AnimatedLoadingDotsState extends State<_AnimatedLoadingDots>
-    with TickerProviderStateMixin {
-  late List<AnimationController> _controllers;
-  late List<Animation<double>> _animations;
-
-  @override
-  void initState() {
-    super.initState();
-    _controllers = List.generate(
-      3,
-      (index) => AnimationController(
-        duration: const Duration(milliseconds: 600),
-        vsync: this,
-      ),
-    );
-
-    _animations = _controllers
-        .map(
-          (controller) => Tween<double>(begin: 0, end: -12).animate(
-            CurvedAnimation(parent: controller, curve: Curves.easeInOut),
-          ),
-        )
-        .toList();
-
-    // Start animations with delay
-    for (int i = 0; i < 3; i++) {
-      Future.delayed(Duration(milliseconds: i * 200), () {
-        if (mounted) {
-          _controllers[i].repeat(reverse: true);
-        }
-      });
-    }
-  }
-
-  @override
-  void dispose() {
-    for (var controller in _controllers) {
-      controller.dispose();
-    }
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(3, (index) {
-        return AnimatedBuilder(
-          animation: _animations[index],
-          builder: (context, child) {
-            return Transform.translate(
-              offset: Offset(0, _animations[index].value),
-              child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 4),
-                width: 12,
-                height: 12,
-                decoration: BoxDecoration(
-                  color: [
-                    AppTheme.primaryBlue,
-                    AppTheme.success,
-                    AppTheme.warning,
-                  ][index],
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: [
-                        AppTheme.primaryBlue,
-                        AppTheme.success,
-                        AppTheme.warning,
-                      ][index].withValues(alpha: 0.5),
-                      blurRadius: 8,
-                      spreadRadius: 2,
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      }),
     );
   }
 }

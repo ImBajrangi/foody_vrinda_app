@@ -16,40 +16,58 @@ class OrderService {
     String? paymentId,
     bool isTestOrder = false,
   }) async {
-    final items = cartItems
-        .map(
-          (cartItem) => OrderItem(
-            menuItemId: cartItem.menuItem.id,
-            name: cartItem.menuItem.name,
-            price: cartItem.menuItem.price,
-            quantity: cartItem.quantity,
-          ),
-        )
-        .toList();
+    try {
+      print('OrderService: Creating order for shop $shopId');
+      print('OrderService: Customer: $customerName, Phone: $customerPhone');
+      print('OrderService: Items count: ${cartItems.length}');
 
-    final totalAmount = cartItems.fold<double>(
-      0,
-      (sum, item) => sum + item.total,
-    );
+      final items = cartItems
+          .map(
+            (cartItem) => OrderItem(
+              menuItemId: cartItem.menuItem.id,
+              name: cartItem.menuItem.name,
+              price: cartItem.menuItem.price,
+              quantity: cartItem.quantity,
+            ),
+          )
+          .toList();
 
-    final order = OrderModel(
-      id: '',
-      shopId: shopId,
-      userId: userId,
-      customerName: customerName,
-      customerPhone: customerPhone,
-      deliveryAddress: deliveryAddress,
-      items: items,
-      totalAmount: totalAmount,
-      status: OrderStatus.newOrder,
-      paymentId: paymentId,
-      isTestOrder: isTestOrder,
-    );
+      final totalAmount = cartItems.fold<double>(
+        0,
+        (sum, item) => sum + item.total,
+      );
 
-    final docRef = await _firestore
-        .collection('orders')
-        .add(order.toFirestore());
-    return docRef.id;
+      print('OrderService: Total amount: $totalAmount');
+
+      // Generate order number based on timestamp
+      final now = DateTime.now();
+      final orderNumber = '${now.millisecondsSinceEpoch}';
+
+      final orderData = {
+        'shopId': shopId,
+        'userId': userId,
+        'customerName': customerName,
+        'customerPhone': customerPhone,
+        'deliveryAddress': deliveryAddress,
+        'items': items.map((item) => item.toMap()).toList(),
+        'totalAmount': totalAmount,
+        'status': 'new',
+        'paymentId': paymentId,
+        'isTestOrder': isTestOrder,
+        'orderNumber': orderNumber,
+        'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
+
+      print('OrderService: Saving order to Firestore...');
+      final docRef = await _firestore.collection('orders').add(orderData);
+
+      print('OrderService: Order created successfully with ID: ${docRef.id}');
+      return docRef.id;
+    } catch (e) {
+      print('OrderService: Error creating order: $e');
+      rethrow;
+    }
   }
 
   // Get order by ID
@@ -61,21 +79,23 @@ class OrderService {
       }
       return null;
     } catch (e) {
-      print('Error getting order: $e');
+      print('OrderService: Error getting order: $e');
       return null;
     }
   }
 
   // Order stream
   Stream<OrderModel?> orderStream(String orderId) {
-    return _firestore
-        .collection('orders')
-        .doc(orderId)
-        .snapshots()
-        .map((doc) => doc.exists ? OrderModel.fromFirestore(doc) : null);
+    return _firestore.collection('orders').doc(orderId).snapshots().map((doc) {
+      if (doc.exists) {
+        print('OrderService: Order stream update for $orderId');
+        return OrderModel.fromFirestore(doc);
+      }
+      return null;
+    });
   }
 
-  // Get orders for a shop
+  // Get orders for a shop (without ordering to avoid index requirement)
   Stream<List<OrderModel>> getShopOrders(String shopId, {OrderStatus? status}) {
     Query<Map<String, dynamic>> query = _firestore
         .collection('orders')
@@ -85,14 +105,15 @@ class OrderService {
       query = query.where('status', isEqualTo: status.value);
     }
 
-    return query
-        .orderBy('createdAt', descending: true)
-        .snapshots()
-        .map(
-          (snapshot) => snapshot.docs
-              .map((doc) => OrderModel.fromFirestore(doc))
-              .toList(),
-        );
+    return query.snapshots().map(
+      (snapshot) =>
+          snapshot.docs.map((doc) => OrderModel.fromFirestore(doc)).toList()
+            ..sort(
+              (a, b) => (b.createdAt ?? DateTime.now()).compareTo(
+                a.createdAt ?? DateTime.now(),
+              ),
+            ),
+    );
   }
 
   // Get active orders for a shop (new, preparing, ready_for_pickup, out_for_delivery)
@@ -104,42 +125,59 @@ class OrderService {
           'status',
           whereIn: ['new', 'preparing', 'ready_for_pickup', 'out_for_delivery'],
         )
-        .orderBy('createdAt', descending: true)
         .snapshots()
         .map(
-          (snapshot) => snapshot.docs
-              .map((doc) => OrderModel.fromFirestore(doc))
-              .toList(),
+          (snapshot) =>
+              snapshot.docs.map((doc) => OrderModel.fromFirestore(doc)).toList()
+                ..sort(
+                  (a, b) => (b.createdAt ?? DateTime.now()).compareTo(
+                    a.createdAt ?? DateTime.now(),
+                  ),
+                ),
         );
   }
 
   // Get kitchen orders (new and preparing)
-  Stream<List<OrderModel>> getKitchenOrders(String shopId) {
-    return _firestore
-        .collection('orders')
-        .where('shopId', isEqualTo: shopId)
+  Stream<List<OrderModel>> getKitchenOrders(String? shopId) {
+    Query<Map<String, dynamic>> query = _firestore.collection('orders');
+
+    if (shopId != null) {
+      query = query.where('shopId', isEqualTo: shopId);
+    }
+
+    return query
         .where('status', whereIn: ['new', 'preparing'])
-        .orderBy('createdAt', descending: true)
         .snapshots()
         .map(
-          (snapshot) => snapshot.docs
-              .map((doc) => OrderModel.fromFirestore(doc))
-              .toList(),
+          (snapshot) =>
+              snapshot.docs.map((doc) => OrderModel.fromFirestore(doc)).toList()
+                ..sort(
+                  (a, b) => (b.createdAt ?? DateTime.now()).compareTo(
+                    a.createdAt ?? DateTime.now(),
+                  ),
+                ),
         );
   }
 
   // Get delivery orders (ready_for_pickup and out_for_delivery)
-  Stream<List<OrderModel>> getDeliveryOrders(String shopId) {
-    return _firestore
-        .collection('orders')
-        .where('shopId', isEqualTo: shopId)
+  Stream<List<OrderModel>> getDeliveryOrders(String? shopId) {
+    Query<Map<String, dynamic>> query = _firestore.collection('orders');
+
+    if (shopId != null) {
+      query = query.where('shopId', isEqualTo: shopId);
+    }
+
+    return query
         .where('status', whereIn: ['ready_for_pickup', 'out_for_delivery'])
-        .orderBy('createdAt', descending: true)
         .snapshots()
         .map(
-          (snapshot) => snapshot.docs
-              .map((doc) => OrderModel.fromFirestore(doc))
-              .toList(),
+          (snapshot) =>
+              snapshot.docs.map((doc) => OrderModel.fromFirestore(doc)).toList()
+                ..sort(
+                  (a, b) => (b.createdAt ?? DateTime.now()).compareTo(
+                    a.createdAt ?? DateTime.now(),
+                  ),
+                ),
         );
   }
 
@@ -153,12 +191,15 @@ class OrderService {
         .collection('orders')
         .where('shopId', whereIn: shopIds)
         .where('status', whereIn: ['ready_for_pickup', 'out_for_delivery'])
-        .orderBy('createdAt', descending: true)
         .snapshots()
         .map(
-          (snapshot) => snapshot.docs
-              .map((doc) => OrderModel.fromFirestore(doc))
-              .toList(),
+          (snapshot) =>
+              snapshot.docs.map((doc) => OrderModel.fromFirestore(doc)).toList()
+                ..sort(
+                  (a, b) => (b.createdAt ?? DateTime.now()).compareTo(
+                    a.createdAt ?? DateTime.now(),
+                  ),
+                ),
         );
   }
 
@@ -168,32 +209,19 @@ class OrderService {
     DateTime? startDate,
     DateTime? endDate,
   }) {
-    Query<Map<String, dynamic>> query = _firestore
+    return _firestore
         .collection('orders')
         .where('shopId', isEqualTo: shopId)
-        .where('status', isEqualTo: 'completed');
-
-    if (startDate != null) {
-      query = query.where(
-        'createdAt',
-        isGreaterThanOrEqualTo: Timestamp.fromDate(startDate),
-      );
-    }
-
-    if (endDate != null) {
-      query = query.where(
-        'createdAt',
-        isLessThanOrEqualTo: Timestamp.fromDate(endDate),
-      );
-    }
-
-    return query
-        .orderBy('createdAt', descending: true)
+        .where('status', isEqualTo: 'completed')
         .snapshots()
         .map(
-          (snapshot) => snapshot.docs
-              .map((doc) => OrderModel.fromFirestore(doc))
-              .toList(),
+          (snapshot) =>
+              snapshot.docs.map((doc) => OrderModel.fromFirestore(doc)).toList()
+                ..sort(
+                  (a, b) => (b.createdAt ?? DateTime.now()).compareTo(
+                    a.createdAt ?? DateTime.now(),
+                  ),
+                ),
         );
   }
 
@@ -202,39 +230,58 @@ class OrderService {
     return _firestore
         .collection('orders')
         .where('userId', isEqualTo: userId)
-        .orderBy('createdAt', descending: true)
         .snapshots()
         .map(
-          (snapshot) => snapshot.docs
-              .map((doc) => OrderModel.fromFirestore(doc))
-              .toList(),
+          (snapshot) =>
+              snapshot.docs.map((doc) => OrderModel.fromFirestore(doc)).toList()
+                ..sort(
+                  (a, b) => (b.createdAt ?? DateTime.now()).compareTo(
+                    a.createdAt ?? DateTime.now(),
+                  ),
+                ),
         );
   }
 
   // Update order status
   Future<void> updateOrderStatus(String orderId, OrderStatus status) async {
-    await _firestore.collection('orders').doc(orderId).update({
-      'status': status.value,
-      'updatedAt': FieldValue.serverTimestamp(),
-    });
+    try {
+      print('OrderService: Updating order $orderId to status ${status.value}');
+      await _firestore.collection('orders').doc(orderId).update({
+        'status': status.value,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+      print('OrderService: Order status updated successfully');
+    } catch (e) {
+      print('OrderService: Error updating order status: $e');
+      rethrow;
+    }
   }
 
   // Cancel order
   Future<void> cancelOrder(String orderId) async {
-    await _firestore.collection('orders').doc(orderId).delete();
+    try {
+      await _firestore.collection('orders').doc(orderId).delete();
+      print('OrderService: Order $orderId cancelled');
+    } catch (e) {
+      print('OrderService: Error cancelling order: $e');
+      rethrow;
+    }
   }
 
   // Get all orders (developer only)
   Stream<List<OrderModel>> getAllOrders({int limit = 50}) {
     return _firestore
         .collection('orders')
-        .orderBy('createdAt', descending: true)
         .limit(limit)
         .snapshots()
         .map(
-          (snapshot) => snapshot.docs
-              .map((doc) => OrderModel.fromFirestore(doc))
-              .toList(),
+          (snapshot) =>
+              snapshot.docs.map((doc) => OrderModel.fromFirestore(doc)).toList()
+                ..sort(
+                  (a, b) => (b.createdAt ?? DateTime.now()).compareTo(
+                    a.createdAt ?? DateTime.now(),
+                  ),
+                ),
         );
   }
 
