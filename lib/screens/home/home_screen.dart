@@ -195,6 +195,16 @@ class _HomeScreenState extends State<HomeScreen> {
                                 child: Image.network(
                                   userData!.photoURL!,
                                   fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) =>
+                                      Center(
+                                        child: Text(
+                                          userData.initials,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                            color: AppTheme.primaryBlue,
+                                          ),
+                                        ),
+                                      ),
                                 ),
                               )
                             : Center(
