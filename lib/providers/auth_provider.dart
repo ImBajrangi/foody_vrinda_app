@@ -78,15 +78,13 @@ class AuthProvider extends ChangeNotifier {
         _userData = await _authService.getUserData(user.uid);
 
         // If no user data exists, create it
-        if (_userData == null) {
-          _userData = UserModel(
-            uid: user.uid,
-            email: user.email ?? '',
-            displayName: user.displayName,
-            photoURL: user.photoURL,
-            role: UserRole.customer,
-          );
-        }
+        _userData ??= UserModel(
+          uid: user.uid,
+          email: user.email ?? '',
+          displayName: user.displayName,
+          photoURL: user.photoURL,
+          role: UserRole.customer,
+        );
       }
 
       _status = AuthStatus.authenticated;

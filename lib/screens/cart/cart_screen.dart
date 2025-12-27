@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:provider/provider.dart';
+import 'package:razorpay_flutter/razorpay_flutter.dart';
 import '../../config/theme.dart';
 import '../../models/shop_model.dart';
 import '../../providers/cart_provider.dart';
@@ -10,6 +12,7 @@ import '../../services/shop_service.dart';
 import '../../widgets/buttons.dart';
 import '../../widgets/inputs.dart';
 import '../order/order_tracking_screen.dart';
+import '../auth/login_screen.dart';
 
 class CartScreen extends StatefulWidget {
   final ShopModel? shop;
@@ -28,13 +31,21 @@ class _CartScreenState extends State<CartScreen> {
 
   final OrderService _orderService = OrderService();
   final ShopService _shopService = ShopService();
+  Razorpay? _razorpay; // Nullable - only initialized on mobile
+
   bool _isLoading = false;
   ShopModel? _shop;
   bool _shopLoading = true;
 
+  // Store order details for use after payment success
+  String? _pendingCustomerName;
+  String? _pendingCustomerPhone;
+  String? _pendingDeliveryAddress;
+
   @override
   void initState() {
     super.initState();
+    _initializeRazorpay();
     if (widget.shop != null) {
       _shop = widget.shop;
       _shopLoading = false;
@@ -58,8 +69,21 @@ class _CartScreenState extends State<CartScreen> {
     }
   }
 
+  void _initializeRazorpay() {
+    // Razorpay only works on Android and iOS, not on Web
+    if (kIsWeb) {
+      debugPrint('CartScreen: Razorpay not available on web platform');
+      return;
+    }
+    _razorpay = Razorpay();
+    _razorpay!.on(Razorpay.EVENT_PAYMENT_SUCCESS, _handlePaymentSuccess);
+    _razorpay!.on(Razorpay.EVENT_PAYMENT_ERROR, _handlePaymentError);
+    _razorpay!.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
+  }
+
   @override
   void dispose() {
+    _razorpay?.clear();
     _nameController.dispose();
     _phoneController.dispose();
     _addressController.dispose();
@@ -370,7 +394,7 @@ class _CartScreenState extends State<CartScreen> {
               ),
               child: SafeArea(
                 child: AppButton(
-                  text: 'Place Order • ${cartProvider.formattedTotal}',
+                  text: 'Pay & Place Order • ${cartProvider.formattedTotal}',
                   isFullWidth: true,
                   isLoading: _isLoading,
                   height: 52,
@@ -391,6 +415,8 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
+  /// Initiate payment via Razorpay
+  /// Order is created ONLY after successful payment
   Future<void> _placeOrder() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -407,29 +433,148 @@ class _CartScreenState extends State<CartScreen> {
       return;
     }
 
-    setState(() => _isLoading = true);
+    // Check if user is logged in (anonymous users cannot pay)
+    if (!authProvider.isAuthenticated ||
+        (authProvider.user?.isAnonymous ?? true)) {
+      _showLoginRequiredDialog();
+      return;
+    }
+
+    // Store details for use after payment success
+    _pendingCustomerName = _nameController.text.trim();
+    _pendingCustomerPhone = _phoneController.text.trim();
+    _pendingDeliveryAddress = _addressController.text.trim();
+
+    // Check if on web - Razorpay doesn't work on web
+    if (kIsWeb) {
+      _showWebNotSupportedDialog();
+      return;
+    }
+
+    // Calculate total in paise (Razorpay expects amount in smallest currency unit)
+    final totalAmountInPaise = (cartProvider.totalAmount * 100).toInt();
+
+    final options = {
+      'key': 'rzp_test_RU9lPJQl5wqQFM', // Razorpay Test Key
+      'amount': totalAmountInPaise,
+      'currency': 'INR',
+      'name': 'CloudKitchen',
+      'description': 'Order Payment',
+      'prefill': {
+        'name': _pendingCustomerName,
+        'contact': _pendingCustomerPhone,
+        'email': authProvider.user?.email ?? '',
+      },
+      'notes': {'shopId': _shop?.id ?? '', 'address': _pendingDeliveryAddress},
+      'theme': {'color': '#0071e3'},
+    };
 
     try {
-      print('CartScreen: Placing order...');
-      print('CartScreen: Shop ID: ${_shop?.id}');
-      print('CartScreen: User ID: ${authProvider.user?.uid}');
-      print('CartScreen: Cart items: ${cartProvider.items.length}');
+      debugPrint('CartScreen: Opening Razorpay checkout...');
+      _razorpay!.open(options);
+    } catch (e) {
+      debugPrint('CartScreen: Error opening Razorpay - $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Could not open payment: ${e.toString()}'),
+          backgroundColor: AppTheme.error,
+        ),
+      );
+    }
+  }
 
+  /// Show dialog explaining web payment is not supported
+  void _showWebNotSupportedDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.phone_android, color: AppTheme.primaryBlue),
+            SizedBox(width: 8),
+            Text('Use Mobile App'),
+          ],
+        ),
+        content: const Text(
+          'Payment is only available on the mobile app (Android/iOS). Please download our app to place orders with payment.',
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryBlue,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Got it'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Show dialog prompting user to login
+  void _showLoginRequiredDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.lock_outline, color: AppTheme.primaryBlue),
+            SizedBox(width: 8),
+            Text('Login Required'),
+          ],
+        ),
+        content: const Text(
+          'You need to be logged in to place an order and make a payment.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const LoginScreen()),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryBlue,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Sign In'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Called on successful Razorpay payment
+  void _handlePaymentSuccess(PaymentSuccessResponse response) async {
+    debugPrint('CartScreen: Payment successful - ${response.paymentId}');
+    setState(() => _isLoading = true);
+
+    final cartProvider = Provider.of<CartProvider>(context, listen: false);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    try {
       final orderId = await _orderService.createOrder(
         shopId: _shop!.id,
         userId: authProvider.user?.uid,
-        customerName: _nameController.text.trim(),
-        customerPhone: _phoneController.text.trim(),
-        deliveryAddress: _addressController.text.trim(),
+        customerName: _pendingCustomerName!,
+        customerPhone: _pendingCustomerPhone!,
+        deliveryAddress: _pendingDeliveryAddress!,
         cartItems: cartProvider.items,
+        paymentId: response.paymentId,
       );
 
-      print('CartScreen: Order placed successfully - $orderId');
-
-      // Clear cart
+      debugPrint('CartScreen: Order created successfully - $orderId');
       cartProvider.clear();
 
-      // Show success message
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -437,17 +582,14 @@ class _CartScreenState extends State<CartScreen> {
               children: [
                 Icon(Icons.check_circle, color: Colors.white),
                 SizedBox(width: 8),
-                Text('Order placed successfully!'),
+                Text('Payment successful! Order placed.'),
               ],
             ),
             backgroundColor: AppTheme.success,
             duration: Duration(seconds: 2),
           ),
         );
-      }
 
-      // Navigate to order tracking
-      if (mounted) {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
@@ -456,35 +598,50 @@ class _CartScreenState extends State<CartScreen> {
         );
       }
     } catch (e) {
-      print('CartScreen: Error placing order - $e');
+      debugPrint('CartScreen: Error creating order after payment - $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.error_outline, color: Colors.white),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Failed to place order: ${e.toString().replaceAll('Exception: ', '')}',
-                  ),
-                ),
-              ],
+            content: Text(
+              'Payment received but order creation failed. Please contact support. Error: $e',
             ),
             backgroundColor: AppTheme.error,
-            duration: const Duration(seconds: 4),
-            action: SnackBarAction(
-              label: 'Retry',
-              textColor: Colors.white,
-              onPressed: _placeOrder,
-            ),
+            duration: const Duration(seconds: 6),
           ),
         );
       }
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  /// Called on Razorpay payment error
+  void _handlePaymentError(PaymentFailureResponse response) {
+    debugPrint(
+      'CartScreen: Payment failed - ${response.code}: ${response.message}',
+    );
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.error_outline, color: Colors.white),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(response.message ?? 'Payment cancelled or failed.'),
+              ),
+            ],
+          ),
+          backgroundColor: AppTheme.error,
+          duration: const Duration(seconds: 4),
+        ),
+      );
+    }
+  }
+
+  /// Called when user selects an external wallet (e.g., Paytm, PhonePe)
+  void _handleExternalWallet(ExternalWalletResponse response) {
+    debugPrint('CartScreen: External wallet selected - ${response.walletName}');
+    // This is informational; actual payment flow will continue through Razorpay
   }
 }

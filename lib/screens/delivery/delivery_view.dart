@@ -27,7 +27,7 @@ class _DeliveryViewState extends State<DeliveryView> {
   final ShopService _shopService = ShopService();
   final NotificationService _notificationService = NotificationService();
   String? _selectedShopId;
-  bool _showAllShops = true; // Default to showing all shops
+  final bool _showAllShops = true; // Default to showing all shops
   Set<String> _previousOrderIds = {};
   bool _isFirstLoad = true;
 

@@ -106,8 +106,9 @@ class _DeveloperPanelState extends State<DeveloperPanel>
       }
     } catch (e) {
       print('DevPanel: Error loading shops: $e');
-      if (mounted)
+      if (mounted) {
         setState(() => _shopsLoaded = true); // Mark loaded even on error
+      }
     }
   }
 
@@ -1007,11 +1008,13 @@ class _DeveloperPanelState extends State<DeveloperPanel>
                   child: StreamBuilder<List<ShopModel>>(
                     stream: _shopsStream,
                     builder: (context, snapshot) {
-                      if (!snapshot.hasData)
+                      if (!snapshot.hasData) {
                         return const Center(child: CircularProgressIndicator());
+                      }
                       final shops = snapshot.data!;
-                      if (shops.isEmpty)
+                      if (shops.isEmpty) {
                         return const Center(child: Text('No shops found.'));
+                      }
                       return ListView.builder(
                         itemCount: shops.length,
                         itemBuilder: (context, index) {
@@ -1109,7 +1112,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
               // Shop selector
               DropdownButtonFormField<String>(
                 decoration: _inputDecoration('Select Shop to Update Schedule'),
-                value: _selectedScheduleShopId,
+                initialValue: _selectedScheduleShopId,
                 items: [
                   const DropdownMenuItem(
                     value: null,
@@ -1167,8 +1170,9 @@ class _DeveloperPanelState extends State<DeveloperPanel>
                                     _openTime ??
                                     const TimeOfDay(hour: 9, minute: 0),
                               );
-                              if (picked != null)
+                              if (picked != null) {
                                 setState(() => _openTime = picked);
+                              }
                             },
                             child: Container(
                               padding: const EdgeInsets.symmetric(
@@ -1224,8 +1228,9 @@ class _DeveloperPanelState extends State<DeveloperPanel>
                                     _closeTime ??
                                     const TimeOfDay(hour: 21, minute: 0),
                               );
-                              if (picked != null)
+                              if (picked != null) {
                                 setState(() => _closeTime = picked);
+                              }
                             },
                             child: Container(
                               padding: const EdgeInsets.symmetric(
@@ -1388,18 +1393,20 @@ class _DeveloperPanelState extends State<DeveloperPanel>
       child: StreamBuilder<List<ShopModel>>(
         stream: _shopsStream,
         builder: (context, snapshot) {
-          if (!snapshot.hasData)
+          if (!snapshot.hasData) {
             return const Center(child: AnimatedLoader(size: 80));
+          }
           final shops = snapshot.data!;
-          if (shops.isEmpty)
+          if (shops.isEmpty) {
             return const Text('Create a shop first to manage menus.');
+          }
 
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               DropdownButtonFormField<String>(
                 decoration: _inputDecoration('Select Shop to Manage'),
-                value: _selectedMenuShopId,
+                initialValue: _selectedMenuShopId,
                 items: [
                   const DropdownMenuItem(
                     value: null,
@@ -1505,15 +1512,17 @@ class _DeveloperPanelState extends State<DeveloperPanel>
                                 _selectedMenuShopId!,
                               ),
                               builder: (context, snapshot) {
-                                if (!snapshot.hasData)
+                                if (!snapshot.hasData) {
                                   return const Center(
                                     child: CircularProgressIndicator(),
                                   );
+                                }
                                 final items = snapshot.data!;
-                                if (items.isEmpty)
+                                if (items.isEmpty) {
                                   return const Center(
                                     child: Text('No menu items yet.'),
                                   );
+                                }
                                 return ListView.builder(
                                   itemCount: items.length,
                                   itemBuilder: (context, index) {
@@ -1599,7 +1608,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
                 children: [
                   DropdownButtonFormField<String>(
                     decoration: _inputDecoration('Select Shop'),
-                    value: _selectedTestShopId,
+                    initialValue: _selectedTestShopId,
                     items: shops
                         .map(
                           (s) => DropdownMenuItem(
@@ -1907,8 +1916,9 @@ class _DeveloperPanelState extends State<DeveloperPanel>
             child: StreamBuilder<List<OrderModel>>(
               stream: _orderService.getAllOrders(limit: 50),
               builder: (context, snapshot) {
-                if (!snapshot.hasData)
+                if (!snapshot.hasData) {
                   return const Center(child: CircularProgressIndicator());
+                }
                 var orders = snapshot.data!;
 
                 // Apply filters
@@ -1945,8 +1955,9 @@ class _DeveloperPanelState extends State<DeveloperPanel>
                       .toList();
                 }
 
-                if (orders.isEmpty)
+                if (orders.isEmpty) {
                   return const Center(child: Text('No orders found.'));
+                }
                 return ListView.builder(
                   itemCount: orders.length,
                   itemBuilder: (context, index) => _OrderMonitorTile(
@@ -2719,13 +2730,14 @@ class _FullShopDashboardState extends State<_FullShopDashboard> {
   }
 
   Widget _buildSalesChart() {
-    if (_dailyRevenue.isEmpty)
+    if (_dailyRevenue.isEmpty) {
       return const Center(
         child: Text(
           'No sales data available',
           style: TextStyle(color: AppTheme.textSecondary),
         ),
       );
+    }
 
     // Get last 7 days keys
     List<String> days = [];
@@ -2800,8 +2812,9 @@ class _FullShopDashboardState extends State<_FullShopDashboard> {
   }
 
   Widget _buildStatusPieChart() {
-    if (_statusCounts.isEmpty)
+    if (_statusCounts.isEmpty) {
       return const Center(child: Text('No orders to analyze'));
+    }
 
     List<PieChartSectionData> sections = [];
     _statusCounts.forEach((status, count) {
@@ -3154,63 +3167,54 @@ class _FullShopDashboardState extends State<_FullShopDashboard> {
             ),
           )
         else
-          ..._staffMembers
-              .map(
-                (staff) => Container(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
+          ..._staffMembers.map(
+            (staff) => Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: AppTheme.background,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    backgroundColor: AppTheme.ownerColor.withValues(alpha: 0.1),
+                    child: const Icon(
+                      Icons.person_rounded,
+                      color: AppTheme.ownerColor,
+                    ),
                   ),
-                  decoration: BoxDecoration(
-                    color: AppTheme.background,
-                    borderRadius: BorderRadius.circular(12),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          staff['email'],
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        Text(
+                          staff['role'].toString().toUpperCase(),
+                          style: const TextStyle(
+                            fontSize: 10,
+                            color: AppTheme.textSecondary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  child: Row(
-                    children: [
-                      CircleAvatar(
-                        backgroundColor: AppTheme.ownerColor.withValues(
-                          alpha: 0.1,
-                        ),
-                        child: const Icon(
-                          Icons.person_rounded,
-                          color: AppTheme.ownerColor,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              staff['email'],
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            Text(
-                              staff['role'].toString().toUpperCase(),
-                              style: const TextStyle(
-                                fontSize: 10,
-                                color: AppTheme.textSecondary,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () => _removeStaff(staff['id']),
-                        icon: const Icon(
-                          Icons.delete_outline_rounded,
-                          color: AppTheme.error,
-                        ),
-                      ),
-                    ],
+                  IconButton(
+                    onPressed: () => _removeStaff(staff['id']),
+                    icon: const Icon(
+                      Icons.delete_outline_rounded,
+                      color: AppTheme.error,
+                    ),
                   ),
-                ),
-              )
-              .toList(),
+                ],
+              ),
+            ),
+          ),
       ],
     );
   }

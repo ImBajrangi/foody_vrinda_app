@@ -299,7 +299,7 @@ class _DashboardViewState extends State<DashboardView> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      value: 'kitchen',
+                      initialValue: 'kitchen',
                       items: const [
                         DropdownMenuItem(
                           value: 'kitchen',
