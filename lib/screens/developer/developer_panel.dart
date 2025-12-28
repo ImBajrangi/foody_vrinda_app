@@ -14,6 +14,7 @@ import '../../services/shop_service.dart';
 import 'package:lottie/lottie.dart';
 import '../../config/lottie_assets.dart';
 import '../../services/auth_service.dart';
+import '../../services/order_notification_manager.dart';
 import '../../widgets/animations.dart';
 
 class DeveloperPanel extends StatefulWidget {
@@ -30,6 +31,8 @@ class _DeveloperPanelState extends State<DeveloperPanel>
   final ShopService _shopService = ShopService();
   final AuthService _authService = AuthService();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final OrderNotificationManager _notificationManager =
+      OrderNotificationManager();
   late final Stream<List<ShopModel>> _shopsStream = _shopService.getShops();
 
   // Eagerly cached shops for instant loading
@@ -91,8 +94,17 @@ class _DeveloperPanelState extends State<DeveloperPanel>
         _loadSummary();
         _runSystemTests();
         _loadAllUsers();
+        _initNotificationListener();
       }
     });
+  }
+
+  Future<void> _initNotificationListener() async {
+    // Developer gets notifications for ALL orders
+    _notificationManager.startListening(
+      userRole: UserRole.developer,
+      shopId: null, // null = all shops
+    );
   }
 
   Future<void> _loadShops() async {
@@ -115,6 +127,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
   @override
   void dispose() {
     _tabController.dispose();
+    _notificationManager.stopListening();
     super.dispose();
   }
 

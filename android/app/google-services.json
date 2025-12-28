@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "166281611781-nl6efi201u755lgh0rf5aa7krk8bp3aj.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.vrindopnishad.foody_vrinda",
+            "certificate_hash": "1b3965f4544d2e0151cbbf370c4cd6dd3f8a4e87"
+          }
+        },
+        {
           "client_id": "166281611781-vh09rl3hjcb0872gulpd2oi6ut9nh16n.apps.googleusercontent.com",
           "client_type": 3
         }
@@ -29,6 +37,13 @@
             {
               "client_id": "166281611781-vh09rl3hjcb0872gulpd2oi6ut9nh16n.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "166281611781-1u3uppe5erqoeflgo2ukpv73kqmid3i6.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.vrindopnishad.foodyVrinda"
+              }
             }
           ]
         }

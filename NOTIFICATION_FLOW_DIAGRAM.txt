@@ -28,18 +28,18 @@
                 │                           │
                 ▼                           ▼
     ┌───────────────────┐       ┌───────────────────┐
-    │ Notification      │       │ Notification      │
-    │ Service           │       │ Service           │
+    │ Notification            │       │ Notification      │
+    │ Service                │       │ Service           │
     ├───────────────────┤       ├───────────────────┤
-    │ userRole: owner   │       │ userRole: kitchen │
+    │ userRole: owner        │       │ userRole: kitchen │
     └───────────────────┘       └───────────────────┘
                 │                           │
                 ▼                           ▼
     ┌───────────────────┐       ┌───────────────────┐
-    │ Sound Config      │       │ Sound Config      │
+    │ Sound Config          │       │ Sound Config      │
     ├───────────────────┤       ├───────────────────┤
-    │ owner_            │       │ kitchen_          │
-    │ notification      │       │ notification      │
+    │ owner_                │       │ kitchen_          │
+    │ notification             │       │ notification      │
     └───────────────────┘       └───────────────────┘
                 │                           │
                 ▼                           ▼
@@ -52,41 +52,41 @@
                               │
                               ▼
                     ┌──────────────────┐
-                    │  Order Service   │
-                    │updateOrderStatus()│
+                    │  Order Service       │
+                    │updateOrderStatus()    │
                     └──────────────────┘
                               │
                               ▼
                     ┌──────────────────────┐
-                    │ Status == READY?     │
+                    │     Status == READY?      │
                     └──────────────────────┘
                               │ Yes
                               ▼
                     ┌──────────────────────┐
-                    │ Get Delivery Staff   │
-                    │ for this shop        │
+                    │    Get Delivery Staff      │
+                    │      for this shop         │
                     └──────────────────────┘
                               │
                               ▼
                     ┌───────────────────┐
-                    │  DELIVERY USER    │
-                    │  Role: delivery   │
+                    │   DELIVERY USER      │
+                    │   Role: delivery        │
                     └───────────────────┘
                               │
                               ▼
                     ┌───────────────────┐
-                    │ Notification      │
-                    │ Service           │
+                    │       Notification      │
+                    │      Service           │
                     ├───────────────────┤
-                    │ userRole:delivery │
+                    │       userRole:delivery │
                     └───────────────────┘
                               │
                               ▼
                     ┌───────────────────┐
-                    │ Sound Config      │
+                    │      Sound Config      │
                     ├───────────────────┤
-                    │ delivery_         │
-                    │ notification      │
+                    │       delivery_        │
+                    │        notification      │
                     └───────────────────┘
                               │
                               ▼

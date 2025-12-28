@@ -10,12 +10,17 @@ import 'providers/cart_provider.dart';
 import 'screens/home/home_screen.dart';
 import 'package:lottie/lottie.dart';
 import 'config/lottie_assets.dart';
+import 'services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize Firebase with platform-specific options
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // Initialize Notification Service
+  await NotificationService().initialize();
+  await NotificationService().requestPermissions();
 
   // Set system UI overlay style
   SystemChrome.setSystemUIOverlayStyle(

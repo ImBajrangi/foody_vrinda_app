@@ -3,14 +3,25 @@ import 'package:foody_vrinda/models/user_model.dart';
 /// Configuration for notification sounds based on user roles
 class NotificationSoundConfig {
   // Sound file names for different roles
+  // NOTE: These sound files must be placed in:
+  //   Android: android/app/src/main/res/raw/ (as .mp3 or .wav)
+  //   iOS: Runner/Resources/ (as .caf or .aiff)
   static const String ownerSound = 'owner_notification';
   static const String kitchenSound = 'kitchen_notification';
   static const String deliverySound = 'delivery_notification';
   static const String defaultSound = 'default';
 
+  // Set to true when custom sound files have been added
+  static const bool _customSoundsEnabled = false;
+
   /// Get the sound resource name based on user role
   /// Returns null to use system default if custom sound is not configured
   static String? getSoundForRole(UserRole role) {
+    // Return null to use system default sound when custom sounds are disabled
+    if (!_customSoundsEnabled) {
+      return null;
+    }
+
     switch (role) {
       case UserRole.owner:
         return ownerSound;

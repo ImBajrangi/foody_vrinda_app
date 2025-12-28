@@ -7,6 +7,8 @@ import '../../models/shop_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/order_service.dart';
 import '../../services/shop_service.dart';
+import '../../services/order_notification_manager.dart';
+import '../../services/notification_service.dart';
 import '../../widgets/order_widgets.dart';
 import '../../widgets/animations.dart';
 
@@ -22,12 +24,65 @@ class KitchenView extends StatefulWidget {
 class _KitchenViewState extends State<KitchenView> {
   final OrderService _orderService = OrderService();
   final ShopService _shopService = ShopService();
+  final OrderNotificationManager _notificationManager =
+      OrderNotificationManager();
+  final NotificationService _notificationService = NotificationService();
   String? _selectedShopId;
 
   @override
   void initState() {
     super.initState();
     _selectedShopId = widget.shopId;
+    _initNotificationListener();
+  }
+
+  Future<void> _initNotificationListener() async {
+    // Get user data after first frame to ensure context is available
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final userData = authProvider.userData;
+
+      // Initialize notification service first
+      await _notificationService.initialize();
+      await _notificationService.requestPermissions();
+
+      if (userData != null &&
+          (userData.role == UserRole.owner ||
+              userData.role == UserRole.kitchen ||
+              userData.role == UserRole.developer)) {
+        _notificationManager.startListening(
+          userRole: userData.role,
+          shopId: userData.shopId ?? widget.shopId,
+        );
+      }
+    });
+  }
+
+  /// Test notification - call this to verify notifications work
+  Future<void> _sendTestNotification() async {
+    await _notificationService.showNewOrderNotification(
+      orderId: 'test-${DateTime.now().millisecondsSinceEpoch}',
+      customerName: 'Test Customer',
+      amount: 299.0,
+      userRole: UserRole.owner,
+    );
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Test notification sent! Check your notification tray.',
+          ),
+          backgroundColor: AppTheme.success,
+        ),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _notificationManager.stopListening();
+    super.dispose();
   }
 
   @override
@@ -209,24 +264,47 @@ class _KitchenViewState extends State<KitchenView> {
               }
 
               if (isOwner) {
-                return ElevatedButton.icon(
-                  onPressed: () {
-                    // TODO: Show create order dialog
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Create order coming soon!'),
+                return Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Test Notification Button
+                    IconButton(
+                      onPressed: _sendTestNotification,
+                      icon: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppTheme.warning.withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.notifications_active,
+                          color: AppTheme.warning,
+                          size: 20,
+                        ),
                       ),
-                    );
-                  },
-                  icon: const Icon(Icons.add, size: 18),
-                  label: const Text('New Order'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.success,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 10,
+                      tooltip: 'Test Notification',
                     ),
-                  ),
+                    const SizedBox(width: 8),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        // TODO: Show create order dialog
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Create order coming soon!'),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.add, size: 18),
+                      label: const Text('New Order'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.success,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 10,
+                        ),
+                      ),
+                    ),
+                  ],
                 );
               }
               return const SizedBox.shrink();
