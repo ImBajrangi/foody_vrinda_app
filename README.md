@@ -137,3 +137,8 @@ The app connects to the Foody Vrinda Firebase project. Configuration is handled 
 ## License
 
 © Vrindopnishad. All rights reserved.
+
+## for emulator
+
+flutter emulators --launch Medium_Phone_API_36.1
+

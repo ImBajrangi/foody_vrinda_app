@@ -1,37 +1,66 @@
 import 'package:foody_vrinda/models/user_model.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Configuration for notification sounds based on user roles
 class NotificationSoundConfig {
-  // Sound file names for different roles
-  // NOTE: These sound files must be placed in:
-  //   Android: android/app/src/main/res/raw/ (as .mp3 or .wav)
-  //   iOS: Runner/Resources/ (as .caf or .aiff)
-  static const String ownerSound = 'owner_notification';
-  static const String kitchenSound = 'kitchen_notification';
-  static const String deliverySound = 'delivery_notification';
-  static const String defaultSound = 'default';
+  // Default sound file names for different roles
+  static const String defaultOwnerSound = 'mixkit-bell-notification-933.wav';
+  static const String defaultKitchenSound =
+      'mixkit-urgent-simple-tone-loop-2976.wav';
+  static const String defaultDeliverySound =
+      'mixkit-doorbell-single-press-333.wav';
 
-  // Set to true when custom sound files have been added
-  static const bool _customSoundsEnabled = false;
+  // Cache for loaded sounds
+  static Map<String, String>? _cachedSounds;
 
-  /// Get the sound resource name based on user role
-  /// Returns null to use system default if custom sound is not configured
-  static String? getSoundForRole(UserRole role) {
-    // Return null to use system default sound when custom sounds are disabled
-    if (!_customSoundsEnabled) {
-      return null;
+  /// Get the sound file path for a specific role
+  /// Returns the configured sound from SharedPreferences or default
+  static Future<String> getSoundForRole(UserRole role) async {
+    // Load sounds if not cached
+    if (_cachedSounds == null) {
+      await _loadSounds();
     }
 
     switch (role) {
       case UserRole.owner:
-        return ownerSound;
+        return _cachedSounds!['owner']!;
       case UserRole.kitchen:
-        return kitchenSound;
+        return _cachedSounds!['kitchen']!;
       case UserRole.delivery:
-        return deliverySound;
+        return _cachedSounds!['delivery']!;
       default:
-        return null; // Use system default for customers and general notifications
+        return defaultOwnerSound; // Use owner sound as default
     }
+  }
+
+  /// Load sound preferences from SharedPreferences
+  static Future<void> _loadSounds() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      _cachedSounds = {
+        'owner': prefs.getString('sound_owner') ?? defaultOwnerSound,
+        'kitchen': prefs.getString('sound_kitchen') ?? defaultKitchenSound,
+        'delivery': prefs.getString('sound_delivery') ?? defaultDeliverySound,
+      };
+    } catch (e) {
+      // If there's an error, use defaults
+      _cachedSounds = {
+        'owner': defaultOwnerSound,
+        'kitchen': defaultKitchenSound,
+        'delivery': defaultDeliverySound,
+      };
+    }
+  }
+
+  /// Reload sound preferences (call this after updating preferences)
+  static Future<void> reloadSounds() async {
+    _cachedSounds = null;
+    await _loadSounds();
+  }
+
+  /// Get the asset path for a sound file
+  static String getAssetPath(String soundFile) {
+    return 'sounds/$soundFile';
   }
 
   /// Get channel ID based on notification type and role

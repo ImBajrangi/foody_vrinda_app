@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 class AppTheme {
   // Primary Colors
   static const Color primaryBlue = Color(0xFF0071E3);
+  static const Color primaryGreen = success; // Alias for success color
   static const Color primaryBlack = Color(0xFF1D1D1F);
 
   // Status Colors
@@ -36,6 +37,7 @@ class AppTheme {
 
   // Border Colors
   static const Color border = Color(0xFFD2D2D7);
+  static const Color borderColor = border; // Alias for convenience
   static const Color borderLight = Color(0xFFE5E7EB);
 
   // Role Colors

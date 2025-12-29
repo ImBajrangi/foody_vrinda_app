@@ -48,22 +48,22 @@ class NotificationService {
   }
 
   /// Get Android notification details with custom sound for role
-  AndroidNotificationDetails _getAndroidDetails({
+  Future<AndroidNotificationDetails> _getAndroidDetails({
     required String channelId,
     required String channelName,
     required String channelDescription,
     UserRole? role,
     Importance importance = Importance.high,
     Priority priority = Priority.high,
-  }) {
-    final soundFileName = role != null
-        ? NotificationSoundConfig.getSoundForRole(role)
+  }) async {
+    // Get sound file name from config (async) - prefixed with _ for future use
+    final _ = role != null
+        ? await NotificationSoundConfig.getSoundForRole(role)
         : null;
 
-    // Create sound resource reference if custom sound is configured
-    final sound = soundFileName != null
-        ? RawResourceAndroidNotificationSound(soundFileName)
-        : null;
+    // For Android, we don't use RawResourceAndroidNotificationSound for asset sounds
+    // Instead, we'll use the default notification sound for now
+    // To use custom sounds on Android, they need to be in res/raw directory
 
     return AndroidNotificationDetails(
       NotificationSoundConfig.getChannelId(channelId, role),
@@ -72,27 +72,28 @@ class NotificationService {
       importance: importance,
       priority: priority,
       playSound: true,
-      sound: sound, // Custom sound for the role
+      // sound: RawResourceAndroidNotificationSound(soundFileName), // Requires sound in res/raw
       enableVibration: true,
       icon: '@mipmap/launcher_icon',
     );
   }
 
   /// Get iOS notification details with custom sound for role
-  DarwinNotificationDetails _getIOSDetails({UserRole? role}) {
-    final soundFileName = role != null
-        ? NotificationSoundConfig.getSoundForRole(role)
+  Future<DarwinNotificationDetails> _getIOSDetails({UserRole? role}) async {
+    // Get sound file name from config (async) - prefixed with _ for future use
+    final _ = role != null
+        ? await NotificationSoundConfig.getSoundForRole(role)
         : null;
 
     // For iOS, sound file should be in .caf format and placed in the bundle
     // If no custom sound, iOS will use default
-    final sound = soundFileName != null ? '$soundFileName.caf' : null;
+    // For now, using default iOS sounds
 
-    return DarwinNotificationDetails(
+    return const DarwinNotificationDetails(
       presentAlert: true,
       presentBadge: true,
       presentSound: true,
-      sound: sound,
+      // sound: sound, // Would require sound files in iOS bundle
     );
   }
 
@@ -106,14 +107,14 @@ class NotificationService {
   }) async {
     if (!_isInitialized) await initialize();
 
-    final androidDetails = _getAndroidDetails(
+    final androidDetails = await _getAndroidDetails(
       channelId: 'new_orders',
       channelName: 'New Orders',
       channelDescription: 'Notifications for new orders',
       role: userRole,
     );
 
-    final iosDetails = _getIOSDetails(role: userRole);
+    final iosDetails = await _getIOSDetails(role: userRole);
 
     final NotificationDetails details = NotificationDetails(
       android: androidDetails,
@@ -148,14 +149,14 @@ class NotificationService {
   }) async {
     if (!_isInitialized) await initialize();
 
-    final androidDetails = _getAndroidDetails(
+    final androidDetails = await _getAndroidDetails(
       channelId: 'delivery_orders',
       channelName: 'Delivery Orders',
       channelDescription: 'Notifications for orders ready for delivery',
       role: userRole,
     );
 
-    final iosDetails = _getIOSDetails(role: userRole);
+    final iosDetails = await _getIOSDetails(role: userRole);
 
     final NotificationDetails details = NotificationDetails(
       android: androidDetails,
@@ -185,14 +186,14 @@ class NotificationService {
   }) async {
     if (!_isInitialized) await initialize();
 
-    final androidDetails = _getAndroidDetails(
+    final androidDetails = await _getAndroidDetails(
       channelId: 'order_updates',
       channelName: 'Order Updates',
       channelDescription: 'Notifications for order status updates',
       role: userRole,
     );
 
-    final iosDetails = _getIOSDetails(role: userRole);
+    final iosDetails = await _getIOSDetails(role: userRole);
 
     final NotificationDetails details = NotificationDetails(
       android: androidDetails,
@@ -241,7 +242,7 @@ class NotificationService {
   }) async {
     if (!_isInitialized) await initialize();
 
-    final androidDetails = _getAndroidDetails(
+    final androidDetails = await _getAndroidDetails(
       channelId: 'general',
       channelName: 'General Notifications',
       channelDescription: 'General app notifications',
@@ -250,7 +251,7 @@ class NotificationService {
       priority: Priority.defaultPriority,
     );
 
-    final iosDetails = _getIOSDetails(role: userRole);
+    final iosDetails = await _getIOSDetails(role: userRole);
 
     final NotificationDetails details = NotificationDetails(
       android: androidDetails,

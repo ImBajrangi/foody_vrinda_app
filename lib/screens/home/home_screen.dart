@@ -111,10 +111,14 @@ class _HomeScreenState extends State<HomeScreen> {
                     Text(
                       'Foody Vrinda',
                       style: Theme.of(context).textTheme.headlineMedium,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     Text(
                       'Find your favorites',
                       style: Theme.of(context).textTheme.bodySmall,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),

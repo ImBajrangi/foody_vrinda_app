@@ -60,13 +60,15 @@ class AuthProvider extends ChangeNotifier {
           role: UserRole.developer,
         );
 
-        // Update Firestore with developer role
+        // Update Firestore with developer role - force sync
         try {
           await _firestore.collection('users').doc(user.uid).set({
+            'uid': user.uid,
             'email': user.email,
             'role': 'developer',
-            'displayName': user.displayName ?? 'Developer',
-            'photoURL': user.photoURL,
+            if (user.displayName != null) 'displayName': user.displayName,
+            if (user.photoURL != null) 'photoURL': user.photoURL,
+            'lastSync': FieldValue.serverTimestamp(),
           }, SetOptions(merge: true));
         } catch (e) {
           print('AuthProvider: Error updating developer role: $e');

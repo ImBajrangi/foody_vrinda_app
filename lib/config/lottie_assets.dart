@@ -55,7 +55,7 @@ class LottieAssets {
   static const String star =
       'https://assets3.lottiefiles.com/packages/lf20_obhph3sh.json';
   static const String heart =
-      'https://assets1.lottiefiles.com/packages/lf20_9vev46qz.json';
+      'https://lottie.host/4c1d3dd6-8c5b-4a97-a9ef-f5e0d9c3f4cb/GwWQXXLZJF.json';
   static const String profile =
       'https://assets8.lottiefiles.com/packages/lf20_m6cuL6.json';
 
@@ -69,7 +69,19 @@ class LottieAssets {
   static const String error =
       'https://assets4.lottiefiles.com/packages/lf20_qpwbiyxf.json';
   static const String warning =
-      'https://assets2.lottiefiles.com/packages/lf20_s8pfpkqe.json';
+      'https://lottie.host/5b8a6a1c-3c96-4f90-b9e2-e8cfd50e17e9/K3EWwgoxJN.json';
   static const String notFound =
       'https://assets3.lottiefiles.com/packages/lf20_GIyuXJ.json';
+
+  // Time Period Animations (for schedule selector)
+  static const String sunrise =
+      'https://assets5.lottiefiles.com/packages/lf20_xlky4kvh.json';
+  static const String sun =
+      'https://assets3.lottiefiles.com/packages/lf20_kk62um5v.json';
+  static const String sunset =
+      'https://assets7.lottiefiles.com/packages/lf20_hxeylwwa.json';
+  static const String moon =
+      'https://assets9.lottiefiles.com/packages/lf20_m4znnezt.json';
+  static const String clock =
+      'https://assets5.lottiefiles.com/packages/lf20_vPnn3K.json';
 }

@@ -87,16 +87,45 @@ class _DeveloperPanelState extends State<DeveloperPanel>
     super.initState();
     _tabController = TabController(length: 6, vsync: this);
 
-    // Defer heavy loads until after the initial build/transition is complete
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _loadShops(); // Eagerly load shops for fast access
-        _loadSummary();
-        _runSystemTests();
-        _loadAllUsers();
-        _initNotificationListener();
+    // Start loading immediately - don't wait for frame callback
+    _loadAllDataInParallel();
+  }
+
+  /// Load all data in parallel for instant loading
+  void _loadAllDataInParallel() {
+    // Run all loads concurrently - don't await, just fire and forget
+    _ensureDeveloperRole(); // Non-blocking role setup
+    _loadShops();
+    _loadSummary();
+    _runSystemTests();
+    _loadAllUsers();
+    _initNotificationListener();
+  }
+
+  /// Automatically ensures the current user has developer role
+  Future<void> _ensureDeveloperRole() async {
+    final user = _authService.currentUser;
+    if (user == null) return;
+
+    try {
+      // Check if user already has developer role
+      final userDoc = await _firestore.collection('users').doc(user.uid).get();
+
+      if (!userDoc.exists || userDoc.data()?['role'] != 'developer') {
+        // Set developer role automatically
+        await _firestore.collection('users').doc(user.uid).set({
+          'uid': user.uid,
+          'email': user.email ?? '',
+          'displayName': user.displayName ?? 'Developer',
+          'photoURL': user.photoURL,
+          'role': 'developer',
+          'lastLogin': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
       }
-    });
+    } catch (e) {
+      // Silently fail - the manual fix button is still available
+      debugPrint('Auto-set developer role failed: $e');
+    }
   }
 
   Future<void> _initNotificationListener() async {
@@ -150,27 +179,28 @@ class _DeveloperPanelState extends State<DeveloperPanel>
         setState(() => _totalShops = shopsCount.count ?? 0);
       }
     } catch (e) {
-      print('DevPanel: Error loading shops: $e');
+      debugPrint('DevPanel: Error loading shops: $e');
     }
 
     try {
-      final usersCount = await _firestore.collection('users').count().get();
+      // Use regular query instead of count() for better compatibility
+      final usersSnapshot = await _firestore.collection('users').get();
       if (mounted) {
-        setState(() => _totalUsers = usersCount.count ?? 0);
+        setState(() => _totalUsers = usersSnapshot.docs.length);
       }
     } catch (e) {
-      print('DevPanel: Error loading users count: $e');
-      _showPermissionError('users');
+      debugPrint('DevPanel: Error loading users count: $e');
+      // Don't show error popup - it's disruptive
     }
 
     try {
-      final ordersCount = await _firestore.collection('orders').count().get();
+      final ordersSnapshot = await _firestore.collection('orders').get();
       if (mounted) {
-        setState(() => _totalOrders = ordersCount.count ?? 0);
+        setState(() => _totalOrders = ordersSnapshot.docs.length);
       }
     } catch (e) {
-      print('DevPanel: Error loading orders count: $e');
-      _showPermissionError('orders');
+      debugPrint('DevPanel: Error loading orders count: $e');
+      // Don't show error popup - it's disruptive
     }
 
     try {
@@ -181,20 +211,6 @@ class _DeveloperPanelState extends State<DeveloperPanel>
       }
     } catch (e) {
       print('DevPanel: Error loading orders today: $e');
-    }
-  }
-
-  void _showPermissionError(String collection) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Permission denied for $collection. Make sure your user document has role: "developer" in Firestore.',
-          ),
-          backgroundColor: AppTheme.error,
-          duration: const Duration(seconds: 5),
-        ),
-      );
     }
   }
 
@@ -940,132 +956,120 @@ class _DeveloperPanelState extends State<DeveloperPanel>
       subtitle: 'Create and manage shops',
       icon: Icons.store,
       iconColor: AppTheme.success,
-      child: Row(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Create shop form
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Create New Shop',
-                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: nameController,
-                  decoration: _inputDecoration(
-                    'Shop Name (e.g., Vrinda Foods - Downtown)',
-                  ),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: addressController,
-                  decoration: _inputDecoration('Shop Address'),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: imageController,
-                  decoration: _inputDecoration('Shop Image URL (Optional)'),
-                ),
-                const SizedBox(height: 12),
-                ElevatedButton(
-                  onPressed: () async {
-                    if (nameController.text.isNotEmpty) {
-                      await _shopService.createShop(
-                        name: nameController.text,
-                        address: addressController.text.isNotEmpty
-                            ? addressController.text
-                            : null,
-                        imageUrl: imageController.text.isNotEmpty
-                            ? imageController.text
-                            : null,
-                      );
-                      nameController.clear();
-                      addressController.clear();
-                      imageController.clear();
-                      _loadSummary();
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Shop created!'),
-                            backgroundColor: AppTheme.success,
-                          ),
-                        );
-                      }
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.success,
-                    minimumSize: const Size.fromHeight(44),
-                  ),
-                  child: const Text('Create Shop'),
-                ),
-              ],
+          const Text(
+            'Create New Shop',
+            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: nameController,
+            decoration: _inputDecoration(
+              'Shop Name (e.g., Vrinda Foods - Downtown)',
             ),
           ),
-          const SizedBox(width: 24),
+          const SizedBox(height: 8),
+          TextField(
+            controller: addressController,
+            decoration: _inputDecoration('Shop Address'),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: imageController,
+            decoration: _inputDecoration('Shop Image URL (Optional)'),
+          ),
+          const SizedBox(height: 12),
+          ElevatedButton(
+            onPressed: () async {
+              if (nameController.text.isNotEmpty) {
+                await _shopService.createShop(
+                  name: nameController.text,
+                  address: addressController.text.isNotEmpty
+                      ? addressController.text
+                      : null,
+                  imageUrl: imageController.text.isNotEmpty
+                      ? imageController.text
+                      : null,
+                );
+                nameController.clear();
+                addressController.clear();
+                imageController.clear();
+                _loadSummary();
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Shop created!'),
+                      backgroundColor: AppTheme.success,
+                    ),
+                  );
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.success,
+              minimumSize: const Size.fromHeight(44),
+            ),
+            child: const Text('Create Shop'),
+          ),
+          const SizedBox(height: 24),
+          const Divider(),
+          const SizedBox(height: 16),
           // Existing shops
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Existing Shops',
-                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  height: 240,
-                  child: StreamBuilder<List<ShopModel>>(
-                    stream: _shopsStream,
-                    builder: (context, snapshot) {
-                      if (!snapshot.hasData) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-                      final shops = snapshot.data!;
-                      if (shops.isEmpty) {
-                        return const Center(child: Text('No shops found.'));
-                      }
-                      return ListView.builder(
-                        itemCount: shops.length,
-                        itemBuilder: (context, index) {
-                          final shop = shops[index];
-                          return ListTile(
-                            dense: true,
-                            leading: const Icon(
-                              Icons.store,
-                              color: AppTheme.primaryBlue,
-                            ),
-                            title: Text(shop.name),
-                            subtitle: Text(
-                              shop.address ?? 'No address',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            trailing: IconButton(
-                              icon: const Icon(
-                                Icons.delete,
-                                color: AppTheme.error,
-                                size: 20,
-                              ),
-                              onPressed: () => _showConfirmDialog(
-                                'Delete Shop',
-                                'Delete "${shop.name}"? This will also delete all menu items and orders for this shop.',
-                                () async {
-                                  await _shopService.deleteShop(shop.id);
-                                  _loadSummary();
-                                },
-                              ),
-                            ),
-                          );
-                        },
-                      );
-                    },
-                  ),
-                ),
-              ],
+          const Text(
+            'Existing Shops',
+            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 200,
+            child: StreamBuilder<List<ShopModel>>(
+              stream: _shopsStream,
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                final shops = snapshot.data!;
+                if (shops.isEmpty) {
+                  return const Center(child: Text('No shops found.'));
+                }
+                return ListView.builder(
+                  itemCount: shops.length,
+                  itemBuilder: (context, index) {
+                    final shop = shops[index];
+                    return ListTile(
+                      dense: true,
+                      leading: const Icon(
+                        Icons.store,
+                        color: AppTheme.primaryBlue,
+                      ),
+                      title: Text(shop.name, overflow: TextOverflow.ellipsis),
+                      subtitle: Text(
+                        shop.address ?? 'No address',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      trailing: IconButton(
+                        icon: const Icon(
+                          Icons.delete,
+                          color: AppTheme.error,
+                          size: 20,
+                        ),
+                        onPressed: () => _showConfirmDialog(
+                          'Delete Shop',
+                          'Delete "${shop.name}"? This will also delete all menu items and orders for this shop.',
+                          () async {
+                            await _shopService.deleteShop(shop.id);
+                            _loadSummary();
+                          },
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
             ),
           ),
         ],

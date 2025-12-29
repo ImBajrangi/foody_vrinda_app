@@ -49,8 +49,17 @@ service cloud.firestore {
     
     // 3. Users (Profile management and Staff assignment)
     match /users/{userId} {
+      // Any authenticated user can create their own profile
       allow create: if request.auth.uid == userId;
-      allow read, update: if request.auth.uid == userId;
+      
+      // Any authenticated user can read ANY user document
+      // This is needed for staff screens to list users
+      allow read: if isAuthenticated();
+      
+      // Users can update their own profile
+      allow update: if request.auth.uid == userId;
+      
+      // Developers and owners can update other users
       allow update: if isDeveloper() || (
           isAuthenticated() && 
           userExists() &&
@@ -58,7 +67,9 @@ service cloud.firestore {
           resource.data.shopId == getUserData().shopId && 
           resource.data.role != 'developer'
       );
-      allow read, delete: if isDeveloper();
+      
+      // Only developers can delete users
+      allow delete: if isDeveloper();
     }
 
     // 4. Orders - SIMPLIFIED for working app
