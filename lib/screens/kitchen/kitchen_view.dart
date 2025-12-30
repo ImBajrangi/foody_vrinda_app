@@ -58,27 +58,6 @@ class _KitchenViewState extends State<KitchenView> {
     });
   }
 
-  /// Test notification - call this to verify notifications work
-  Future<void> _sendTestNotification() async {
-    await _notificationService.showNewOrderNotification(
-      orderId: 'test-${DateTime.now().millisecondsSinceEpoch}',
-      customerName: 'Test Customer',
-      amount: 299.0,
-      userRole: UserRole.owner,
-    );
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Test notification sent! Check your notification tray.',
-          ),
-          backgroundColor: AppTheme.success,
-        ),
-      );
-    }
-  }
-
   @override
   void dispose() {
     _notificationManager.stopListening();
@@ -224,16 +203,6 @@ class _KitchenViewState extends State<KitchenView> {
               ],
             ),
           ),
-          // Test Notification button (for everyone in kitchen but owner/dev)
-          IconButton(
-            onPressed: _sendTestNotification,
-            icon: const Icon(
-              Icons.notifications_active_outlined,
-              size: 20,
-              color: AppTheme.textSecondary,
-            ),
-            tooltip: 'Test Notifications',
-          ),
           // Create order button (for owner/developer)
           Consumer<AuthProvider>(
             builder: (context, auth, _) {
@@ -282,24 +251,6 @@ class _KitchenViewState extends State<KitchenView> {
                 return Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Test Notification Button
-                    IconButton(
-                      onPressed: _sendTestNotification,
-                      icon: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: AppTheme.warning.withValues(alpha: 0.1),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.notifications_active,
-                          color: AppTheme.warning,
-                          size: 20,
-                        ),
-                      ),
-                      tooltip: 'Test Notification',
-                    ),
-                    const SizedBox(width: 8),
                     ElevatedButton.icon(
                       onPressed: () {
                         // TODO: Show create order dialog

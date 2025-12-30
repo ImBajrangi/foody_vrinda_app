@@ -18,6 +18,7 @@ import '../delivery/delivery_view.dart';
 import '../dashboard/dashboard_view.dart';
 import '../developer/developer_panel.dart';
 import '../search/search_screen.dart';
+import '../settings/notification_settings_screen.dart';
 import '../../widgets/animations.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -177,7 +178,12 @@ class _HomeScreenState extends State<HomeScreen> {
               // Notification bell
               IconButton(
                 onPressed: () {
-                  // Show notifications
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const NotificationSettingsScreen(),
+                    ),
+                  );
                 },
                 icon: const Icon(Icons.notifications_outlined),
               ),
