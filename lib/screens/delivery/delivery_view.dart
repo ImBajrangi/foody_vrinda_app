@@ -27,7 +27,8 @@ class _DeliveryViewState extends State<DeliveryView> {
   final ShopService _shopService = ShopService();
   final NotificationService _notificationService = NotificationService();
   String? _selectedShopId;
-  final bool _showAllShops = true; // Default to showing all shops
+  bool _showAllShops =
+      false; // Changed to false by default for strict filtering
   Set<String> _previousOrderIds = {};
   bool _isFirstLoad = true;
 
@@ -79,34 +80,38 @@ class _DeliveryViewState extends State<DeliveryView> {
     final isDeveloper = userData?.role == UserRole.developer;
     final isDelivery = userData?.role == UserRole.delivery;
 
-    // Use selected shop or fall back to user's assigned shop
-    final activeShopId = _selectedShopId ?? shopId;
-
-    // Delivery staff can now see ALL shops' orders
-    if (isDelivery && _showAllShops) {
-      return _buildAllShopsDelivery();
-    } else if (shopIds != null && shopIds.isNotEmpty && !isDeveloper) {
-      return _buildMultiShopDelivery(shopIds);
-    } else if (activeShopId != null) {
-      return _buildSingleShopDelivery(activeShopId);
-    } else if (isDeveloper || isDelivery) {
-      // Developers and delivery staff can see all shops
-      return _buildAllShopsDelivery();
-    } else {
-      return const Center(
-        child: EmptyState(
-          title: 'No Shop Assigned',
-          subtitle: 'You are not assigned to any shop for deliveries.',
-          animationType: 'box',
-        ),
-      );
+    if (isDeveloper) {
+      if (_showAllShops || _selectedShopId == null) {
+        return _buildAllShopsDelivery(userData, isDeveloper);
+      } else {
+        return _buildSingleShopDelivery(_selectedShopId, userData, isDeveloper);
+      }
+    } else if (isDelivery) {
+      if (shopIds != null && shopIds.isNotEmpty) {
+        return _buildMultiShopDelivery(shopIds, userData, isDeveloper);
+      } else if (shopId != null) {
+        return _buildSingleShopDelivery(shopId, userData, isDeveloper);
+      }
     }
+
+    // Fallback for owners or other roles
+    if (shopId != null) {
+      return _buildSingleShopDelivery(shopId, userData, isDeveloper);
+    }
+
+    return const Center(
+      child: EmptyState(
+        title: 'No Shop Assigned',
+        subtitle: 'You are not assigned to any shop for deliveries.',
+        animationType: 'box',
+      ),
+    );
   }
 
-  Widget _buildAllShopsDelivery() {
+  Widget _buildAllShopsDelivery(UserModel? userData, bool isDeveloper) {
     return Column(
       children: [
-        _buildHeader(),
+        _buildHeader(userData, isDeveloper),
         Expanded(
           child: StreamBuilder<List<OrderModel>>(
             stream: _orderService.getDeliveryOrders(null), // null = all shops
@@ -117,10 +122,14 @@ class _DeliveryViewState extends State<DeliveryView> {
     );
   }
 
-  Widget _buildSingleShopDelivery(String? shopId) {
+  Widget _buildSingleShopDelivery(
+    String? shopId,
+    UserModel? userData,
+    bool isDeveloper,
+  ) {
     return Column(
       children: [
-        _buildHeader(),
+        _buildHeader(userData, isDeveloper),
         Expanded(
           child: shopId == null
               ? const Center(
@@ -141,10 +150,14 @@ class _DeliveryViewState extends State<DeliveryView> {
     );
   }
 
-  Widget _buildMultiShopDelivery(List<String> shopIds) {
+  Widget _buildMultiShopDelivery(
+    List<String> shopIds,
+    UserModel? userData,
+    bool isDeveloper,
+  ) {
     return Column(
       children: [
-        _buildHeader(),
+        _buildHeader(userData, isDeveloper),
         Expanded(
           child: StreamBuilder<List<OrderModel>>(
             stream: _orderService.getDeliveryOrdersMultiShop(shopIds),
@@ -155,7 +168,7 @@ class _DeliveryViewState extends State<DeliveryView> {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(UserModel? userData, bool isDeveloper) {
     return Container(
       padding: const EdgeInsets.all(16),
       child: Row(
@@ -182,15 +195,26 @@ class _DeliveryViewState extends State<DeliveryView> {
                   stream: _shopService.getShops(),
                   builder: (context, snapshot) {
                     final shops = snapshot.data ?? [];
-                    final shopName = _selectedShopId == null
-                        ? 'All Shops'
-                        : shops
-                              .firstWhere(
-                                (s) => s.id == _selectedShopId,
-                                orElse: () =>
-                                    ShopModel(id: '', name: 'Unknown Shop'),
+                    final shopName = isDeveloper && _selectedShopId == null
+                        ? 'Global Delivery Monitor (All Shops)'
+                        : (shops.any(
+                                (s) =>
+                                    s.id ==
+                                    (isDeveloper
+                                        ? _selectedShopId
+                                        : (userData?.shopId ?? widget.shopId)),
                               )
-                              .name;
+                              ? shops
+                                    .firstWhere(
+                                      (s) =>
+                                          s.id ==
+                                          (isDeveloper
+                                              ? _selectedShopId
+                                              : (userData?.shopId ??
+                                                    widget.shopId)),
+                                    )
+                                    .name
+                              : 'My Shop');
                     return Text(
                       'Orders for $shopName',
                       style: const TextStyle(

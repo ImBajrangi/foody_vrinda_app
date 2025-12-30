@@ -92,7 +92,10 @@ class _KitchenViewState extends State<KitchenView> {
     final isDeveloper = userData?.role == UserRole.developer;
 
     // Use selected shop or fall back to user's assigned shop
-    final activeShopId = _selectedShopId ?? userData?.shopId;
+    // STRICT ROLE-BASED FILTERING: Non-developers are locked to their assigned shop
+    final activeShopId = isDeveloper
+        ? (_selectedShopId ?? userData?.shopId)
+        : userData?.shopId;
 
     if (activeShopId == null && !isDeveloper) {
       return const Center(
@@ -107,7 +110,7 @@ class _KitchenViewState extends State<KitchenView> {
     return Column(
       children: [
         // Header
-        _buildHeader(),
+        _buildHeader(isDeveloper),
 
         // Orders list
         Expanded(
@@ -171,7 +174,7 @@ class _KitchenViewState extends State<KitchenView> {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(bool isDeveloper) {
     return Container(
       padding: const EdgeInsets.all(16),
       child: Row(
@@ -208,7 +211,9 @@ class _KitchenViewState extends State<KitchenView> {
                               )
                               .name;
                     return Text(
-                      'Manage pending orders for $shopName',
+                      isDeveloper && _selectedShopId == null
+                          ? 'Global Kitchen Monitor (All Shops)'
+                          : 'Manage pending orders for $shopName',
                       style: const TextStyle(
                         color: AppTheme.textSecondary,
                         fontSize: 13,
@@ -218,6 +223,16 @@ class _KitchenViewState extends State<KitchenView> {
                 ),
               ],
             ),
+          ),
+          // Test Notification button (for everyone in kitchen but owner/dev)
+          IconButton(
+            onPressed: _sendTestNotification,
+            icon: const Icon(
+              Icons.notifications_active_outlined,
+              size: 20,
+              color: AppTheme.textSecondary,
+            ),
+            tooltip: 'Test Notifications',
           ),
           // Create order button (for owner/developer)
           Consumer<AuthProvider>(
@@ -427,6 +442,70 @@ class _KitchenOrderCard extends StatelessWidget {
             ),
           ),
 
+          // Arrival Time & Importance
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppTheme.background,
+              border: Border(bottom: BorderSide(color: AppTheme.borderLight)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.access_time,
+                      size: 14,
+                      color: AppTheme.textSecondary,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Arrival: ${order.arrivalTime}',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: AppTheme.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: order.importanceColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: order.importanceColor.withValues(alpha: 0.5),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.priority_high,
+                        size: 12,
+                        color: order.importanceColor,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        order.importance,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: order.importanceColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
           // Items
           Padding(
             padding: const EdgeInsets.all(16),
@@ -457,74 +536,38 @@ class _KitchenOrderCard extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 12),
-                        Expanded(child: Text(item.name)),
-                        Text(
-                          item.formattedTotal,
-                          style: const TextStyle(fontWeight: FontWeight.w500),
+                        Expanded(
+                          child: Text(
+                            item.name,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w500,
+                              fontSize: 15,
+                            ),
+                          ),
                         ),
                       ],
                     ),
                   ),
                 ),
 
-                const Divider(height: 24),
-
-                // Customer info
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.person_outline,
-                      size: 16,
-                      color: AppTheme.textSecondary,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      order.customerName,
-                      style: const TextStyle(fontWeight: FontWeight.w500),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.phone_outlined,
-                      size: 16,
-                      color: AppTheme.textSecondary,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(order.customerPhone),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Icon(
-                      Icons.location_on_outlined,
-                      size: 16,
-                      color: AppTheme.textSecondary,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(child: Text(order.deliveryAddress)),
-                  ],
-                ),
-
                 const SizedBox(height: 16),
-
                 // Total
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text(
-                      'Total',
-                      style: TextStyle(fontWeight: FontWeight.w600),
+                      'Importance Basis (Total)',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppTheme.textSecondary,
+                        fontStyle: FontStyle.italic,
+                      ),
                     ),
                     Text(
                       order.formattedTotal,
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
-                        fontSize: 20,
+                        fontSize: 18,
                         color: AppTheme.primaryBlue,
                       ),
                     ),

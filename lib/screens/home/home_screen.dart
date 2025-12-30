@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../config/theme.dart';
 import 'package:lottie/lottie.dart';
 import '../../config/lottie_assets.dart';
@@ -16,6 +17,7 @@ import '../kitchen/kitchen_view.dart';
 import '../delivery/delivery_view.dart';
 import '../dashboard/dashboard_view.dart';
 import '../developer/developer_panel.dart';
+import '../search/search_screen.dart';
 import '../../widgets/animations.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -90,10 +92,18 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12),
-                  child: Image.network(
-                    'https://imbajrangi.github.io/Company/Vrindopnishad%20Web/class/logo/foodyVrinda-logo.png',
+                  child: CachedNetworkImage(
+                    imageUrl:
+                        'https://imbajrangi.github.io/Company/Vrindopnishad%20Web/class/logo/foodyVrinda-logo.png',
                     fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) => const Icon(
+                    placeholder: (context, url) => const Center(
+                      child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    ),
+                    errorWidget: (context, url, error) => const Icon(
                       Icons.restaurant,
                       color: Colors.white,
                       size: 24,
@@ -238,6 +248,37 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ],
           ),
+          // Search Bar
+          const SizedBox(height: 12),
+          GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SearchScreen()),
+              );
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: AppTheme.background,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppTheme.border.withOpacity(0.5)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.search, color: AppTheme.textTertiary, size: 20),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Search shops, items, cuisines...',
+                    style: TextStyle(
+                      color: AppTheme.textTertiary,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -351,17 +392,17 @@ class _HomeScreenState extends State<HomeScreen> {
     if (role == UserRole.kitchen ||
         role == UserRole.owner ||
         role == UserRole.developer) {
-      views.add(_buildKitchenView());
+      views.add(_buildKitchenView(userData));
     }
 
     if (role == UserRole.delivery ||
         role == UserRole.owner ||
         role == UserRole.developer) {
-      views.add(_buildDeliveryView());
+      views.add(_buildDeliveryView(userData));
     }
 
     if (role == UserRole.owner || role == UserRole.developer) {
-      views.add(_buildDashboardView());
+      views.add(_buildDashboardView(userData));
     }
 
     if (role == UserRole.developer) {
@@ -585,16 +626,16 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildKitchenView() {
-    return const KitchenView();
+  Widget _buildKitchenView(UserModel? userData) {
+    return KitchenView(shopId: userData?.shopId);
   }
 
-  Widget _buildDeliveryView() {
-    return const DeliveryView();
+  Widget _buildDeliveryView(UserModel? userData) {
+    return DeliveryView(shopId: userData?.shopId, shopIds: userData?.shopIds);
   }
 
-  Widget _buildDashboardView() {
-    return const DashboardView();
+  Widget _buildDashboardView(UserModel? userData) {
+    return DashboardView(shopId: userData?.shopId);
   }
 
   Widget _buildDevPanel() {

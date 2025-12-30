@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 import 'firebase_options.dart';
 import 'config/theme.dart';
@@ -172,15 +173,21 @@ class _SplashScreenState extends State<SplashScreen>
                       ),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(32),
-                        child: Image.network(
-                          'https://imbajrangi.github.io/Company/Vrindopnishad%20Web/class/logo/foodyVrinda-logo.png',
+                        child: CachedNetworkImage(
+                          imageUrl:
+                              'https://imbajrangi.github.io/Company/Vrindopnishad%20Web/class/logo/foodyVrinda-logo.png',
                           fit: BoxFit.contain,
-                          errorBuilder: (context, error, stackTrace) =>
-                              const Icon(
-                                Icons.restaurant,
-                                color: AppTheme.primaryBlue,
-                                size: 70,
-                              ),
+                          placeholder: (context, url) => const Center(
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppTheme.primaryBlue,
+                            ),
+                          ),
+                          errorWidget: (context, url, error) => const Icon(
+                            Icons.restaurant,
+                            color: AppTheme.primaryBlue,
+                            size: 70,
+                          ),
                         ),
                       ),
                     ),

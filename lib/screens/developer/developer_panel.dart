@@ -2077,6 +2077,12 @@ class _DeveloperPanelState extends State<DeveloperPanel>
                       ),
                       DataColumn(
                         label: Text(
+                          'Shop Assignment',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      DataColumn(
+                        label: Text(
                           'Actions',
                           style: TextStyle(fontWeight: FontWeight.bold),
                         ),
@@ -2151,14 +2157,74 @@ class _DeveloperPanelState extends State<DeveloperPanel>
                             ),
                           ),
                           DataCell(
+                            user.role == UserRole.kitchen ||
+                                    user.role == UserRole.owner
+                                ? DropdownButton<String>(
+                                    value:
+                                        _cachedShops.any(
+                                          (s) => s.id == user.shopId,
+                                        )
+                                        ? user.shopId
+                                        : null,
+                                    hint: const Text(
+                                      'Select Shop',
+                                      style: TextStyle(fontSize: 12),
+                                    ),
+                                    isDense: true,
+                                    underline: const SizedBox(),
+                                    items: [
+                                      ..._cachedShops.map(
+                                        (shop) => DropdownMenuItem(
+                                          value: shop.id,
+                                          child: Text(
+                                            shop.name,
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                    onChanged: (value) =>
+                                        _updateUserShop(user.uid, value!),
+                                  )
+                                : user.role == UserRole.delivery
+                                ? Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        '${user.shopIds?.length ?? 0} Shops',
+                                        style: const TextStyle(fontSize: 12),
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(
+                                          Icons.edit_location_alt_outlined,
+                                          size: 18,
+                                          color: AppTheme.primaryBlue,
+                                        ),
+                                        onPressed: () =>
+                                            _showMultiShopSelectionDialog(user),
+                                        tooltip: 'Manage Shop Assignments',
+                                        padding: EdgeInsets.zero,
+                                        constraints: const BoxConstraints(),
+                                      ),
+                                    ],
+                                  )
+                                : const Text(
+                                    'N/A',
+                                    style: TextStyle(
+                                      color: AppTheme.textTertiary,
+                                    ),
+                                  ),
+                          ),
+                          DataCell(
                             IconButton(
                               icon: const Icon(
                                 Icons.save,
                                 color: AppTheme.success,
                               ),
-                              onPressed: () =>
-                                  _updateUserRole(user.uid, user.role.value),
-                              tooltip: 'Save',
+                              onPressed: () => _loadAllUsers(),
+                              tooltip: 'Refresh to verify',
                             ),
                           ),
                         ],
@@ -2228,7 +2294,12 @@ class _DeveloperPanelState extends State<DeveloperPanel>
 
   Future<void> _updateUserRole(String userId, String role) async {
     try {
-      await _firestore.collection('users').doc(userId).update({'role': role});
+      final updateData = {'role': role};
+      // If setting to customer or developer, clear shop assignment
+      if (role == 'customer' || role == 'developer') {
+        updateData['shopId'] = FieldValue.delete() as dynamic;
+      }
+      await _firestore.collection('users').doc(userId).update(updateData);
       _loadAllUsers();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -2245,6 +2316,119 @@ class _DeveloperPanelState extends State<DeveloperPanel>
         );
       }
     }
+  }
+
+  Future<void> _updateUserShop(String userId, String shopId) async {
+    try {
+      await _firestore.collection('users').doc(userId).update({
+        'shopId': shopId,
+        'shopIds': [shopId], // Also update shopIds for compatibility
+      });
+      _loadAllUsers();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('User shop assignment updated'),
+            backgroundColor: AppTheme.success,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: AppTheme.error),
+        );
+      }
+    }
+  }
+
+  Future<void> _updateUserShopIds(String userId, List<String> shopIds) async {
+    try {
+      await _firestore.collection('users').doc(userId).update({
+        'shopIds': shopIds,
+        // Set shopId to the first one for backwards compatibility or display
+        'shopId': shopIds.isNotEmpty ? shopIds[0] : FieldValue.delete(),
+      });
+      _loadAllUsers();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Multi-shop assignment updated'),
+            backgroundColor: AppTheme.success,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: AppTheme.error),
+        );
+      }
+    }
+  }
+
+  void _showMultiShopSelectionDialog(UserModel user) {
+    if (_cachedShops.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No shops available to assign.')),
+      );
+      return;
+    }
+
+    final selectedIds = List<String>.from(user.shopIds ?? []);
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: Text('Assign Shops: ${user.email}'),
+              content: SizedBox(
+                width: double.maxFinite,
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: _cachedShops.length,
+                  itemBuilder: (context, index) {
+                    final shop = _cachedShops[index];
+                    final isSelected = selectedIds.contains(shop.id);
+                    return CheckboxListTile(
+                      title: Text(shop.name),
+                      value: isSelected,
+                      onChanged: (value) {
+                        setDialogState(() {
+                          if (value == true) {
+                            selectedIds.add(shop.id);
+                          } else {
+                            selectedIds.remove(shop.id);
+                          }
+                        });
+                      },
+                    );
+                  },
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    _updateUserShopIds(user.uid, selectedIds);
+                    Navigator.pop(context);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.success,
+                  ),
+                  child: const Text('Save Assignments'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   Future<void> _resetCustomerOrders() async {
@@ -3545,24 +3729,26 @@ class _DevCard extends StatelessWidget {
                 child: Icon(icon, color: Colors.white, size: 22),
               ),
               const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  ),
-                  Text(
-                    subtitle,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: AppTheme.textSecondary,
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppTheme.textSecondary,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ],
           ),

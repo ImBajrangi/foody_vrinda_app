@@ -91,25 +91,28 @@ class ShopCard extends StatelessWidget {
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(18),
               ),
-              child: AspectRatio(
-                aspectRatio: 16 / 9,
-                child: imageUrl?.isNotEmpty == true
-                    ? CachedNetworkImage(
-                        imageUrl: imageUrl!,
-                        fit: BoxFit.cover,
-                        placeholder: (context, url) => Container(
-                          color: AppTheme.background,
-                          child: const Center(
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: AppTheme.primaryBlue,
+              child: Hero(
+                tag: 'shop-${imageUrl ?? name}',
+                child: AspectRatio(
+                  aspectRatio: 16 / 9,
+                  child: imageUrl?.isNotEmpty == true
+                      ? CachedNetworkImage(
+                          imageUrl: imageUrl!,
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) => Container(
+                            color: AppTheme.background,
+                            child: const Center(
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: AppTheme.primaryBlue,
+                              ),
                             ),
                           ),
-                        ),
-                        errorWidget: (context, url, error) =>
-                            _buildPlaceholder(),
-                      )
-                    : _buildPlaceholder(),
+                          errorWidget: (context, url, error) =>
+                              _buildPlaceholder(),
+                        )
+                      : _buildPlaceholder(),
+                ),
               ),
             ),
 
@@ -271,24 +274,28 @@ class MenuItemCard extends StatelessWidget {
         children: [
           ClipRRect(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-            child: AspectRatio(
-              aspectRatio: 4 / 3,
-              child: imageUrl?.isNotEmpty == true
-                  ? CachedNetworkImage(
-                      imageUrl: imageUrl!,
-                      fit: BoxFit.cover,
-                      placeholder: (context, url) => Container(
-                        color: AppTheme.background,
-                        child: const Center(
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: AppTheme.primaryBlue,
+            child: Hero(
+              tag: 'menu-item-${imageUrl ?? name}',
+              child: AspectRatio(
+                aspectRatio: 4 / 3,
+                child: imageUrl?.isNotEmpty == true
+                    ? CachedNetworkImage(
+                        imageUrl: imageUrl!,
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) => Container(
+                          color: AppTheme.background,
+                          child: const Center(
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppTheme.primaryBlue,
+                            ),
                           ),
                         ),
-                      ),
-                      errorWidget: (context, url, error) => _buildPlaceholder(),
-                    )
-                  : _buildPlaceholder(),
+                        errorWidget: (context, url, error) =>
+                            _buildPlaceholder(),
+                      )
+                    : _buildPlaceholder(),
+              ),
             ),
           ),
 

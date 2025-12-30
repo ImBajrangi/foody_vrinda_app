@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
+import '../services/resource_cache_service.dart';
 import '../config/app_config.dart';
 
 enum AuthStatus { uninitialized, authenticated, unauthenticated, loading }
@@ -93,6 +94,11 @@ class AuthProvider extends ChangeNotifier {
       print(
         'AuthProvider: Authenticated as ${_userData?.role.value} - ${user.email}',
       );
+
+      // Trigger pre-caching for the user's role
+      if (_userData != null) {
+        ResourceCacheService().preCacheResources(_userData!.role);
+      }
     }
     notifyListeners();
   }

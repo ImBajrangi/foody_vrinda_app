@@ -1,4 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
+import 'package:flutter/material.dart';
 
 enum OrderStatus {
   newOrder,
@@ -244,5 +246,22 @@ class OrderModel {
     } else {
       return 'Just now';
     }
+  }
+
+  String get arrivalTime {
+    if (createdAt == null) return 'N/A';
+    return DateFormat('hh:mm a').format(createdAt!);
+  }
+
+  String get importance {
+    if (totalAmount >= 500) return 'High';
+    if (totalAmount >= 200) return 'Medium';
+    return 'Regular';
+  }
+
+  Color get importanceColor {
+    if (totalAmount >= 500) return const Color(0xFFE53935); // Important Red
+    if (totalAmount >= 200) return const Color(0xFFFB8C00); // Orange
+    return const Color(0xFF43A047); // Green
   }
 }

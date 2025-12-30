@@ -44,10 +44,14 @@ class _DashboardViewState extends State<DashboardView> {
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
     final userData = authProvider.userData;
-    final shopId = widget.shopId ?? userData?.shopId;
     final isDeveloper = userData?.role == UserRole.developer;
 
-    if (shopId == null && !isDeveloper) {
+    // STRICT ROLE-BASED FILTERING: Non-developers are locked to their assigned shop
+    final activeShopId = isDeveloper
+        ? (widget.shopId ?? userData?.shopId)
+        : userData?.shopId;
+
+    if (activeShopId == null && !isDeveloper) {
       return const Center(
         child: EmptyState(
           title: 'No Shop Assigned',
@@ -65,7 +69,7 @@ class _DashboardViewState extends State<DashboardView> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Header
-            _buildHeader(),
+            _buildHeader(activeShopId, isDeveloper),
             const SizedBox(height: 24),
 
             // KPI Cards
@@ -77,29 +81,33 @@ class _DashboardViewState extends State<DashboardView> {
             const SizedBox(height: 24),
 
             // Order History
-            _buildOrderHistory(shopId),
+            _buildOrderHistory(activeShopId),
             const SizedBox(height: 24),
 
             // Staff Management
-            _buildStaffManagement(shopId),
+            _buildStaffManagement(activeShopId),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(String? shopId, bool isDeveloper) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Owner Dashboard',
+          isDeveloper && shopId == null
+              ? 'Global Dashboard'
+              : 'Owner Dashboard',
           style: Theme.of(context).textTheme.displaySmall,
         ),
         const SizedBox(height: 4),
-        const Text(
-          'A high-level overview of your kitchen\'s performance.',
-          style: TextStyle(color: AppTheme.textSecondary),
+        Text(
+          isDeveloper && shopId == null
+              ? 'Monitoring performance across all shops (Global View).'
+              : 'A high-level overview of your kitchen\'s performance.',
+          style: const TextStyle(color: AppTheme.textSecondary),
         ),
       ],
     );

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../config/theme.dart';
 import '../../widgets/animations.dart';
 import '../../models/shop_model.dart';
@@ -44,61 +45,117 @@ class _MenuScreenState extends State<MenuScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Header
-            Container(
-              padding: const EdgeInsets.all(16),
-              color: AppTheme.background,
-              child: Row(
-                children: [
-                  IconButton(
+            // Shop Banner
+            Stack(
+              children: [
+                Hero(
+                  tag: 'shop-${widget.shop.imageUrl ?? widget.shop.name}',
+                  child: Container(
+                    height: 200,
+                    width: double.infinity,
+                    decoration: BoxDecoration(color: AppTheme.cardBackground),
+                    child:
+                        widget.shop.imageUrl != null &&
+                            widget.shop.imageUrl!.isNotEmpty
+                        ? CachedNetworkImage(
+                            imageUrl: widget.shop.imageUrl!,
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) => const Center(
+                              child: CircularProgressIndicator(),
+                            ),
+                            errorWidget: (context, url, error) => const Icon(
+                              Icons.store,
+                              size: 80,
+                              color: AppTheme.textTertiary,
+                            ),
+                          )
+                        : const Icon(
+                            Icons.store,
+                            size: 80,
+                            color: AppTheme.textTertiary,
+                          ),
+                  ),
+                ),
+                // Gradient Overlay for text legibility if needed
+                Container(
+                  height: 200,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.black.withValues(alpha: 0.4),
+                        Colors.transparent,
+                        Colors.black.withValues(alpha: 0.6),
+                      ],
+                    ),
+                  ),
+                ),
+                // Back Button on top of banner
+                Positioned(
+                  top: 16,
+                  left: 16,
+                  child: IconButton(
                     onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.arrow_back),
+                    icon: const Icon(Icons.arrow_back, color: Colors.white),
                     style: IconButton.styleFrom(
-                      backgroundColor: AppTheme.cardBackground,
+                      backgroundColor: Colors.black26,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.shop.name,
-                          style: Theme.of(context).textTheme.headlineSmall,
-                          overflow: TextOverflow.ellipsis,
+                ),
+                // Shop Name and Status on Banner
+                Positioned(
+                  bottom: 20,
+                  left: 20,
+                  right: 20,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.shop.name,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
                         ),
-                        Row(
-                          children: [
-                            Container(
-                              width: 8,
-                              height: 8,
-                              decoration: BoxDecoration(
-                                color: widget.shop.isOpen
-                                    ? AppTheme.success
-                                    : AppTheme.error,
-                                shape: BoxShape.circle,
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Container(
+                            width: 10,
+                            height: 10,
+                            decoration: BoxDecoration(
+                              color: widget.shop.isOpen
+                                  ? AppTheme.success
+                                  : AppTheme.error,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Colors.white,
+                                width: 1.5,
                               ),
                             ),
-                            const SizedBox(width: 6),
-                            Text(
-                              widget.shop.isOpen ? 'Open Now' : 'Closed',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: widget.shop.isOpen
-                                    ? AppTheme.success
-                                    : AppTheme.error,
-                              ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            widget.shop.isOpen ? 'Open Now' : 'Closed',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: widget.shop.isOpen
+                                  ? AppTheme.success
+                                  : AppTheme.error,
                             ),
-                          ],
-                        ),
-                      ],
-                    ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
 
             // Menu content + Cart Summary overlay
