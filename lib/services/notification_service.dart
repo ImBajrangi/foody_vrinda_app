@@ -56,23 +56,32 @@ class NotificationService {
     Importance importance = Importance.high,
     Priority priority = Priority.high,
   }) async {
-    // Get sound file name from config (async) - prefixed with _ for future use
-    final _ = role != null
-        ? await NotificationSoundConfig.getSoundForRole(role)
-        : null;
+    // Get sound file name from config
+    String? soundFileName;
+    if (role != null) {
+      final soundFile = await NotificationSoundConfig.getSoundForRole(role);
+      if (soundFile != 'default') {
+        // Remove .wav extension for Android resource name
+        soundFileName = soundFile.replaceAll('.wav', '').replaceAll('-', '_');
+      }
+    }
 
-    // For Android, we don't use RawResourceAndroidNotificationSound for asset sounds
-    // Instead, we'll use the default notification sound for now
-    // To use custom sounds on Android, they need to be in res/raw directory
+    // Create unique channel ID based on sound to allow different sounds
+    // (Android 8+ locks sound to channel after creation)
+    final effectiveChannelId = soundFileName != null
+        ? '${NotificationSoundConfig.getChannelId(channelId, role)}_$soundFileName'
+        : NotificationSoundConfig.getChannelId(channelId, role);
 
     return AndroidNotificationDetails(
-      NotificationSoundConfig.getChannelId(channelId, role),
+      effectiveChannelId,
       NotificationSoundConfig.getChannelName(channelName, role),
       channelDescription: channelDescription,
       importance: importance,
       priority: priority,
       playSound: true,
-      // sound: RawResourceAndroidNotificationSound(soundFileName), // Requires sound in res/raw
+      sound: soundFileName != null
+          ? RawResourceAndroidNotificationSound(soundFileName)
+          : null, // null = use default system sound
       enableVibration: true,
       icon: '@mipmap/launcher_icon',
     );

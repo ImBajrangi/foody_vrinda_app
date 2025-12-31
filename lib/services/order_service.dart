@@ -388,4 +388,85 @@ class OrderService {
       'weeklySales': weeklySales,
     };
   }
+
+  // Get delivery statistics for delivery staff dashboard
+  Future<Map<String, dynamic>> getDeliveryStats(String? shopId) async {
+    final now = DateTime.now();
+    final startOfToday = DateTime(now.year, now.month, now.day);
+    final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
+    final startOfWeekDate = DateTime(
+      startOfWeek.year,
+      startOfWeek.month,
+      startOfWeek.day,
+    );
+
+    // Build query based on shopId
+    Query<Map<String, dynamic>> query = _firestore.collection('orders');
+    if (shopId != null) {
+      query = query.where('shopId', isEqualTo: shopId);
+    }
+
+    final snapshot = await query.get();
+    final allOrders = snapshot.docs
+        .map((doc) => OrderModel.fromFirestore(doc))
+        .toList();
+
+    // Today's completed deliveries
+    int todayDeliveries = 0;
+    double todayCollections = 0.0;
+
+    // Active orders (ready_for_pickup + out_for_delivery)
+    int activeOrders = 0;
+
+    // Weekly delivery counts (Mon-Sun)
+    final weeklyDeliveries = List<int>.filled(7, 0);
+
+    for (final order in allOrders) {
+      final orderDate = order.createdAt;
+
+      // Count active orders
+      if (order.status == OrderStatus.readyForPickup ||
+          order.status == OrderStatus.outForDelivery) {
+        activeOrders++;
+      }
+
+      // Count completed orders
+      if (order.status == OrderStatus.completed && orderDate != null) {
+        // Today's stats
+        if (orderDate.isAfter(startOfToday) ||
+            orderDate.isAtSameMomentAs(startOfToday)) {
+          todayDeliveries++;
+          todayCollections += order.totalAmount;
+        }
+
+        // Weekly stats
+        if (orderDate.isAfter(startOfWeekDate) ||
+            orderDate.isAtSameMomentAs(startOfWeekDate)) {
+          final dayOfWeek = orderDate.weekday - 1; // 0 = Monday
+          if (dayOfWeek >= 0 && dayOfWeek < 7) {
+            weeklyDeliveries[dayOfWeek]++;
+          }
+        }
+      }
+    }
+
+    // Total completed deliveries (all time)
+    final totalDeliveries = allOrders
+        .where((o) => o.status == OrderStatus.completed)
+        .length;
+
+    // Total collections (all time)
+    final totalCollections = allOrders
+        .where((o) => o.status == OrderStatus.completed)
+        .fold<double>(0, (sum, o) => sum + o.totalAmount);
+
+    return {
+      'todayDeliveries': todayDeliveries,
+      'todayCollections': todayCollections,
+      'activeOrders': activeOrders,
+      'weeklyDeliveries': weeklyDeliveries,
+      'totalDeliveries': totalDeliveries,
+      'totalCollections': totalCollections,
+    };
+  }
 }

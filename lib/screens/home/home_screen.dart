@@ -15,6 +15,7 @@ import '../cart/cart_screen.dart';
 import '../auth/login_screen.dart';
 import '../kitchen/kitchen_view.dart';
 import '../delivery/delivery_view.dart';
+import '../delivery/delivery_dashboard_view.dart';
 import '../dashboard/dashboard_view.dart';
 import '../developer/developer_panel.dart';
 import '../search/search_screen.dart';
@@ -307,6 +308,15 @@ class _HomeScreenState extends State<HomeScreen> {
       views.add({'name': 'Delivery', 'icon': Icons.delivery_dining});
     }
 
+    // Dashboard for delivery staff
+    if (role == UserRole.delivery) {
+      views.add({
+        'name': 'Dashboard',
+        'icon': Icons.dashboard,
+        'color': AppTheme.success,
+      });
+    }
+
     if (role == UserRole.owner || role == UserRole.developer) {
       views.add({
         'name': 'Dashboard',
@@ -405,6 +415,11 @@ class _HomeScreenState extends State<HomeScreen> {
         role == UserRole.owner ||
         role == UserRole.developer) {
       views.add(_buildDeliveryView(userData));
+    }
+
+    // Delivery Dashboard for delivery staff
+    if (role == UserRole.delivery) {
+      views.add(_buildDeliveryDashboardView(userData));
     }
 
     if (role == UserRole.owner || role == UserRole.developer) {
@@ -638,6 +653,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildDeliveryView(UserModel? userData) {
     return DeliveryView(shopId: userData?.shopId, shopIds: userData?.shopIds);
+  }
+
+  Widget _buildDeliveryDashboardView(UserModel? userData) {
+    return DeliveryDashboardView(
+      shopId: userData?.shopId,
+      shopIds: userData?.shopIds,
+    );
   }
 
   Widget _buildDashboardView(UserModel? userData) {
