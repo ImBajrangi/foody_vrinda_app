@@ -277,6 +277,9 @@ class ShopModel {
   final String id;
   final String name;
   final String? address;
+  final String? phoneNumber; // Contact phone number for the shop
+  final double? latitude; // Location coordinate
+  final double? longitude; // Location coordinate
   final String? imageUrl;
   final String? ownerId;
   final ShopSchedule schedule;
@@ -292,6 +295,9 @@ class ShopModel {
     required this.id,
     required this.name,
     this.address,
+    this.phoneNumber,
+    this.latitude,
+    this.longitude,
     this.imageUrl,
     this.ownerId,
     ShopSchedule? schedule,
@@ -344,6 +350,9 @@ class ShopModel {
       id: doc.id,
       name: data['name']?.toString() ?? 'Unnamed Shop',
       address: data['address']?.toString(),
+      phoneNumber: data['phoneNumber']?.toString(),
+      latitude: (data['latitude'] ?? data['lat'])?.toDouble(),
+      longitude: (data['longitude'] ?? data['lng'])?.toDouble(),
       imageUrl: image,
       ownerId: data['ownerId']?.toString(),
       schedule: schedule,
@@ -361,6 +370,9 @@ class ShopModel {
     return {
       'name': name,
       'address': address,
+      'phoneNumber': phoneNumber,
+      'latitude': latitude,
+      'longitude': longitude,
       'image': imageUrl, // Use 'image' to match existing data
       'ownerId': ownerId,
       'schedule': schedule.toMap(),
@@ -380,6 +392,9 @@ class ShopModel {
     String? id,
     String? name,
     String? address,
+    String? phoneNumber,
+    double? latitude,
+    double? longitude,
     String? imageUrl,
     String? ownerId,
     ShopSchedule? schedule,
@@ -395,6 +410,9 @@ class ShopModel {
       id: id ?? this.id,
       name: name ?? this.name,
       address: address ?? this.address,
+      phoneNumber: phoneNumber ?? this.phoneNumber,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
       imageUrl: imageUrl ?? this.imageUrl,
       ownerId: ownerId ?? this.ownerId,
       schedule: schedule ?? this.schedule,

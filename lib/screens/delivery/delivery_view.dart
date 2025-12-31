@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../config/theme.dart';
 import '../../models/order_model.dart';
 import '../../models/user_model.dart';
@@ -31,6 +32,8 @@ class _DeliveryViewState extends State<DeliveryView> {
       false; // Changed to false by default for strict filtering
   Set<String> _previousOrderIds = {};
   bool _isFirstLoad = true;
+  bool _isOnline = true; // Delivery availability status
+  bool _isTogglingStatus = false;
 
   @override
   void initState() {
@@ -42,6 +45,48 @@ class _DeliveryViewState extends State<DeliveryView> {
   Future<void> _initNotifications() async {
     await _notificationService.initialize();
     await _notificationService.requestPermissions();
+  }
+
+  /// Toggle online/offline status for delivery staff
+  Future<void> _toggleOnlineStatus(bool value) async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final userId = authProvider.user?.uid;
+    if (userId == null) return;
+
+    setState(() => _isTogglingStatus = true);
+
+    try {
+      await FirebaseFirestore.instance.collection('users').doc(userId).update({
+        'isOnline': value,
+      });
+      setState(() => _isOnline = value);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(value ? Icons.wifi : Icons.wifi_off, color: Colors.white),
+                const SizedBox(width: 8),
+                Text(value ? 'You are now online' : 'You are now offline'),
+              ],
+            ),
+            backgroundColor: value ? AppTheme.success : AppTheme.textSecondary,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to update status: $e'),
+            backgroundColor: AppTheme.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isTogglingStatus = false);
+    }
   }
 
   /// Check for new orders and show notifications
@@ -267,6 +312,34 @@ class _DeliveryViewState extends State<DeliveryView> {
                   },
                 );
               }
+              // Availability toggle for delivery staff
+              if (auth.userData?.role == UserRole.delivery) {
+                return Row(
+                  children: [
+                    Text(
+                      _isOnline ? 'Online' : 'Offline',
+                      style: TextStyle(
+                        color: _isOnline
+                            ? AppTheme.success
+                            : AppTheme.textSecondary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    _isTogglingStatus
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Switch(
+                            value: _isOnline,
+                            onChanged: _toggleOnlineStatus,
+                            activeColor: AppTheme.success,
+                          ),
+                  ],
+                );
+              }
               return const SizedBox.shrink();
             },
           ),
@@ -385,12 +458,48 @@ class _DeliveryOrderCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        order.orderNumber,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                        ),
+                      Row(
+                        children: [
+                          Text(
+                            order.orderNumber,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          // Priority badge for large orders
+                          if (order.totalAmount >= 500)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppTheme.warning.withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.star,
+                                    size: 12,
+                                    color: AppTheme.warning,
+                                  ),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    'Large Order',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppTheme.warning,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                        ],
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -467,6 +576,22 @@ class _DeliveryOrderCard extends StatelessWidget {
                         child: const Icon(
                           Icons.phone,
                           color: AppTheme.success,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                    // WhatsApp button
+                    IconButton(
+                      onPressed: () => _openWhatsApp(order.customerPhone),
+                      icon: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF25D366).withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.chat,
+                          color: Color(0xFF25D366),
                           size: 20,
                         ),
                       ),
@@ -618,6 +743,18 @@ class _DeliveryOrderCard extends StatelessWidget {
     final uri = Uri.parse(
       'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(address)}',
     );
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  Future<void> _openWhatsApp(String phone) async {
+    // Format phone number for WhatsApp (remove spaces/dashes, add country code if needed)
+    String formattedPhone = phone.replaceAll(RegExp(r'[\s\-\(\)]'), '');
+    if (!formattedPhone.startsWith('+')) {
+      formattedPhone = '+91$formattedPhone'; // Default to India
+    }
+    final uri = Uri.parse('https://wa.me/$formattedPhone');
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }

@@ -39,9 +39,11 @@ class UserModel {
   final String email;
   final String? displayName;
   final String? photoURL;
+  final String? phoneNumber; // Contact phone number
   final UserRole role;
   final String? shopId;
   final List<String>? shopIds; // For delivery staff multi-shop support
+  final bool isOnline; // For delivery availability status
   final DateTime? createdAt;
   final DateTime? lastLogin;
 
@@ -50,9 +52,11 @@ class UserModel {
     required this.email,
     this.displayName,
     this.photoURL,
+    this.phoneNumber,
     this.role = UserRole.customer,
     this.shopId,
     this.shopIds,
+    this.isOnline = false,
     this.createdAt,
     this.lastLogin,
   });
@@ -68,11 +72,13 @@ class UserModel {
       email: data['email'] ?? '',
       displayName: data['displayName'],
       photoURL: data['photoURL'],
+      phoneNumber: data['phoneNumber'],
       role: UserRoleExtension.fromString(data['role']),
       shopId: data['shopId'],
       shopIds: data['shopIds'] != null
           ? List<String>.from(data['shopIds'])
           : null,
+      isOnline: data['isOnline'] ?? false,
       createdAt: data['createdAt'] != null
           ? (data['createdAt'] as Timestamp).toDate()
           : null,
@@ -87,9 +93,11 @@ class UserModel {
       'email': email,
       'displayName': displayName,
       'photoURL': photoURL,
+      'phoneNumber': phoneNumber,
       'role': role.value,
       'shopId': shopId,
       'shopIds': shopIds,
+      'isOnline': isOnline,
       'createdAt': createdAt != null
           ? Timestamp.fromDate(createdAt!)
           : FieldValue.serverTimestamp(),
@@ -104,9 +112,11 @@ class UserModel {
       'email': email,
       'displayName': displayName,
       'photoURL': photoURL,
+      'phoneNumber': phoneNumber,
       'role': role.value,
       'shopId': shopId,
       'shopIds': shopIds,
+      'isOnline': isOnline,
       'createdAt': createdAt?.toIso8601String(),
       'lastLogin': lastLogin?.toIso8601String(),
     };
@@ -119,11 +129,13 @@ class UserModel {
       email: json['email'] ?? '',
       displayName: json['displayName'],
       photoURL: json['photoURL'],
+      phoneNumber: json['phoneNumber'],
       role: UserRoleExtension.fromString(json['role']),
       shopId: json['shopId'],
       shopIds: json['shopIds'] != null
           ? List<String>.from(json['shopIds'])
           : null,
+      isOnline: json['isOnline'] ?? false,
       createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'])
           : null,
@@ -138,9 +150,11 @@ class UserModel {
     String? email,
     String? displayName,
     String? photoURL,
+    String? phoneNumber,
     UserRole? role,
     String? shopId,
     List<String>? shopIds,
+    bool? isOnline,
     DateTime? createdAt,
     DateTime? lastLogin,
   }) {
@@ -149,9 +163,11 @@ class UserModel {
       email: email ?? this.email,
       displayName: displayName ?? this.displayName,
       photoURL: photoURL ?? this.photoURL,
+      phoneNumber: phoneNumber ?? this.phoneNumber,
       role: role ?? this.role,
       shopId: shopId ?? this.shopId,
       shopIds: shopIds ?? this.shopIds,
+      isOnline: isOnline ?? this.isOnline,
       createdAt: createdAt ?? this.createdAt,
       lastLogin: lastLogin ?? this.lastLogin,
     );

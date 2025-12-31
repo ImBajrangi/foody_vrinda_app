@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'dart:ui' as ui;
 import '../../config/theme.dart';
 import '../../models/order_model.dart';
 import '../../models/user_model.dart';
@@ -23,6 +27,7 @@ class _DeliveryDashboardViewState extends State<DeliveryDashboardView> {
   final OrderService _orderService = OrderService();
   Map<String, dynamic>? _stats;
   bool _isLoading = true;
+  String _selectedHistoryFilter = 'today'; // 'today', 'week', 'all'
 
   @override
   void initState() {
@@ -70,6 +75,10 @@ class _DeliveryDashboardViewState extends State<DeliveryDashboardView> {
               _buildTodayStats(),
               const SizedBox(height: 20),
 
+              // Location Hub
+              _buildLocationPanel(),
+              const SizedBox(height: 20),
+
               // Weekly Performance
               _buildWeeklyPerformance(),
               const SizedBox(height: 20),
@@ -80,6 +89,10 @@ class _DeliveryDashboardViewState extends State<DeliveryDashboardView> {
 
               // Recent Deliveries
               _buildRecentDeliveries(),
+              const SizedBox(height: 20),
+
+              // Delivery History with Date Filters
+              _buildDeliveryHistory(),
             ],
           ],
         ),
@@ -225,6 +238,127 @@ class _DeliveryDashboardViewState extends State<DeliveryDashboardView> {
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildLocationPanel() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppTheme.cardBackground,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppTheme.primaryBlue,
+                      AppTheme.primaryBlue.withValues(alpha: 0.7),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.map, color: Colors.white, size: 24),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Location Hub',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    Text(
+                      'Navigate to shops & deliveries',
+                      style: TextStyle(
+                        color: AppTheme.textSecondary,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: _LocationButton(
+                  icon: Icons.store,
+                  label: 'Shop',
+                  color: AppTheme.success,
+                  onTap: () => _openShopLocation(),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _LocationButton(
+                  icon: Icons.location_on,
+                  label: 'Orders',
+                  color: AppTheme.error,
+                  onTap: () => _openOrdersOnMap(),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _LocationButton(
+                  icon: Icons.people,
+                  label: 'Team',
+                  color: AppTheme.primaryBlue,
+                  onTap: () => _openTeamLocations(),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _openShopLocation() async {
+    // Open shop location in Google Maps
+    // TODO: Get actual shop coordinates from shop data
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Opening shop location...'),
+        duration: Duration(seconds: 1),
+      ),
+    );
+  }
+
+  Future<void> _openOrdersOnMap() async {
+    // Show all pending order destinations
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const _DeliveryMapView()),
+    );
+  }
+
+  Future<void> _openTeamLocations() async {
+    // Show other delivery boys' locations
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Team locations feature coming soon!'),
+        duration: Duration(seconds: 2),
       ),
     );
   }
@@ -492,6 +626,224 @@ class _DeliveryDashboardViewState extends State<DeliveryDashboardView> {
       ),
     );
   }
+
+  Widget _buildDeliveryHistory() {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final shopId = widget.shopId ?? authProvider.userData?.shopId;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppTheme.cardBackground,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Delivery History',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              Icon(Icons.history, color: AppTheme.textSecondary),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Date filter chips
+          Row(
+            children: [
+              _buildFilterChip('Today', 'today'),
+              const SizedBox(width: 8),
+              _buildFilterChip('This Week', 'week'),
+              const SizedBox(width: 8),
+              _buildFilterChip('All Time', 'all'),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // History list
+          StreamBuilder<List<OrderModel>>(
+            stream: shopId != null
+                ? _orderService.getCompletedOrders(shopId)
+                : Stream.value([]),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              final orders = snapshot.data ?? [];
+              final filteredOrders = _filterOrdersByDate(orders);
+
+              if (filteredOrders.isEmpty) {
+                return Container(
+                  padding: const EdgeInsets.all(24),
+                  child: Center(
+                    child: Column(
+                      children: [
+                        const Icon(
+                          Icons.inbox_outlined,
+                          size: 48,
+                          color: AppTheme.textTertiary,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'No deliveries for ${_getFilterLabel()}',
+                          style: const TextStyle(color: AppTheme.textSecondary),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }
+
+              return Column(
+                children: [
+                  // Summary row
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    margin: const EdgeInsets.only(bottom: 12),
+                    decoration: BoxDecoration(
+                      color: AppTheme.success.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        Column(
+                          children: [
+                            Text(
+                              '${filteredOrders.length}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 20,
+                                color: AppTheme.success,
+                              ),
+                            ),
+                            const Text(
+                              'Deliveries',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppTheme.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Container(width: 1, height: 30, color: AppTheme.border),
+                        Column(
+                          children: [
+                            Text(
+                              '₹${_calculateTotalAmount(filteredOrders).toStringAsFixed(0)}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 20,
+                                color: AppTheme.success,
+                              ),
+                            ),
+                            const Text(
+                              'Total Value',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppTheme.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  ...filteredOrders
+                      .take(10)
+                      .map((order) => _RecentDeliveryTile(order: order)),
+                  if (filteredOrders.length > 10)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Text(
+                        '+ ${filteredOrders.length - 10} more deliveries',
+                        style: const TextStyle(
+                          color: AppTheme.textSecondary,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterChip(String label, String value) {
+    final isSelected = _selectedHistoryFilter == value;
+    return GestureDetector(
+      onTap: () => setState(() => _selectedHistoryFilter = value),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? AppTheme.primaryBlue : AppTheme.background,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? AppTheme.primaryBlue : AppTheme.border,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.white : AppTheme.textSecondary,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+            fontSize: 13,
+          ),
+        ),
+      ),
+    );
+  }
+
+  List<OrderModel> _filterOrdersByDate(List<OrderModel> orders) {
+    final now = DateTime.now();
+    switch (_selectedHistoryFilter) {
+      case 'today':
+        return orders.where((o) {
+          if (o.createdAt == null) return false;
+          return o.createdAt!.day == now.day &&
+              o.createdAt!.month == now.month &&
+              o.createdAt!.year == now.year;
+        }).toList();
+      case 'week':
+        final weekAgo = now.subtract(const Duration(days: 7));
+        return orders.where((o) {
+          if (o.createdAt == null) return false;
+          return o.createdAt!.isAfter(weekAgo);
+        }).toList();
+      case 'all':
+      default:
+        return orders;
+    }
+  }
+
+  String _getFilterLabel() {
+    switch (_selectedHistoryFilter) {
+      case 'today':
+        return 'today';
+      case 'week':
+        return 'this week';
+      case 'all':
+        return 'all time';
+      default:
+        return 'selected period';
+    }
+  }
+
+  double _calculateTotalAmount(List<OrderModel> orders) {
+    return orders.fold(0.0, (sum, order) => sum + order.totalAmount);
+  }
 }
 
 class _StatItem extends StatelessWidget {
@@ -649,5 +1001,512 @@ class _RecentDeliveryTile extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+class _LocationButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _LocationButton({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: color, size: 28),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              style: TextStyle(
+                color: color,
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DeliveryMapView extends StatefulWidget {
+  const _DeliveryMapView();
+
+  @override
+  State<_DeliveryMapView> createState() => _DeliveryMapViewState();
+}
+
+class _DeliveryMapViewState extends State<_DeliveryMapView> {
+  final OrderService _orderService = OrderService();
+  GoogleMapController? _mapController;
+  Set<Marker> _markers = {};
+
+  // Custom marker icons
+  BitmapDescriptor? _shopIcon;
+  BitmapDescriptor? _readyOrderIcon;
+  BitmapDescriptor? _enRouteOrderIcon;
+  BitmapDescriptor? _deliveryBoyIcon;
+
+  // Default to India center
+  static const LatLng _defaultLocation = LatLng(28.6139, 77.2090); // Delhi
+
+  @override
+  void initState() {
+    super.initState();
+    _createCustomMarkers();
+  }
+
+  /// Create custom colored circular markers
+  Future<void> _createCustomMarkers() async {
+    _shopIcon = await _createCircleMarkerIcon(Colors.blue, Icons.store, 48);
+    _readyOrderIcon = await _createCircleMarkerIcon(
+      Colors.green,
+      Icons.location_on,
+      40,
+    );
+    _enRouteOrderIcon = await _createCircleMarkerIcon(
+      Colors.orange,
+      Icons.delivery_dining,
+      40,
+    );
+    _deliveryBoyIcon = await _createCircleMarkerIcon(
+      Colors.purple,
+      Icons.person_pin,
+      44,
+    );
+    if (mounted) setState(() {});
+  }
+
+  /// Generate a custom circular marker icon with an inner icon
+  Future<BitmapDescriptor> _createCircleMarkerIcon(
+    Color color,
+    IconData iconData,
+    double size,
+  ) async {
+    final pictureRecorder = ui.PictureRecorder();
+    final canvas = Canvas(pictureRecorder);
+    final paint = Paint()..color = color;
+    final shadowPaint = Paint()
+      ..color = Colors.black.withValues(alpha: 0.3)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+
+    final center = Offset(size / 2, size / 2);
+    final radius = size / 2 - 4;
+
+    // Draw shadow
+    canvas.drawCircle(center + const Offset(2, 2), radius, shadowPaint);
+    // Draw main circle
+    canvas.drawCircle(center, radius, paint);
+    // Draw white border
+    canvas.drawCircle(
+      center,
+      radius,
+      Paint()
+        ..color = Colors.white
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3,
+    );
+
+    // Draw icon in center
+    final iconPainter = TextPainter(textDirection: ui.TextDirection.ltr);
+    iconPainter.text = TextSpan(
+      text: String.fromCharCode(iconData.codePoint),
+      style: TextStyle(
+        fontSize: size * 0.45,
+        fontFamily: iconData.fontFamily,
+        package: iconData.fontPackage,
+        color: Colors.white,
+      ),
+    );
+    iconPainter.layout();
+    iconPainter.paint(
+      canvas,
+      Offset(
+        center.dx - iconPainter.width / 2,
+        center.dy - iconPainter.height / 2,
+      ),
+    );
+
+    final picture = pictureRecorder.endRecording();
+    final image = await picture.toImage(size.toInt(), size.toInt());
+    final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
+
+    return BitmapDescriptor.bytes(bytes!.buffer.asUint8List());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final shopId = authProvider.userData?.shopId;
+
+    return Scaffold(
+      backgroundColor: AppTheme.background,
+      appBar: AppBar(
+        backgroundColor: AppTheme.cardBackground,
+        title: const Text('Delivery Map'),
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.my_location),
+            onPressed: _goToCurrentLocation,
+            tooltip: 'My Location',
+          ),
+        ],
+      ),
+      body: StreamBuilder<List<OrderModel>>(
+        stream: shopId != null
+            ? _orderService.getDeliveryOrders(shopId)
+            : Stream.value([]),
+        builder: (context, snapshot) {
+          _updateMarkers(snapshot.data ?? []);
+
+          return Stack(
+            children: [
+              GoogleMap(
+                initialCameraPosition: const CameraPosition(
+                  target: _defaultLocation,
+                  zoom: 12,
+                ),
+                onMapCreated: (controller) {
+                  _mapController = controller;
+                },
+                markers: _markers,
+                myLocationEnabled: true,
+                myLocationButtonEnabled: false,
+                zoomControlsEnabled: true,
+                mapToolbarEnabled: false,
+              ),
+              // Legend
+              Positioned(
+                bottom: 16,
+                left: 16,
+                right: 16,
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppTheme.cardBackground,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.1),
+                        blurRadius: 10,
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _buildLegendItem(Colors.green, 'Ready'),
+                      _buildLegendItem(Colors.orange, 'En Route'),
+                      _buildLegendItem(Colors.blue, 'Shop'),
+                    ],
+                  ),
+                ),
+              ),
+              // Order count
+              Positioned(
+                top: 16,
+                left: 16,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppTheme.cardBackground,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.1),
+                        blurRadius: 10,
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.delivery_dining,
+                        color: AppTheme.success,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '${_markers.length} Orders',
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildLegendItem(Color color, String label) {
+    return Row(
+      children: [
+        Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 6),
+        Text(label, style: const TextStyle(fontSize: 12)),
+      ],
+    );
+  }
+
+  void _updateMarkers(List<OrderModel> orders) {
+    final Set<Marker> newMarkers = {};
+
+    // Add shop marker (blue store icon)
+    if (_shopIcon != null) {
+      newMarkers.add(
+        Marker(
+          markerId: const MarkerId('shop'),
+          position: _defaultLocation,
+          icon: _shopIcon!,
+          infoWindow: const InfoWindow(title: 'Shop Location'),
+        ),
+      );
+    }
+
+    // Add order destination markers
+    for (var i = 0; i < orders.length; i++) {
+      final order = orders[i];
+      final isReady = order.status == OrderStatus.readyForPickup;
+
+      // Use custom icons if available, otherwise fall back to default
+      BitmapDescriptor icon;
+      if (isReady && _readyOrderIcon != null) {
+        icon = _readyOrderIcon!;
+      } else if (!isReady && _enRouteOrderIcon != null) {
+        icon = _enRouteOrderIcon!;
+      } else {
+        icon = BitmapDescriptor.defaultMarkerWithHue(
+          isReady ? BitmapDescriptor.hueGreen : BitmapDescriptor.hueOrange,
+        );
+      }
+
+      newMarkers.add(
+        Marker(
+          markerId: MarkerId(order.id),
+          position: LatLng(
+            _defaultLocation.latitude + (i * 0.01) - 0.02,
+            _defaultLocation.longitude + (i * 0.008) - 0.01,
+          ),
+          icon: icon,
+          infoWindow: InfoWindow(
+            title: order.customerName,
+            snippet: '${order.formattedTotal} - ${order.deliveryAddress}',
+          ),
+          onTap: () => _showOrderDetails(order),
+        ),
+      );
+    }
+
+    if (_markers.length != newMarkers.length || _shopIcon != null) {
+      setState(() {
+        _markers = newMarkers;
+      });
+      if (_markers.isNotEmpty && _mapController != null) {
+        _fitMarkers();
+      }
+    }
+  }
+
+  void _fitMarkers() {
+    if (_markers.isEmpty || _mapController == null) return;
+
+    double minLat = _markers.first.position.latitude;
+    double maxLat = _markers.first.position.latitude;
+    double minLng = _markers.first.position.longitude;
+    double maxLng = _markers.first.position.longitude;
+
+    for (var marker in _markers) {
+      if (marker.position.latitude < minLat) minLat = marker.position.latitude;
+      if (marker.position.latitude > maxLat) maxLat = marker.position.latitude;
+      if (marker.position.longitude < minLng)
+        minLng = marker.position.longitude;
+      if (marker.position.longitude > maxLng)
+        maxLng = marker.position.longitude;
+    }
+
+    _mapController!.animateCamera(
+      CameraUpdate.newLatLngBounds(
+        LatLngBounds(
+          southwest: LatLng(minLat, minLng),
+          northeast: LatLng(maxLat, maxLng),
+        ),
+        50.0,
+      ),
+    );
+  }
+
+  void _showOrderDetails(OrderModel order) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppTheme.cardBackground,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryBlue.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Center(
+                    child: Text(
+                      order.customerName.isNotEmpty
+                          ? order.customerName[0]
+                          : 'C',
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.primaryBlue,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        order.customerName,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      Text(
+                        order.customerPhone,
+                        style: const TextStyle(color: AppTheme.textSecondary),
+                      ),
+                    ],
+                  ),
+                ),
+                Text(
+                  order.formattedTotal,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                    color: AppTheme.success,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppTheme.background,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.location_on,
+                    color: AppTheme.error,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(order.deliveryAddress)),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () => _openNavigation(order.deliveryAddress),
+                icon: const Icon(Icons.navigation),
+                label: const Text('Start Navigation'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.success,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openNavigation(String address) async {
+    final uri = Uri.parse(
+      'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(address)}',
+    );
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+    if (mounted) Navigator.pop(context);
+  }
+
+  Future<void> _goToCurrentLocation() async {
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) throw 'Location services are disabled.';
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied)
+          throw 'Location permissions are denied';
+      }
+
+      if (permission == LocationPermission.deniedForever)
+        throw 'Location permissions are permanently denied';
+
+      final position = await Geolocator.getCurrentPosition();
+      if (_mapController != null) {
+        _mapController!.animateCamera(
+          CameraUpdate.newLatLng(LatLng(position.latitude, position.longitude)),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      }
+    }
   }
 }

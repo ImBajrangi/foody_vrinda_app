@@ -16,6 +16,8 @@ import '../../config/lottie_assets.dart';
 import '../../services/auth_service.dart';
 import '../../services/order_notification_manager.dart';
 import '../../widgets/animations.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import '../../widgets/location_picker_dialog.dart';
 
 class DeveloperPanel extends StatefulWidget {
   const DeveloperPanel({super.key});
@@ -78,6 +80,13 @@ class _DeveloperPanelState extends State<DeveloperPanel>
   TimeOfDay? _openTime;
   TimeOfDay? _closeTime;
   Set<String> _selectedDays = {'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'};
+
+  // Add Staff form
+  final _staffNameController = TextEditingController();
+  final _staffEmailController = TextEditingController();
+  final _staffPhoneController = TextEditingController();
+  String _staffRole = 'kitchen';
+  String? _staffShopId;
 
   // User role management
   List<UserModel> _allUsers = [];
@@ -495,7 +504,11 @@ class _DeveloperPanelState extends State<DeveloperPanel>
           ]),
 
           // Tab 2: Users & Roles
-          _buildResponsiveTab([_buildUserRoleManagement()]),
+          _buildResponsiveTab([
+            _buildAddStaffSection(),
+            const SizedBox(height: 16),
+            _buildUserRoleManagement(),
+          ]),
 
           // Tab 3: Orders & Testing
           _buildResponsiveTab([
@@ -949,6 +962,9 @@ class _DeveloperPanelState extends State<DeveloperPanel>
   Widget _buildShopManagement() {
     final nameController = TextEditingController();
     final addressController = TextEditingController();
+    final phoneController = TextEditingController();
+    final latController = TextEditingController();
+    final lngController = TextEditingController();
     final imageController = TextEditingController();
 
     return _DevCard(
@@ -978,6 +994,92 @@ class _DeveloperPanelState extends State<DeveloperPanel>
           ),
           const SizedBox(height: 8),
           TextField(
+            controller: phoneController,
+            decoration: _inputDecoration('Shop Phone Number'),
+            keyboardType: TextInputType.phone,
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    TextField(
+                      controller: latController,
+                      decoration: _inputDecoration('Latitude (e.g. 28.61)'),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: lngController,
+                      decoration: _inputDecoration('Longitude (e.g. 77.21)'),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Column(
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryBlue.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: IconButton(
+                      icon: const Icon(
+                        Icons.map,
+                        color: AppTheme.primaryBlue,
+                        size: 28,
+                      ),
+                      onPressed: () async {
+                        final LatLng? picked = await showDialog<LatLng>(
+                          context: context,
+                          builder: (context) => LocationPickerDialog(
+                            initialLocation:
+                                latController.text.isNotEmpty &&
+                                    lngController.text.isNotEmpty
+                                ? LatLng(
+                                    double.tryParse(latController.text) ??
+                                        28.6139,
+                                    double.tryParse(lngController.text) ??
+                                        77.2090,
+                                  )
+                                : null,
+                          ),
+                        );
+                        if (picked != null) {
+                          latController.text = picked.latitude.toStringAsFixed(
+                            6,
+                          );
+                          lngController.text = picked.longitude.toStringAsFixed(
+                            6,
+                          );
+                        }
+                      },
+                      tooltip: 'Pick on Map',
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Map Picker',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: AppTheme.primaryBlue,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          TextField(
             controller: imageController,
             decoration: _inputDecoration('Shop Image URL (Optional)'),
           ),
@@ -990,12 +1092,20 @@ class _DeveloperPanelState extends State<DeveloperPanel>
                   address: addressController.text.isNotEmpty
                       ? addressController.text
                       : null,
+                  phoneNumber: phoneController.text.isNotEmpty
+                      ? phoneController.text
+                      : null,
+                  latitude: double.tryParse(latController.text),
+                  longitude: double.tryParse(lngController.text),
                   imageUrl: imageController.text.isNotEmpty
                       ? imageController.text
                       : null,
                 );
                 nameController.clear();
                 addressController.clear();
+                phoneController.clear();
+                latController.clear();
+                lngController.clear();
                 imageController.clear();
                 _loadSummary();
                 if (mounted) {
@@ -1989,6 +2099,160 @@ class _DeveloperPanelState extends State<DeveloperPanel>
         ],
       ),
     );
+  }
+
+  Widget _buildAddStaffSection() {
+    return _DevCard(
+      title: 'Add New Staff',
+      subtitle: 'Pre-create staff accounts (Kitchen, Delivery, Owner)',
+      icon: Icons.person_add,
+      iconColor: AppTheme.primaryBlue,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Register Staff Details',
+            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _staffNameController,
+            decoration: _inputDecoration('Full Name'),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _staffEmailController,
+            decoration: _inputDecoration('Email Address'),
+            keyboardType: TextInputType.emailAddress,
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _staffPhoneController,
+            decoration: _inputDecoration('Phone Number'),
+            keyboardType: TextInputType.phone,
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'Assign Role & Shop',
+            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: DropdownButtonFormField<String>(
+                  value: _staffRole,
+                  decoration: _inputDecoration('Role'),
+                  items: const [
+                    DropdownMenuItem(
+                      value: 'kitchen',
+                      child: Text('Kitchen Staff'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'delivery',
+                      child: Text('Delivery Boy'),
+                    ),
+                    DropdownMenuItem(value: 'owner', child: Text('Shop Owner')),
+                  ],
+                  onChanged: (value) => setState(() => _staffRole = value!),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: DropdownButtonFormField<String>(
+                  value: _staffShopId,
+                  decoration: _inputDecoration('Primary Shop'),
+                  items: _cachedShops
+                      .map(
+                        (shop) => DropdownMenuItem(
+                          value: shop.id,
+                          child: Text(
+                            shop.name,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) => setState(() => _staffShopId = value),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton.icon(
+            onPressed: _addStaffUser,
+            icon: const Icon(Icons.check_circle_outline),
+            label: const Text('Add Staff Record'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryBlue,
+              minimumSize: const Size.fromHeight(48),
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Note: This creates a Firestore record. Staff must sign up with the same email to link their account.',
+            style: TextStyle(
+              fontSize: 11,
+              color: AppTheme.textSecondary,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _addStaffUser() async {
+    final name = _staffNameController.text.trim();
+    final email = _staffEmailController.text.trim().toLowerCase();
+    final phone = _staffPhoneController.text.trim();
+
+    if (name.isEmpty ||
+        email.isEmpty ||
+        phone.isEmpty ||
+        _staffShopId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please fill all required fields'),
+          backgroundColor: AppTheme.warning,
+        ),
+      );
+      return;
+    }
+
+    try {
+      // Create a document in users collection with email as key or queryable field
+      await _firestore.collection('users').add({
+        'displayName': name,
+        'email': email,
+        'phoneNumber': phone,
+        'role': _staffRole,
+        'shopId': _staffShopId,
+        'shopIds': [_staffShopId],
+        'createdAt': FieldValue.serverTimestamp(),
+        'isOnline': false,
+        'isPreCreated': true, // Flag for AuthService to identify
+      });
+
+      _staffNameController.clear();
+      _staffEmailController.clear();
+      _staffPhoneController.clear();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Staff record created successfully!'),
+            backgroundColor: AppTheme.success,
+          ),
+        );
+        _loadAllUsers();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: AppTheme.error),
+        );
+      }
+    }
   }
 
   Widget _buildUserRoleManagement() {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:provider/provider.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../config/theme.dart';
 import '../../models/shop_model.dart';
 import '../../providers/cart_provider.dart';
@@ -11,6 +12,8 @@ import '../../services/order_service.dart';
 import '../../services/shop_service.dart';
 import '../../widgets/buttons.dart';
 import '../../widgets/inputs.dart';
+import '../../widgets/address_autocomplete_field.dart';
+import '../../services/location_service.dart';
 import '../order/order_tracking_screen.dart';
 import '../auth/login_screen.dart';
 
@@ -41,6 +44,7 @@ class _CartScreenState extends State<CartScreen> {
   String? _pendingCustomerName;
   String? _pendingCustomerPhone;
   String? _pendingDeliveryAddress;
+  LatLng? _deliveryLocation; // Store coordinates for distance calculation
 
   @override
   void initState() {
@@ -98,6 +102,9 @@ class _CartScreenState extends State<CartScreen> {
     // Pre-fill user info if authenticated
     if (authProvider.isAuthenticated && _nameController.text.isEmpty) {
       _nameController.text = authProvider.userData?.displayName ?? '';
+    }
+    if (authProvider.isAuthenticated && _phoneController.text.isEmpty) {
+      _phoneController.text = authProvider.userData?.phoneNumber ?? '';
     }
 
     return Scaffold(
@@ -356,19 +363,28 @@ class _CartScreenState extends State<CartScreen> {
                           ),
                           const SizedBox(height: 16),
 
-                          AppInputField(
+                          AddressAutocompleteField(
                             controller: _addressController,
-                            label: 'Delivery Address',
-                            hintText: 'Enter your delivery address',
-                            prefixIcon: Icons.location_on_outlined,
-                            maxLines: 3,
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please enter your delivery address';
-                              }
-                              return null;
+                            labelText: 'Delivery Address',
+                            hintText: 'Start typing your address...',
+                            onAddressSelected: (address, location) {
+                              setState(() {
+                                _deliveryLocation = location;
+                              });
                             },
                           ),
+                          // Validation message for address
+                          if (_addressController.text.isEmpty)
+                            const Padding(
+                              padding: EdgeInsets.only(top: 8),
+                              child: Text(
+                                '',
+                                style: TextStyle(
+                                  color: AppTheme.error,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
                         ],
                       ),
                     ),
@@ -573,6 +589,17 @@ class _CartScreenState extends State<CartScreen> {
       );
 
       debugPrint('CartScreen: Order created successfully - $orderId');
+
+      // Update user's phone number in Firestore if not already set
+      if (authProvider.isAuthenticated &&
+          (authProvider.userData?.phoneNumber == null ||
+              authProvider.userData!.phoneNumber!.isEmpty)) {
+        FirebaseFirestore.instance
+            .collection('users')
+            .doc(authProvider.user!.uid)
+            .update({'phoneNumber': _pendingCustomerPhone});
+      }
+
       cartProvider.clear();
 
       if (mounted) {

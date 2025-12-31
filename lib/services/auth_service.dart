@@ -175,13 +175,37 @@ class AuthService {
       }
 
       if (!doc.exists) {
+        // Check if a document with this email already exists (pre-created staff)
+        final preCreatedQuery = await _firestore
+            .collection('users')
+            .where('email', isEqualTo: user.email?.toLowerCase())
+            .where('isPreCreated', isEqualTo: true)
+            .limit(1)
+            .get();
+
+        Map<String, dynamic>? preCreatedData;
+        if (preCreatedQuery.docs.isNotEmpty) {
+          preCreatedData = preCreatedQuery.docs.first.data();
+          role = preCreatedData['role'] ?? 'customer';
+          print(
+            'AuthService: Found pre-created record for ${user.email} with role $role',
+          );
+
+          // Delete the temporary pre-created document
+          await preCreatedQuery.docs.first.reference.delete();
+        }
+
         // Create new user document
         await userRef.set({
           'uid': user.uid,
           'email': user.email ?? '',
-          'displayName': user.displayName,
+          'displayName': user.displayName ?? preCreatedData?['displayName'],
+          'phoneNumber': preCreatedData?['phoneNumber'],
           'photoURL': user.photoURL,
           'role': role,
+          'shopId':
+              preCreatedData?['shopId'] ?? (role == 'developer' ? null : null),
+          'shopIds': preCreatedData?['shopIds'],
           'createdAt': FieldValue.serverTimestamp(),
           'lastLogin': FieldValue.serverTimestamp(),
           'lastSync': FieldValue.serverTimestamp(),
