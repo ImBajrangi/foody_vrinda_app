@@ -49,8 +49,8 @@ service cloud.firestore {
     
     // 3. Users (Profile management and Staff assignment)
     match /users/{userId} {
-      // Any authenticated user can create their own profile
-      allow create: if request.auth.uid == userId;
+      // Users can create their own profile, OR developers can pre-create staff records
+      allow create: if request.auth.uid == userId || isDeveloper();
       
       // Any authenticated user can read ANY user document
       // This is needed for staff screens to list users
