@@ -303,27 +303,89 @@ class OrderService {
 
   // Get order statistics for a shop
   Future<Map<String, dynamic>> getOrderStats(String shopId) async {
-    final snapshot = await _firestore
+    // Get all orders for this shop (not just completed)
+    final allOrdersSnapshot = await _firestore
         .collection('orders')
         .where('shopId', isEqualTo: shopId)
-        .where('status', isEqualTo: 'completed')
         .get();
 
-    final orders = snapshot.docs
+    final allOrders = allOrdersSnapshot.docs
         .map((doc) => OrderModel.fromFirestore(doc))
         .toList();
 
-    final totalRevenue = orders.fold<double>(
+    // Calculate status counts
+    int pending = 0;
+    int preparing = 0;
+    int ready = 0;
+    int completed = 0;
+
+    for (final order in allOrders) {
+      switch (order.status) {
+        case OrderStatus.newOrder:
+          pending++;
+          break;
+        case OrderStatus.preparing:
+          preparing++;
+          break;
+        case OrderStatus.readyForPickup:
+          ready++;
+          break;
+        case OrderStatus.outForDelivery:
+          completed++;
+          break;
+        case OrderStatus.completed:
+          completed++;
+          break;
+      }
+    }
+
+    // Calculate weekly sales (last 7 days)
+    final now = DateTime.now();
+    final weeklySales = List<double>.filled(7, 0.0);
+
+    for (final order in allOrders) {
+      if (order.status == OrderStatus.completed) {
+        final orderDate = order.createdAt;
+        if (orderDate != null) {
+          final dayOfWeek = orderDate.weekday - 1; // 0 = Monday, 6 = Sunday
+          if (dayOfWeek >= 0 && dayOfWeek < 7) {
+            // Check if this order is from the current week
+            final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
+            final startOfWeekDate = DateTime(
+              startOfWeek.year,
+              startOfWeek.month,
+              startOfWeek.day,
+            );
+            if (orderDate.isAfter(startOfWeekDate) ||
+                orderDate.isAtSameMomentAs(startOfWeekDate)) {
+              weeklySales[dayOfWeek] += order.totalAmount;
+            }
+          }
+        }
+      }
+    }
+
+    // Calculate totals (from completed orders only)
+    final completedOrders = allOrders
+        .where((o) => o.status == OrderStatus.completed)
+        .toList();
+
+    final totalRevenue = completedOrders.fold<double>(
       0,
       (sum, order) => sum + order.totalAmount,
     );
-    final totalOrders = orders.length;
+    final totalOrders = completedOrders.length;
     final avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0.0;
 
     return {
       'totalRevenue': totalRevenue,
       'totalOrders': totalOrders,
       'avgOrderValue': avgOrderValue,
+      'pending': pending,
+      'preparing': preparing,
+      'ready': ready,
+      'delivered': completed,
+      'weeklySales': weeklySales,
     };
   }
 }

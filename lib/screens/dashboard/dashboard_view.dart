@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../config/theme.dart';
 import '../../models/order_model.dart';
 import '../../models/user_model.dart';
+import '../../models/shop_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/order_service.dart';
 import '../../widgets/animations.dart';
@@ -86,6 +88,10 @@ class _DashboardViewState extends State<DashboardView> {
 
             // Staff Management
             _buildStaffManagement(activeShopId),
+            const SizedBox(height: 24),
+
+            // Shop Settings (Order Queue Toggle)
+            if (activeShopId != null) _buildShopSettings(activeShopId),
           ],
         ),
       ),
@@ -375,19 +381,25 @@ class _DashboardViewState extends State<DashboardView> {
   Widget _buildChartsRow() {
     return Row(
       children: [
-        Expanded(child: _buildChartCard('Weekly Sales', Icons.show_chart)),
+        Expanded(child: _buildWeeklySalesCard()),
         const SizedBox(width: 16),
-        Expanded(
-          child: _buildChartCard('Order Status', Icons.pie_chart_outline),
-        ),
+        Expanded(child: _buildOrderStatusCard()),
       ],
     );
   }
 
-  Widget _buildChartCard(String title, IconData icon) {
+  Widget _buildWeeklySalesCard() {
+    // Get weekly sales data from stats
+    final weeklySales =
+        _stats?['weeklySales'] as List<double>? ?? List.generate(7, (_) => 0.0);
+    final maxSale = weeklySales.isEmpty
+        ? 1.0
+        : (weeklySales.reduce((a, b) => a > b ? a : b));
+    final days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+
     return Container(
-      height: 200,
-      padding: const EdgeInsets.all(20),
+      height: 220,
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppTheme.cardBackground,
         borderRadius: BorderRadius.circular(20),
@@ -398,42 +410,358 @@ class _DashboardViewState extends State<DashboardView> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                title,
-                style: const TextStyle(
+              const Text(
+                'Weekly Sales',
+                style: TextStyle(
                   fontWeight: FontWeight.bold,
                   color: AppTheme.textPrimary,
                 ),
               ),
-              Icon(icon, size: 20, color: AppTheme.textTertiary),
+              Text(
+                '₹${(_stats?['totalRevenue'] ?? 0).toStringAsFixed(0)}',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.primaryBlue,
+                  fontSize: 13,
+                ),
+              ),
             ],
           ),
-          const Spacer(),
-          // Placeholder for actual chart
-          Center(
-            child: Container(
-              height: 100,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.bottomCenter,
-                  end: Alignment.topCenter,
-                  colors: [
-                    AppTheme.primaryBlue.withValues(alpha: 0.05),
-                    AppTheme.primaryBlue.withValues(alpha: 0.1),
+          const SizedBox(height: 16),
+          Expanded(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: List.generate(7, (index) {
+                final value = index < weeklySales.length
+                    ? weeklySales[index]
+                    : 0.0;
+                final heightPercent = maxSale > 0 ? (value / maxSale) : 0.0;
+
+                return Column(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    if (value > 0)
+                      Text(
+                        '₹${value.toStringAsFixed(0)}',
+                        style: const TextStyle(
+                          fontSize: 8,
+                          color: AppTheme.textTertiary,
+                        ),
+                      ),
+                    const SizedBox(height: 4),
+                    Container(
+                      width: 20,
+                      height: (heightPercent * 80).clamp(4, 80),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.bottomCenter,
+                          end: Alignment.topCenter,
+                          colors: [
+                            AppTheme.primaryBlue.withOpacity(0.8),
+                            AppTheme.primaryBlue.withOpacity(0.4),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      days[index],
+                      style: const TextStyle(
+                        fontSize: 10,
+                        color: AppTheme.textSecondary,
+                      ),
+                    ),
                   ],
-                ),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: CustomPaint(
-                painter: _ChartPlaceholderPainter(
-                  color: AppTheme.primaryBlue.withValues(alpha: 0.3),
-                  isPie: icon == Icons.pie_chart_outline,
-                ),
-              ),
+                );
+              }),
             ),
           ),
-          const Spacer(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOrderStatusCard() {
+    // Get order status counts
+    final pending = _stats?['pending'] ?? 0;
+    final preparing = _stats?['preparing'] ?? 0;
+    final ready = _stats?['ready'] ?? 0;
+    final delivered = _stats?['delivered'] ?? 0;
+    final total = pending + preparing + ready + delivered;
+
+    final statusData = [
+      {'label': 'Pending', 'value': pending, 'color': Colors.orange},
+      {'label': 'Preparing', 'value': preparing, 'color': Colors.blue},
+      {'label': 'Ready', 'value': ready, 'color': Colors.green},
+      {'label': 'Delivered', 'value': delivered, 'color': AppTheme.success},
+    ];
+
+    return Container(
+      height: 220,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.cardBackground,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Order Status',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.textPrimary,
+                ),
+              ),
+              Text(
+                '$total orders',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.textSecondary,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: statusData.map((data) {
+                final value = data['value'] as int;
+                final percent = total > 0 ? (value / total) : 0.0;
+
+                return Row(
+                  children: [
+                    Container(
+                      width: 10,
+                      height: 10,
+                      decoration: BoxDecoration(
+                        color: data['color'] as Color,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    SizedBox(
+                      width: 60,
+                      child: Text(
+                        data['label'] as String,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: AppTheme.textSecondary,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: Container(
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: AppTheme.background,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: FractionallySizedBox(
+                          alignment: Alignment.centerLeft,
+                          widthFactor: percent,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: data['color'] as Color,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    SizedBox(
+                      width: 24,
+                      child: Text(
+                        '$value',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        textAlign: TextAlign.right,
+                      ),
+                    ),
+                  ],
+                );
+              }).toList(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildShopSettings(String shopId) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppTheme.cardBackground,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.settings, size: 20),
+              SizedBox(width: 8),
+              Text(
+                'Shop Settings',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          StreamBuilder<ShopModel?>(
+            stream: FirebaseFirestore.instance
+                .collection('shops')
+                .doc(shopId)
+                .snapshots()
+                .map((doc) => doc.exists ? ShopModel.fromFirestore(doc) : null),
+            builder: (context, snapshot) {
+              final shop = snapshot.data;
+              final showQueue = shop?.showOrderQueue ?? false;
+
+              return Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Show Order Queue to Customers',
+                              style: TextStyle(fontWeight: FontWeight.w500),
+                            ),
+                            Text(
+                              showQueue
+                                  ? 'Customers can see how many orders are waiting'
+                                  : 'Order queue is hidden from customers',
+                              style: const TextStyle(
+                                color: AppTheme.textSecondary,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Switch(
+                        value: showQueue,
+                        onChanged: (value) async {
+                          await FirebaseFirestore.instance
+                              .collection('shops')
+                              .doc(shopId)
+                              .update({'showOrderQueue': value});
+                        },
+                        activeColor: AppTheme.primaryBlue,
+                      ),
+                    ],
+                  ),
+                  const Divider(height: 32),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Show Estimated Waiting Time',
+                              style: TextStyle(fontWeight: FontWeight.w500),
+                            ),
+                            Text(
+                              shop?.showWaitTime ?? false
+                                  ? 'Customers see an estimated preparation time'
+                                  : 'Waiting time is hidden from customers',
+                              style: const TextStyle(
+                                color: AppTheme.textSecondary,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Switch(
+                        value: shop?.showWaitTime ?? false,
+                        onChanged: (value) async {
+                          await FirebaseFirestore.instance
+                              .collection('shops')
+                              .doc(shopId)
+                              .update({'showWaitTime': value});
+                        },
+                        activeColor: AppTheme.primaryBlue,
+                      ),
+                    ],
+                  ),
+                  if (shop?.showWaitTime ?? false) ...[
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        const Expanded(
+                          child: Text(
+                            'Avg. Prep Time per Order (mins)',
+                            style: TextStyle(fontSize: 14),
+                          ),
+                        ),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: AppTheme.background,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.remove, size: 20),
+                                onPressed: () async {
+                                  final current = shop?.estimatedWaitTime ?? 15;
+                                  if (current > 5) {
+                                    await FirebaseFirestore.instance
+                                        .collection('shops')
+                                        .doc(shopId)
+                                        .update({
+                                          'estimatedWaitTime': current - 5,
+                                        });
+                                  }
+                                },
+                              ),
+                              Text(
+                                '${shop?.estimatedWaitTime ?? 15}',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.add, size: 20),
+                                onPressed: () async {
+                                  final current = shop?.estimatedWaitTime ?? 15;
+                                  await FirebaseFirestore.instance
+                                      .collection('shops')
+                                      .doc(shopId)
+                                      .update({
+                                        'estimatedWaitTime': current + 5,
+                                      });
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+              );
+            },
+          ),
         ],
       ),
     );
@@ -597,51 +925,4 @@ class _CompletedOrderTile extends StatelessWidget {
       ),
     );
   }
-}
-
-class _ChartPlaceholderPainter extends CustomPainter {
-  final Color color;
-  final bool isPie;
-
-  _ChartPlaceholderPainter({required this.color, this.isPie = false});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = 2
-      ..style = PaintingStyle.stroke;
-
-    if (isPie) {
-      final center = Offset(size.width / 2, size.height / 2);
-      final radius = size.height / 2.5;
-      canvas.drawCircle(center, radius, paint);
-      canvas.drawLine(
-        center,
-        center + Offset(radius * 0.7, -radius * 0.7),
-        paint,
-      );
-      canvas.drawLine(center, center + Offset(0, radius), paint);
-    } else {
-      final path = Path();
-      path.moveTo(0, size.height * 0.8);
-      path.quadraticBezierTo(
-        size.width * 0.2,
-        size.height * 0.2,
-        size.width * 0.4,
-        size.height * 0.6,
-      );
-      path.quadraticBezierTo(
-        size.width * 0.6,
-        size.height * 0.9,
-        size.width * 0.8,
-        size.height * 0.3,
-      );
-      path.lineTo(size.width, size.height * 0.5);
-      canvas.drawPath(path, paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

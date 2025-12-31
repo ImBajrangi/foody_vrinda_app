@@ -282,6 +282,11 @@ class ShopModel {
   final ShopSchedule schedule;
   final AlarmSettings alarmSettings;
   final DateTime? createdAt;
+  final double rating;
+  final int ratingCount;
+  final bool showOrderQueue;
+  final int estimatedWaitTime;
+  final bool showWaitTime;
 
   ShopModel({
     required this.id,
@@ -292,6 +297,11 @@ class ShopModel {
     ShopSchedule? schedule,
     AlarmSettings? alarmSettings,
     this.createdAt,
+    this.rating = 0.0,
+    this.ratingCount = 0,
+    this.showOrderQueue = false,
+    this.estimatedWaitTime = 15,
+    this.showWaitTime = false,
   }) : schedule = schedule ?? ShopSchedule(),
        alarmSettings = alarmSettings ?? AlarmSettings();
 
@@ -339,6 +349,11 @@ class ShopModel {
       schedule: schedule,
       alarmSettings: alarmSettings,
       createdAt: createdAt,
+      rating: (data['rating'] ?? 0.0).toDouble(),
+      ratingCount: data['ratingCount'] ?? 0,
+      showOrderQueue: data['showOrderQueue'] ?? false,
+      estimatedWaitTime: data['estimatedWaitTime'] ?? 15,
+      showWaitTime: data['showWaitTime'] ?? false,
     );
   }
 
@@ -353,6 +368,11 @@ class ShopModel {
       'createdAt': createdAt != null
           ? Timestamp.fromDate(createdAt!)
           : FieldValue.serverTimestamp(),
+      'rating': rating,
+      'ratingCount': ratingCount,
+      'showOrderQueue': showOrderQueue,
+      'estimatedWaitTime': estimatedWaitTime,
+      'showWaitTime': showWaitTime,
     };
   }
 
@@ -365,6 +385,11 @@ class ShopModel {
     ShopSchedule? schedule,
     AlarmSettings? alarmSettings,
     DateTime? createdAt,
+    double? rating,
+    int? ratingCount,
+    bool? showOrderQueue,
+    int? estimatedWaitTime,
+    bool? showWaitTime,
   }) {
     return ShopModel(
       id: id ?? this.id,
@@ -375,6 +400,11 @@ class ShopModel {
       schedule: schedule ?? this.schedule,
       alarmSettings: alarmSettings ?? this.alarmSettings,
       createdAt: createdAt ?? this.createdAt,
+      rating: rating ?? this.rating,
+      ratingCount: ratingCount ?? this.ratingCount,
+      showOrderQueue: showOrderQueue ?? this.showOrderQueue,
+      estimatedWaitTime: estimatedWaitTime ?? this.estimatedWaitTime,
+      showWaitTime: showWaitTime ?? this.showWaitTime,
     );
   }
 

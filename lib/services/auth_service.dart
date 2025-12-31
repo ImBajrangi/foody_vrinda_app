@@ -16,6 +16,7 @@ class AuthService {
         : null,
     serverClientId:
         '166281611781-vh09rl3hjcb0872gulpd2oi6ut9nh16n.apps.googleusercontent.com',
+    scopes: ['email', 'https://www.googleapis.com/auth/userinfo.profile'],
   );
 
   // Get current user
@@ -183,16 +184,32 @@ class AuthService {
           'role': role,
           'createdAt': FieldValue.serverTimestamp(),
           'lastLogin': FieldValue.serverTimestamp(),
+          'lastSync': FieldValue.serverTimestamp(),
         });
         print('AuthService: Created new user document for ${user.email}');
       } else {
-        // Update existing user
-        await userRef.update({
+        // Update existing user - only update if the new values are not null
+        final Map<String, dynamic> updates = {
           'lastLogin': FieldValue.serverTimestamp(),
-          'displayName': user.displayName,
-          'photoURL': user.photoURL,
-          if (AppConfig.isDeveloperEmail(user.email)) 'role': 'developer',
-        });
+          'lastSync': FieldValue.serverTimestamp(),
+        };
+
+        if (user.displayName != null && user.displayName!.isNotEmpty) {
+          updates['displayName'] = user.displayName;
+        }
+        if (user.photoURL != null && user.photoURL!.isNotEmpty) {
+          updates['photoURL'] = user.photoURL;
+        }
+        if (AppConfig.isDeveloperEmail(user.email)) {
+          updates['role'] = 'developer';
+        }
+
+        if (updates.length > 2) {
+          // More than just timestamps
+          await userRef.update(updates);
+        } else {
+          await userRef.update(updates);
+        }
         print('AuthService: Updated user document for ${user.email}');
       }
     } catch (e) {

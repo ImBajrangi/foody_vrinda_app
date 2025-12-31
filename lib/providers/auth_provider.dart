@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
 import '../services/resource_cache_service.dart';
 import '../config/app_config.dart';
+
+const String _userDataCacheKey = 'cached_user_data';
 
 enum AuthStatus { uninitialized, authenticated, unauthenticated, loading }
 
@@ -36,8 +40,58 @@ class AuthProvider extends ChangeNotifier {
     _initAuth();
   }
 
-  void _initAuth() {
+  Future<void> _initAuth() async {
+    // Try to load cached user data immediately for faster startup
+    await _loadCachedUserData();
+
+    // Then listen for auth state changes (will sync from Firestore)
     _authService.authStateChanges.listen(_onAuthStateChanged);
+  }
+
+  /// Load cached user data from SharedPreferences for instant startup
+  Future<void> _loadCachedUserData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final cachedJson = prefs.getString(_userDataCacheKey);
+
+      if (cachedJson != null) {
+        final jsonData = json.decode(cachedJson) as Map<String, dynamic>;
+        _userData = UserModel.fromJson(jsonData);
+
+        // Check if there's a current Firebase user
+        final currentUser = _authService.currentUser;
+        if (currentUser != null && _userData != null) {
+          _user = currentUser;
+          _status = AuthStatus.authenticated;
+          notifyListeners();
+          print('AuthProvider: Loaded cached user data - ${_userData?.email}');
+        }
+      }
+    } catch (e) {
+      print('AuthProvider: Error loading cached user data: $e');
+    }
+  }
+
+  /// Save user data to SharedPreferences for faster startup
+  Future<void> _saveUserDataToCache(UserModel userData) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_userDataCacheKey, json.encode(userData.toJson()));
+      print('AuthProvider: Saved user data to cache');
+    } catch (e) {
+      print('AuthProvider: Error saving user data to cache: $e');
+    }
+  }
+
+  /// Clear cached user data on sign out
+  Future<void> _clearCachedUserData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_userDataCacheKey);
+      print('AuthProvider: Cleared cached user data');
+    } catch (e) {
+      print('AuthProvider: Error clearing cached user data: $e');
+    }
   }
 
   Future<void> _onAuthStateChanged(User? user) async {
@@ -47,6 +101,7 @@ class AuthProvider extends ChangeNotifier {
       _status = AuthStatus.unauthenticated;
       _user = null;
       _userData = null;
+      await _clearCachedUserData();
     } else {
       _user = user;
 
@@ -80,14 +135,24 @@ class AuthProvider extends ChangeNotifier {
         // Regular user - fetch from Firestore
         _userData = await _authService.getUserData(user.uid);
 
-        // If no user data exists, create it
-        _userData ??= UserModel(
-          uid: user.uid,
-          email: user.email ?? '',
-          displayName: user.displayName,
-          photoURL: user.photoURL,
-          role: UserRole.customer,
-        );
+        // If no user data exists or missing name, use from Google
+        if (_userData == null) {
+          _userData = UserModel(
+            uid: user.uid,
+            email: user.email ?? '',
+            displayName: user.displayName,
+            photoURL: user.photoURL,
+            role: UserRole.customer,
+          );
+        } else if ((_userData!.displayName == null ||
+                _userData!.displayName!.isEmpty) &&
+            user.displayName != null &&
+            user.displayName!.isNotEmpty) {
+          _userData = _userData!.copyWith(
+            displayName: user.displayName,
+            photoURL: _userData!.photoURL ?? user.photoURL,
+          );
+        }
       }
 
       _status = AuthStatus.authenticated;
@@ -98,6 +163,8 @@ class AuthProvider extends ChangeNotifier {
       // Trigger pre-caching for the user's role
       if (_userData != null) {
         ResourceCacheService().preCacheResources(_userData!.role);
+        // Save user data to local cache for faster startup
+        await _saveUserDataToCache(_userData!);
       }
     }
     notifyListeners();

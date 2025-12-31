@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../config/theme.dart';
 import '../../services/search_service.dart';
-import '../../models/shop_model.dart';
 import '../menu/menu_screen.dart';
 import '../../widgets/animations.dart';
 

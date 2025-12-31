@@ -97,6 +97,42 @@ class UserModel {
     };
   }
 
+  /// Convert to JSON for local storage (SharedPreferences)
+  Map<String, dynamic> toJson() {
+    return {
+      'uid': uid,
+      'email': email,
+      'displayName': displayName,
+      'photoURL': photoURL,
+      'role': role.value,
+      'shopId': shopId,
+      'shopIds': shopIds,
+      'createdAt': createdAt?.toIso8601String(),
+      'lastLogin': lastLogin?.toIso8601String(),
+    };
+  }
+
+  /// Create from JSON (from local storage)
+  factory UserModel.fromJson(Map<String, dynamic> json) {
+    return UserModel(
+      uid: json['uid'] ?? '',
+      email: json['email'] ?? '',
+      displayName: json['displayName'],
+      photoURL: json['photoURL'],
+      role: UserRoleExtension.fromString(json['role']),
+      shopId: json['shopId'],
+      shopIds: json['shopIds'] != null
+          ? List<String>.from(json['shopIds'])
+          : null,
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'])
+          : null,
+      lastLogin: json['lastLogin'] != null
+          ? DateTime.parse(json['lastLogin'])
+          : null,
+    );
+  }
+
   UserModel copyWith({
     String? uid,
     String? email,
