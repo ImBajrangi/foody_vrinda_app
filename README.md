@@ -142,3 +142,7 @@ The app connects to the Foody Vrinda Firebase project. Configuration is handled 
 
 flutter emulators --launch Medium_Phone_API_36.1
 
+flutter clean && flutter pub get && flutter build apk --release
+
+flutter build apk --release
+
