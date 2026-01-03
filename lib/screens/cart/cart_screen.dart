@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:provider/provider.dart';
@@ -52,12 +53,13 @@ class _CartScreenState extends State<CartScreen> {
   String? _pendingDeliveryAddress;
   LatLng? _deliveryLocation; // Store coordinates for distance calculation
   PaymentMethod? _selectedPaymentMethod;
+  StreamSubscription? _paymentSettingsSubscription;
 
   @override
   void initState() {
     super.initState();
     _initializeRazorpay();
-    _loadPaymentSettings();
+    _initPaymentSettingsListener();
     if (widget.shop != null) {
       _shop = widget.shop;
       _shopLoading = false;
@@ -96,29 +98,32 @@ class _CartScreenState extends State<CartScreen> {
   @override
   void dispose() {
     _razorpay?.clear();
+    _paymentSettingsSubscription?.cancel();
     _nameController.dispose();
     _phoneController.dispose();
     _addressController.dispose();
     super.dispose();
   }
 
-  Future<void> _loadPaymentSettings() async {
-    try {
-      final settingsDoc = await FirebaseFirestore.instance
-          .collection('settings')
-          .doc('paymentConfig')
-          .get();
-
-      if (settingsDoc.exists && mounted) {
-        final data = settingsDoc.data()!;
-        setState(() {
-          _onlinePaymentsEnabled = data['onlinePaymentsEnabled'] ?? true;
-          _codEnabled = data['codEnabled'] ?? true;
-        });
-      }
-    } catch (e) {
-      debugPrint('CartScreen: Error loading payment settings: $e');
-    }
+  void _initPaymentSettingsListener() {
+    _paymentSettingsSubscription = FirebaseFirestore.instance
+        .collection('settings')
+        .doc('paymentConfig')
+        .snapshots()
+        .listen(
+          (snapshot) {
+            if (snapshot.exists && mounted) {
+              final data = snapshot.data()!;
+              setState(() {
+                _onlinePaymentsEnabled = data['onlinePaymentsEnabled'] ?? true;
+                _codEnabled = data['codEnabled'] ?? true;
+              });
+            }
+          },
+          onError: (e) {
+            debugPrint('CartScreen: Error listening to payment settings: $e');
+          },
+        );
   }
 
   @override
@@ -470,16 +475,22 @@ class _CartScreenState extends State<CartScreen> {
                         const SizedBox(height: 16),
                         _buildPaymentOption(
                           title: 'Cash on Delivery',
-                          subtitle: 'Pay when you receive your food',
+                          subtitle: _codEnabled
+                              ? 'Pay when you receive your food'
+                              : 'Temporarily unavailable',
                           icon: Icons.payments_outlined,
                           method: PaymentMethod.cash,
+                          isEnabled: _codEnabled,
                         ),
                         const Divider(height: 24),
                         _buildPaymentOption(
                           title: 'Online Payment',
-                          subtitle: 'Pay securely via Razorpay',
+                          subtitle: _onlinePaymentsEnabled
+                              ? 'Pay securely via Razorpay'
+                              : 'Temporarily unavailable',
                           icon: Icons.account_balance_wallet_outlined,
                           method: PaymentMethod.online,
+                          isEnabled: _onlinePaymentsEnabled,
                         ),
                       ],
                     ),
@@ -553,6 +564,27 @@ class _CartScreenState extends State<CartScreen> {
         const SnackBar(
           content: Text('Please select a payment method'),
           backgroundColor: AppTheme.warning,
+        ),
+      );
+      return;
+    }
+
+    // Double check enabled status
+    if (_selectedPaymentMethod == PaymentMethod.online &&
+        !_onlinePaymentsEnabled) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Online payments are temporarily disabled'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+    if (_selectedPaymentMethod == PaymentMethod.cash && !_codEnabled) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Cash on Delivery is temporarily disabled'),
+          backgroundColor: Colors.red,
         ),
       );
       return;
@@ -802,67 +834,88 @@ class _CartScreenState extends State<CartScreen> {
     required String subtitle,
     required IconData icon,
     required PaymentMethod method,
+    required bool isEnabled,
   }) {
     final isSelected = _selectedPaymentMethod == method;
+
     return InkWell(
-      onTap: () => setState(() => _selectedPaymentMethod = method),
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color:
-                    (isSelected ? AppTheme.primaryBlue : AppTheme.textTertiary)
-                        .withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(
-                icon,
-                color: isSelected
-                    ? AppTheme.primaryBlue
-                    : AppTheme.textTertiary,
-                size: 24,
-              ),
+      onTap: isEnabled
+          ? () => setState(() => _selectedPaymentMethod = method)
+          : null,
+      child: Opacity(
+        opacity: isEnabled ? 1.0 : 0.5,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? AppTheme.primaryBlue.withValues(alpha: 0.05)
+                : Colors.transparent,
+            border: Border.all(
+              color: isSelected ? AppTheme.primaryBlue : Colors.transparent,
+              width: 1,
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontWeight: isSelected
-                          ? FontWeight.bold
-                          : FontWeight.w500,
-                      fontSize: 16,
-                      color: isSelected
-                          ? AppTheme.primaryBlue
-                          : AppTheme.textPrimary,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? AppTheme.primaryBlue.withValues(alpha: 0.1)
+                      : AppTheme.background,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  icon,
+                  color: isSelected
+                      ? AppTheme.primaryBlue
+                      : AppTheme.textTertiary,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontWeight: isSelected
+                            ? FontWeight.bold
+                            : FontWeight.w500,
+                        fontSize: 16,
+                        color: isEnabled
+                            ? (isSelected
+                                  ? AppTheme.primaryBlue
+                                  : AppTheme.textPrimary)
+                            : AppTheme.textSecondary,
+                      ),
                     ),
-                  ),
-                  Text(
-                    subtitle,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: AppTheme.textSecondary,
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppTheme.textSecondary,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            Radio<PaymentMethod>(
-              value: method,
-              groupValue: _selectedPaymentMethod,
-              onChanged: (val) {
-                if (val != null) setState(() => _selectedPaymentMethod = val);
-              },
-              activeColor: AppTheme.primaryBlue,
-            ),
-          ],
+              Radio<PaymentMethod>(
+                value: method,
+                groupValue: _selectedPaymentMethod,
+                onChanged: isEnabled
+                    ? (val) {
+                        if (val != null)
+                          setState(() => _selectedPaymentMethod = val);
+                      }
+                    : null,
+                activeColor: AppTheme.primaryBlue,
+              ),
+            ],
+          ),
         ),
       ),
     );

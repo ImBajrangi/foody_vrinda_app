@@ -850,15 +850,36 @@ class _DeliveryOrderCard extends StatelessWidget {
   }
 
   Future<void> _callCustomer(BuildContext context, OrderModel order) async {
-    final uri = Uri.parse('tel:${order.customerPhone}');
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
+    final phoneNumber = order.customerPhone;
+    if (phoneNumber.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Customer phone number not available')),
+      );
+      return;
+    }
+
+    // Clean phone number: remove spaces and non-digit characters except +
+    final cleanPhone = phoneNumber.replaceAll(RegExp(r'[^0-9+]'), '');
+    final uri = Uri.parse('tel:$cleanPhone');
+
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        // Fallback: try anyway
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+
       // Log the attempt after calling
       try {
         await OrderService().logContactAttempt(order.id);
       } catch (e) {
         // Silently fail or log
       }
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Could not launch dialer: $e')));
     }
   }
 

@@ -203,66 +203,73 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
 
               // Profile
-              GestureDetector(
-                onTap: () => _showProfileModal(context, authProvider),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppTheme.background,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      // Avatar
-                      Container(
-                        width: 28,
-                        height: 28,
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryBlue.withValues(alpha: 0.2),
-                          shape: BoxShape.circle,
-                        ),
-                        child: userData?.photoURL != null
-                            ? ClipOval(
-                                child: Image.network(
-                                  userData!.photoURL!,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) =>
-                                      Center(
-                                        child: Text(
-                                          userData.initials,
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.w600,
-                                            color: AppTheme.primaryBlue,
+              Flexible(
+                child: GestureDetector(
+                  onTap: () => _showProfileModal(context, authProvider),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppTheme.background,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Avatar
+                        Container(
+                          width: 28,
+                          height: 28,
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryBlue.withValues(alpha: 0.2),
+                            shape: BoxShape.circle,
+                          ),
+                          child: userData?.photoURL != null
+                              ? ClipOval(
+                                  child: Image.network(
+                                    userData!.photoURL!,
+                                    fit: BoxFit.cover,
+                                    errorBuilder:
+                                        (context, error, stackTrace) => Center(
+                                          child: Text(
+                                            userData.initials,
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                              color: AppTheme.primaryBlue,
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                ),
-                              )
-                            : Center(
-                                child: Text(
-                                  userData?.initials ?? 'G',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    color: AppTheme.primaryBlue,
+                                  ),
+                                )
+                              : Center(
+                                  child: Text(
+                                    userData?.initials ?? 'G',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      color: AppTheme.primaryBlue,
+                                    ),
                                   ),
                                 ),
-                              ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        authProvider.isAuthenticated && userData != null
-                            ? (userData.displayName ??
-                                  userData.email.split('@').first)
-                            : 'Guest',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w500,
-                          fontSize: 12,
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Text(
+                            authProvider.isAuthenticated && userData != null
+                                ? (userData.displayName ??
+                                      userData.email.split('@').first)
+                                : 'Guest',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w500,
+                              fontSize: 12,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),

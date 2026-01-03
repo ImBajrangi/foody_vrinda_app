@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -95,6 +96,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
   // Payment settings
   bool _onlinePaymentsEnabled = true;
   bool _codEnabled = true;
+  StreamSubscription? _paymentSettingsSubscription;
 
   @override
   void initState() {
@@ -113,7 +115,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
     _loadSummary();
     _runSystemTests();
     _loadAllUsers();
-    _loadPaymentSettings();
+    _initPaymentSettingsListener();
     _initNotificationListener();
   }
 
@@ -171,8 +173,35 @@ class _DeveloperPanelState extends State<DeveloperPanel>
   @override
   void dispose() {
     _tabController.dispose();
+    _paymentSettingsSubscription?.cancel();
     _notificationManager.stopListening();
+    _staffNameController.dispose();
+    _staffEmailController.dispose();
+    _staffPhoneController.dispose();
     super.dispose();
+  }
+
+  void _initPaymentSettingsListener() {
+    _paymentSettingsSubscription = _firestore
+        .collection('settings')
+        .doc('paymentConfig')
+        .snapshots()
+        .listen(
+          (snapshot) {
+            if (snapshot.exists && mounted) {
+              final data = snapshot.data()!;
+              setState(() {
+                _onlinePaymentsEnabled = data['onlinePaymentsEnabled'] ?? true;
+                _codEnabled = data['codEnabled'] ?? true;
+              });
+            }
+          },
+          onError: (e) {
+            debugPrint(
+              'DeveloperPanel: Error listening to payment settings: $e',
+            );
+          },
+        );
   }
 
   Future<void> _loadAllUsers() async {
@@ -226,25 +255,6 @@ class _DeveloperPanelState extends State<DeveloperPanel>
       }
     } catch (e) {
       print('DevPanel: Error loading orders today: $e');
-    }
-  }
-
-  Future<void> _loadPaymentSettings() async {
-    try {
-      final settingsDoc = await _firestore
-          .collection('settings')
-          .doc('paymentConfig')
-          .get();
-
-      if (settingsDoc.exists && mounted) {
-        final data = settingsDoc.data()!;
-        setState(() {
-          _onlinePaymentsEnabled = data['onlinePaymentsEnabled'] ?? true;
-          _codEnabled = data['codEnabled'] ?? true;
-        });
-      }
-    } catch (e) {
-      print('DevPanel: Error loading payment settings: $e');
     }
   }
 
