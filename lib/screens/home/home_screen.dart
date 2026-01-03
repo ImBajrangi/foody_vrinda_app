@@ -50,7 +50,7 @@ class _HomeScreenState extends State<HomeScreen> {
             _buildHeader(context, authProvider, userData),
 
             // View Switcher
-            if (role != UserRole.customer) _buildViewSwitcher(role),
+            if (role != UserRole.customer) _buildViewSwitcher(userData, role),
 
             // Content
             Expanded(child: _buildContent()),
@@ -311,9 +311,9 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildViewSwitcher(UserRole role) {
-    final views = <Map<String, dynamic>>[
-      {'name': 'Order', 'icon': Icons.shopping_cart},
+  Widget _buildViewSwitcher(UserModel? userData, UserRole role) {
+    List<Map<String, dynamic>> views = [
+      {'name': 'Shop', 'icon': Icons.store},
     ];
 
     if (role == UserRole.kitchen ||
@@ -345,7 +345,11 @@ class _HomeScreenState extends State<HomeScreen> {
       });
     }
 
-    if (role == UserRole.developer) {
+    final hasDevAccess =
+        role == UserRole.developer ||
+        (role == UserRole.owner &&
+            (userData?.devPermissions.isNotEmpty ?? false));
+    if (hasDevAccess) {
       views.add({
         'name': 'Dev Panel',
         'icon': Icons.code,
@@ -446,7 +450,11 @@ class _HomeScreenState extends State<HomeScreen> {
       views.add(_buildDashboardView(userData));
     }
 
-    if (role == UserRole.developer) {
+    final hasDevAccess =
+        role == UserRole.developer ||
+        (role == UserRole.owner &&
+            (userData?.devPermissions.isNotEmpty ?? false));
+    if (hasDevAccess) {
       views.add(_buildDevPanel());
     }
 

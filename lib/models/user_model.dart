@@ -46,6 +46,7 @@ class UserModel {
   final bool isOnline; // For delivery availability status
   final DateTime? createdAt;
   final DateTime? lastLogin;
+  final List<String> devPermissions; // Permissions for dev panel features
 
   UserModel({
     required this.uid,
@@ -59,6 +60,7 @@ class UserModel {
     this.isOnline = false,
     this.createdAt,
     this.lastLogin,
+    this.devPermissions = const [],
   });
 
   factory UserModel.fromFirestore(DocumentSnapshot doc) {
@@ -85,6 +87,9 @@ class UserModel {
       lastLogin: data['lastLogin'] != null
           ? (data['lastLogin'] as Timestamp).toDate()
           : null,
+      devPermissions: data['devPermissions'] != null
+          ? List<String>.from(data['devPermissions'])
+          : const [],
     );
   }
 
@@ -102,6 +107,7 @@ class UserModel {
           ? Timestamp.fromDate(createdAt!)
           : FieldValue.serverTimestamp(),
       'lastLogin': FieldValue.serverTimestamp(),
+      'devPermissions': devPermissions,
     };
   }
 
@@ -119,6 +125,7 @@ class UserModel {
       'isOnline': isOnline,
       'createdAt': createdAt?.toIso8601String(),
       'lastLogin': lastLogin?.toIso8601String(),
+      'devPermissions': devPermissions,
     };
   }
 
@@ -142,6 +149,9 @@ class UserModel {
       lastLogin: json['lastLogin'] != null
           ? DateTime.parse(json['lastLogin'])
           : null,
+      devPermissions: json['devPermissions'] != null
+          ? List<String>.from(json['devPermissions'])
+          : const [],
     );
   }
 
@@ -157,6 +167,7 @@ class UserModel {
     bool? isOnline,
     DateTime? createdAt,
     DateTime? lastLogin,
+    List<String>? devPermissions,
   }) {
     return UserModel(
       uid: uid ?? this.uid,
@@ -170,6 +181,7 @@ class UserModel {
       isOnline: isOnline ?? this.isOnline,
       createdAt: createdAt ?? this.createdAt,
       lastLogin: lastLogin ?? this.lastLogin,
+      devPermissions: devPermissions ?? this.devPermissions,
     );
   }
 
@@ -179,6 +191,13 @@ class UserModel {
       role == UserRole.owner;
   bool get isAdmin => role == UserRole.owner || role == UserRole.developer;
   bool get isDeveloper => role == UserRole.developer;
+
+  bool hasDevPermission(String permission) {
+    if (isDeveloper) return true;
+    return devPermissions.contains(permission);
+  }
+
+  bool get canAccessDevPanel => isDeveloper || devPermissions.isNotEmpty;
 
   String get initials {
     if (displayName != null && displayName!.isNotEmpty) {

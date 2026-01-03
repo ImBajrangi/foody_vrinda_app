@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../providers/auth_provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import '../../config/theme.dart';
@@ -477,8 +479,68 @@ class _DeveloperPanelState extends State<DeveloperPanel>
     }
   }
 
+  bool _hasPerm(UserModel? user, String perm) {
+    if (user == null) return false;
+    if (user.role == UserRole.developer) return true;
+    return user.devPermissions.contains(perm);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context);
+    final user = authProvider.userData;
+    final isDev = user?.role == UserRole.developer;
+
+    // Determine which tabs to show
+    bool showDashboard =
+        _hasPerm(user, 'summary') || _hasPerm(user, 'payments');
+    bool showShopsMenu = _hasPerm(user, 'shops') || _hasPerm(user, 'menu');
+    bool showUsers = _hasPerm(user, 'users');
+    bool showOrders = _hasPerm(user, 'tools'); // Orders monitor and test flow
+
+    List<Widget> tabs = [];
+    if (showDashboard) {
+      tabs.add(
+        const Tab(text: 'Dashboard', icon: Icon(Icons.dashboard_outlined)),
+      );
+    }
+    if (showShopsMenu) {
+      tabs.add(
+        const Tab(text: 'Shops & Menu', icon: Icon(Icons.storefront_outlined)),
+      );
+    }
+    if (showUsers) {
+      tabs.add(
+        const Tab(text: 'Users & Roles', icon: Icon(Icons.people_alt_outlined)),
+      );
+    }
+    if (showOrders) {
+      tabs.add(
+        const Tab(
+          text: 'Orders & Testing',
+          icon: Icon(Icons.shopping_bag_outlined),
+        ),
+      );
+    }
+    if (isDev) {
+      tabs.addAll([
+        const Tab(text: 'Analytics', icon: Icon(Icons.analytics_outlined)),
+        const Tab(text: 'Cash Audit', icon: Icon(Icons.payments_outlined)),
+        const Tab(text: 'UX & Assets', icon: Icon(Icons.movie_filter_outlined)),
+      ]);
+    }
+
+    // Since we are changing tab count dynamically, we need to handle TabController
+    if (_tabController.length != tabs.length) {
+      // Small delay to rebuild controller
+      Future.microtask(() {
+        setState(() {
+          _tabController = TabController(length: tabs.length, vsync: this);
+        });
+      });
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
     return Scaffold(
       backgroundColor: AppTheme.background,
       appBar: AppBar(
@@ -504,63 +566,45 @@ class _DeveloperPanelState extends State<DeveloperPanel>
           indicatorColor: AppTheme.primaryBlue,
           labelColor: AppTheme.primaryBlue,
           unselectedLabelColor: AppTheme.textSecondary,
-          tabs: const [
-            Tab(text: 'Dashboard', icon: Icon(Icons.dashboard_outlined)),
-            Tab(text: 'Shops & Menu', icon: Icon(Icons.storefront_outlined)),
-            Tab(text: 'Users & Roles', icon: Icon(Icons.people_alt_outlined)),
-            Tab(
-              text: 'Orders & Testing',
-              icon: Icon(Icons.shopping_bag_outlined),
-            ),
-            Tab(text: 'Analytics', icon: Icon(Icons.analytics_outlined)),
-            Tab(text: 'Cash Audit', icon: Icon(Icons.payments_outlined)),
-            Tab(text: 'UX & Assets', icon: Icon(Icons.movie_filter_outlined)),
-          ],
+          tabs: tabs,
         ),
       ),
       body: TabBarView(
         controller: _tabController,
         children: [
-          // Tab 0: Dashboard
-          _buildResponsiveTab([
-            _buildSystemOverview(),
-            const SizedBox(height: 16),
-            _buildControlPanel(),
-            const SizedBox(height: 16),
-            _buildDataConsistency(),
-          ]),
-
-          // Tab 1: Shops & Menu
-          _buildResponsiveTab([
-            _buildShopManagement(),
-            const SizedBox(height: 16),
-            _buildShopScheduleManagement(),
-            const SizedBox(height: 16),
-            _buildMenuManagement(),
-          ]),
-
-          // Tab 2: Users & Roles
-          _buildResponsiveTab([
-            _buildAddStaffSection(),
-            const SizedBox(height: 16),
-            _buildUserRoleManagement(),
-          ]),
-
-          // Tab 3: Orders & Testing
-          _buildResponsiveTab([
-            _buildOrdersMonitor(),
-            const SizedBox(height: 16),
-            _buildTestOrderFlow(),
-          ]),
-
-          // Tab 4: Analytics
-          _buildResponsiveTab([_buildViewShopDashboard()]),
-
-          // Tab 5: Cash Audit
-          _buildResponsiveTab([_buildCashAuditPanel()]),
-
-          // Tab 6: UX & Assets
-          _buildResponsiveTab([_buildUXAssetsTab()]),
+          if (showDashboard)
+            _buildResponsiveTab([
+              if (_hasPerm(user, 'summary')) _buildSystemOverview(),
+              if (_hasPerm(user, 'summary')) const SizedBox(height: 16),
+              if (_hasPerm(user, 'payments')) _buildControlPanel(),
+              if (isDev) const SizedBox(height: 16),
+              if (isDev) _buildDataConsistency(),
+            ]),
+          if (showShopsMenu)
+            _buildResponsiveTab([
+              if (_hasPerm(user, 'shops')) _buildShopManagement(),
+              if (_hasPerm(user, 'shops')) const SizedBox(height: 16),
+              if (_hasPerm(user, 'shops')) _buildShopScheduleManagement(),
+              if (_hasPerm(user, 'menu')) const SizedBox(height: 16),
+              if (_hasPerm(user, 'menu')) _buildMenuManagement(),
+            ]),
+          if (showUsers)
+            _buildResponsiveTab([
+              _buildAddStaffSection(),
+              const SizedBox(height: 16),
+              _buildUserRoleManagement(),
+            ]),
+          if (showOrders)
+            _buildResponsiveTab([
+              _buildOrdersMonitor(),
+              const SizedBox(height: 16),
+              _buildTestOrderFlow(),
+            ]),
+          if (isDev) ...[
+            _buildResponsiveTab([_buildViewShopDashboard()]),
+            _buildResponsiveTab([_buildCashAuditPanel()]),
+            _buildResponsiveTab([_buildUXAssetsTab()]),
+          ],
         ],
       ),
     );
@@ -945,53 +989,260 @@ class _DeveloperPanelState extends State<DeveloperPanel>
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.orange.shade50,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.orange.shade200),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.orange.shade200, width: 1.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.payment, color: Colors.orange.shade700),
-              const SizedBox(width: 8),
-              const Text(
-                'Payment Method Controls',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade100,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.payment,
+                  color: Colors.orange.shade700,
+                  size: 18,
+                ),
+              ),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Payment Method Controls',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.textPrimary,
+                      ),
+                    ),
+                    Text(
+                      'Global ON/OFF for payment methods',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: AppTheme.textSecondary,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
               ),
             ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Global ON/OFF for payment methods. Disabled methods will be hidden from customers.',
-            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
           ),
           const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: SwitchListTile(
-                  title: const Text('Online Payments'),
-                  subtitle: const Text('via Razorpay'),
-                  value: _onlinePaymentsEnabled,
-                  onChanged: (value) async {
-                    await _updatePaymentSetting('onlinePaymentsEnabled', value);
-                  },
-                  activeColor: AppTheme.success,
-                ),
+
+          // Online Payments Card
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: _onlinePaymentsEnabled
+                    ? AppTheme.success.withValues(alpha: 0.3)
+                    : AppTheme.borderLight,
+                width: 1.5,
               ),
-              Expanded(
-                child: SwitchListTile(
-                  title: const Text('Cash on Delivery'),
-                  subtitle: const Text('Pay at delivery'),
-                  value: _codEnabled,
-                  onChanged: (value) async {
-                    await _updatePaymentSetting('codEnabled', value);
-                  },
-                  activeColor: Colors.amber.shade700,
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: _onlinePaymentsEnabled
+                        ? AppTheme.success.withValues(alpha: 0.1)
+                        : Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.credit_card,
+                    color: _onlinePaymentsEnabled
+                        ? AppTheme.success
+                        : Colors.grey.shade400,
+                    size: 20,
+                  ),
                 ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Online Payments',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              'via Razorpay',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey.shade600,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 5,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: _onlinePaymentsEnabled
+                                  ? AppTheme.success.withValues(alpha: 0.15)
+                                  : Colors.grey.shade200,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              _onlinePaymentsEnabled ? 'ON' : 'OFF',
+                              style: TextStyle(
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
+                                color: _onlinePaymentsEnabled
+                                    ? AppTheme.success
+                                    : Colors.grey.shade600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Transform.scale(
+                  scale: 0.85,
+                  child: Switch(
+                    value: _onlinePaymentsEnabled,
+                    onChanged: (value) async {
+                      await _updatePaymentSetting(
+                        'onlinePaymentsEnabled',
+                        value,
+                      );
+                    },
+                    activeColor: AppTheme.success,
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          // Cash on Delivery Card
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: _codEnabled
+                    ? Colors.amber.shade700.withValues(alpha: 0.3)
+                    : AppTheme.borderLight,
+                width: 1.5,
               ),
-            ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: _codEnabled
+                        ? Colors.amber.shade100
+                        : Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.local_shipping_outlined,
+                    color: _codEnabled
+                        ? Colors.amber.shade700
+                        : Colors.grey.shade400,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Cash on Delivery',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              'Pay at delivery',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey.shade600,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 5,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: _codEnabled
+                                  ? Colors.amber.shade100
+                                  : Colors.grey.shade200,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              _codEnabled ? 'ON' : 'OFF',
+                              style: TextStyle(
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
+                                color: _codEnabled
+                                    ? Colors.amber.shade700
+                                    : Colors.grey.shade600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Transform.scale(
+                  scale: 0.85,
+                  child: Switch(
+                    value: _codEnabled,
+                    onChanged: (value) async {
+                      await _updatePaymentSetting('codEnabled', value);
+                    },
+                    activeColor: Colors.amber.shade700,
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -2550,6 +2801,12 @@ class _DeveloperPanelState extends State<DeveloperPanel>
                           style: TextStyle(fontWeight: FontWeight.bold),
                         ),
                       ),
+                      DataColumn(
+                        label: Text(
+                          'Perms',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
                     ],
                     rows: managableUsers.map((user) {
                       // Ensure the value is one of the available options
@@ -2690,6 +2947,26 @@ class _DeveloperPanelState extends State<DeveloperPanel>
                               tooltip: 'Refresh to verify',
                             ),
                           ),
+                          DataCell(
+                            user.role == UserRole.owner
+                                ? IconButton(
+                                    icon: const Icon(
+                                      Icons.security_outlined,
+                                      color: AppTheme.primaryBlue,
+                                      size: 20,
+                                    ),
+                                    onPressed: () =>
+                                        _showPermissionsDialog(user),
+                                    tooltip: 'Manage Dev Permissions',
+                                  )
+                                : const Text(
+                                    'N/A',
+                                    style: TextStyle(
+                                      color: AppTheme.textTertiary,
+                                      fontSize: 10,
+                                    ),
+                                  ),
+                          ),
                         ],
                       );
                     }).toList(),
@@ -2697,6 +2974,117 @@ class _DeveloperPanelState extends State<DeveloperPanel>
                 ),
         ],
       ),
+    );
+  }
+
+  void _showPermissionsDialog(UserModel user) {
+    final permissions = List<String>.from(user.devPermissions);
+    final availablePerms = [
+      {
+        'id': 'summary',
+        'label': 'System Overview',
+        'desc': 'View global stats',
+      },
+      {
+        'id': 'payments',
+        'label': 'Payment Toggles',
+        'desc': 'Enable/Disable COD or Online',
+      },
+      {'id': 'shops', 'label': 'Shop Management', 'desc': 'Create/Edit shops'},
+      {
+        'id': 'menu',
+        'label': 'Menu Management',
+        'desc': 'Edit menu for any shop',
+      },
+      {'id': 'users', 'label': 'User Management', 'desc': 'Change roles'},
+      {'id': 'tools', 'label': 'System Tools', 'desc': 'Access test tools'},
+    ];
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: Text('Dev Permissions: ${user.email}'),
+              insetPadding: const EdgeInsets.symmetric(
+                horizontal: 20,
+                vertical: 24,
+              ),
+              content: SizedBox(
+                width: double.maxFinite,
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: availablePerms.length,
+                  itemBuilder: (context, index) {
+                    final perm = availablePerms[index];
+                    final isEnabled = permissions.contains(perm['id']);
+
+                    return SwitchListTile(
+                      title: Text(
+                        perm['label']!,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      subtitle: Text(
+                        perm['desc']!,
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                      value: isEnabled,
+                      onChanged: (value) {
+                        setDialogState(() {
+                          if (value) {
+                            permissions.add(perm['id']!);
+                          } else {
+                            permissions.remove(perm['id']!);
+                          }
+                        });
+                      },
+                    );
+                  },
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    try {
+                      await _firestore.collection('users').doc(user.uid).update(
+                        {'devPermissions': permissions},
+                      );
+                      _loadAllUsers();
+                      if (context.mounted) Navigator.pop(context);
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Permissions updated'),
+                            backgroundColor: AppTheme.success,
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Error: $e'),
+                            backgroundColor: AppTheme.error,
+                          ),
+                        );
+                      }
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryBlue,
+                  ),
+                  child: const Text('Save Permissions'),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 
