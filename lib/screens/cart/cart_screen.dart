@@ -42,6 +42,10 @@ class _CartScreenState extends State<CartScreen> {
   ShopModel? _shop;
   bool _shopLoading = true;
 
+  // Payment settings
+  bool _onlinePaymentsEnabled = true;
+  bool _codEnabled = true;
+
   // Store order details for use after payment success
   String? _pendingCustomerName;
   String? _pendingCustomerPhone;
@@ -53,6 +57,7 @@ class _CartScreenState extends State<CartScreen> {
   void initState() {
     super.initState();
     _initializeRazorpay();
+    _loadPaymentSettings();
     if (widget.shop != null) {
       _shop = widget.shop;
       _shopLoading = false;
@@ -95,6 +100,25 @@ class _CartScreenState extends State<CartScreen> {
     _phoneController.dispose();
     _addressController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadPaymentSettings() async {
+    try {
+      final settingsDoc = await FirebaseFirestore.instance
+          .collection('settings')
+          .doc('paymentConfig')
+          .get();
+
+      if (settingsDoc.exists && mounted) {
+        final data = settingsDoc.data()!;
+        setState(() {
+          _onlinePaymentsEnabled = data['onlinePaymentsEnabled'] ?? true;
+          _codEnabled = data['codEnabled'] ?? true;
+        });
+      }
+    } catch (e) {
+      debugPrint('CartScreen: Error loading payment settings: $e');
+    }
   }
 
   @override

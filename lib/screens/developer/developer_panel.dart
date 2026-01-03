@@ -92,6 +92,10 @@ class _DeveloperPanelState extends State<DeveloperPanel>
   // User role management
   List<UserModel> _allUsers = [];
 
+  // Payment settings
+  bool _onlinePaymentsEnabled = true;
+  bool _codEnabled = true;
+
   @override
   void initState() {
     super.initState();
@@ -109,6 +113,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
     _loadSummary();
     _runSystemTests();
     _loadAllUsers();
+    _loadPaymentSettings();
     _initNotificationListener();
   }
 
@@ -221,6 +226,25 @@ class _DeveloperPanelState extends State<DeveloperPanel>
       }
     } catch (e) {
       print('DevPanel: Error loading orders today: $e');
+    }
+  }
+
+  Future<void> _loadPaymentSettings() async {
+    try {
+      final settingsDoc = await _firestore
+          .collection('settings')
+          .doc('paymentConfig')
+          .get();
+
+      if (settingsDoc.exists && mounted) {
+        final data = settingsDoc.data()!;
+        setState(() {
+          _onlinePaymentsEnabled = data['onlinePaymentsEnabled'] ?? true;
+          _codEnabled = data['codEnabled'] ?? true;
+        });
+      }
+    } catch (e) {
+      print('DevPanel: Error loading payment settings: $e');
     }
   }
 
@@ -898,9 +922,108 @@ class _DeveloperPanelState extends State<DeveloperPanel>
               ),
             ],
           ),
+          const SizedBox(height: 24),
+          // Payment Method Controls
+          _buildPaymentControls(),
         ],
       ),
     );
+  }
+
+  Widget _buildPaymentControls() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.orange.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.orange.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.payment, color: Colors.orange.shade700),
+              const SizedBox(width: 8),
+              const Text(
+                'Payment Method Controls',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Global ON/OFF for payment methods. Disabled methods will be hidden from customers.',
+            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: SwitchListTile(
+                  title: const Text('Online Payments'),
+                  subtitle: const Text('via Razorpay'),
+                  value: _onlinePaymentsEnabled,
+                  onChanged: (value) async {
+                    await _updatePaymentSetting('onlinePaymentsEnabled', value);
+                  },
+                  activeColor: AppTheme.success,
+                ),
+              ),
+              Expanded(
+                child: SwitchListTile(
+                  title: const Text('Cash on Delivery'),
+                  subtitle: const Text('Pay at delivery'),
+                  value: _codEnabled,
+                  onChanged: (value) async {
+                    await _updatePaymentSetting('codEnabled', value);
+                  },
+                  activeColor: Colors.amber.shade700,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _updatePaymentSetting(String field, bool value) async {
+    try {
+      await _firestore.collection('settings').doc('paymentConfig').set({
+        field: value,
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+
+      setState(() {
+        if (field == 'onlinePaymentsEnabled') {
+          _onlinePaymentsEnabled = value;
+        } else {
+          _codEnabled = value;
+        }
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '${field == "onlinePaymentsEnabled" ? "Online payments" : "Cash on Delivery"} ${value ? "enabled" : "disabled"}',
+            ),
+            backgroundColor: AppTheme.success,
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error updating payment setting: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to update payment settings'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _fixDeveloperRole() async {
