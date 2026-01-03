@@ -662,7 +662,7 @@ class _DashboardViewState extends State<DashboardView> {
                               .doc(shopId)
                               .update({'showOrderQueue': value});
                         },
-                        activeColor: AppTheme.primaryBlue,
+                        activeThumbColor: AppTheme.primaryBlue,
                       ),
                     ],
                   ),
@@ -698,7 +698,7 @@ class _DashboardViewState extends State<DashboardView> {
                               .doc(shopId)
                               .update({'showWaitTime': value});
                         },
-                        activeColor: AppTheme.primaryBlue,
+                        activeThumbColor: AppTheme.primaryBlue,
                       ),
                     ],
                   ),

@@ -2141,7 +2141,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
             children: [
               Expanded(
                 child: DropdownButtonFormField<String>(
-                  value: _staffRole,
+                  initialValue: _staffRole,
                   decoration: _inputDecoration('Role'),
                   items: const [
                     DropdownMenuItem(
@@ -2160,7 +2160,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
               const SizedBox(width: 8),
               Expanded(
                 child: DropdownButtonFormField<String>(
-                  value: _staffShopId,
+                  initialValue: _staffShopId,
                   decoration: _inputDecoration('Primary Shop'),
                   items: _cachedShops
                       .map(

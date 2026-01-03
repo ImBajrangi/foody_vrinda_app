@@ -28,7 +28,7 @@ class _DeliveryViewState extends State<DeliveryView> {
   final ShopService _shopService = ShopService();
   final NotificationService _notificationService = NotificationService();
   String? _selectedShopId;
-  bool _showAllShops =
+  final bool _showAllShops =
       false; // Changed to false by default for strict filtering
   Set<String> _previousOrderIds = {};
   bool _isFirstLoad = true;
@@ -335,7 +335,7 @@ class _DeliveryViewState extends State<DeliveryView> {
                         : Switch(
                             value: _isOnline,
                             onChanged: _toggleOnlineStatus,
-                            activeColor: AppTheme.success,
+                            activeThumbColor: AppTheme.success,
                           ),
                   ],
                 );
