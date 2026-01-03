@@ -587,9 +587,67 @@ class OrderService {
     }
   }
 
+  // Settle all collected cash for a shop (used by developer/owner)
+  Future<int> settleAllCashForShop(
+    String shopId,
+    String userId,
+    String userName,
+  ) async {
+    try {
+      final snapshot = await _firestore
+          .collection('orders')
+          .where('shopId', isEqualTo: shopId)
+          .where('paymentMethod', isEqualTo: PaymentMethod.cash.value)
+          .where('cashStatus', isEqualTo: CashStatus.collected.value)
+          .get();
+
+      if (snapshot.docs.isEmpty) return 0;
+
+      final batch = _firestore.batch();
+      final now = DateTime.now();
+      int count = 0;
+
+      for (var doc in snapshot.docs) {
+        final order = OrderModel.fromFirestore(doc);
+
+        // Update order
+        batch.update(doc.reference, {
+          'cashStatus': CashStatus.settled.value,
+          'settledBy': userId,
+          'cashSettledAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+
+        // Create audit transaction
+        final transactionRef = _firestore.collection('cash_transactions').doc();
+        final transaction = CashTransactionModel(
+          id: transactionRef.id,
+          orderId: doc.id,
+          shopId: shopId,
+          amount: order.totalAmount,
+          type: CashTransactionType.settlement,
+          userId: userId,
+          userName: userName,
+          timestamp: now,
+          notes: 'Batch settlement for shop',
+        );
+        batch.set(transactionRef, transaction.toFirestore());
+        count++;
+      }
+
+      await batch.commit();
+      print('OrderService: Settled $count orders for shop $shopId');
+      return count;
+    } catch (e) {
+      print('OrderService: Error in batch settlement: $e');
+      rethrow;
+    }
+  }
+
   // Get cash transactions for audit
   Stream<List<CashTransactionModel>> getCashTransactions({
     String? shopId,
+    String? userId,
     int limit = 100,
   }) {
     Query<Map<String, dynamic>> query = _firestore.collection(
@@ -597,6 +655,9 @@ class OrderService {
     );
     if (shopId != null) {
       query = query.where('shopId', isEqualTo: shopId);
+    }
+    if (userId != null) {
+      query = query.where('userId', isEqualTo: userId);
     }
     return query
         .orderBy('timestamp', descending: true)
@@ -607,6 +668,20 @@ class OrderService {
               .map((doc) => CashTransactionModel.fromFirestore(doc))
               .toList(),
         );
+  }
+
+  // Delete a cash transaction (developer only)
+  Future<void> deleteCashTransaction(String transactionId) async {
+    try {
+      await _firestore
+          .collection('cash_transactions')
+          .doc(transactionId)
+          .delete();
+      print('OrderService: Cash transaction $transactionId deleted');
+    } catch (e) {
+      print('OrderService: Error deleting cash transaction: $e');
+      rethrow;
+    }
   }
 
   // Get unsettled cash orders (for shop owner)

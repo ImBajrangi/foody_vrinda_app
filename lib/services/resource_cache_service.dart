@@ -70,17 +70,44 @@ class ResourceCacheService {
     }
   }
 
+  /// Proactively caches a list of image URLs in the background
+  void cacheImages(List<String> urls) {
+    if (urls.isEmpty) return;
+    dev.log(
+      'Proactively caching ${urls.length} images...',
+      name: 'ResourceCacheService',
+    );
+    for (final url in urls) {
+      _cacheAsset(url);
+    }
+  }
+
   Future<void> _cacheAsset(String url) async {
     try {
-      final file = await _cacheManager.getFileFromCache(url);
-      if (file == null) {
+      // Check if already in cache to avoid redundant hits
+      final fileInfo = await _cacheManager.getFileFromCache(url);
+      if (fileInfo == null) {
         dev.log('Downloading to cache: $url', name: 'ResourceCacheService');
-        await _cacheManager.downloadFile(url);
+        // Proactive background caching without awaiting
+        _cacheManager
+            .downloadFile(url)
+            .then((_) {
+              dev.log(
+                'Successfully cached: $url',
+                name: 'ResourceCacheService',
+              );
+            })
+            .catchError((e) {
+              dev.log('Failed to cache $url: $e', name: 'ResourceCacheService');
+            });
       } else {
-        dev.log('Already in cache: $url', name: 'ResourceCacheService');
+        dev.log('Resource already cached: $url', name: 'ResourceCacheService');
       }
     } catch (e) {
-      dev.log('Error caching $url: $e', name: 'ResourceCacheService');
+      dev.log(
+        'Error checking cache for $url: $e',
+        name: 'ResourceCacheService',
+      );
     }
   }
 }

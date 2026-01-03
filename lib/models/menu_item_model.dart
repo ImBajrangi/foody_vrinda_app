@@ -34,12 +34,15 @@ class MenuItemModel {
       );
     }
 
+    // Handle both 'image' and 'imageUrl' field names for compatibility with different sources
+    String? image = data['imageUrl'] ?? data['image'];
+
     return MenuItemModel(
       id: doc.id,
       shopId: data['shopId'] ?? '',
       name: data['name'] ?? 'Unnamed Item',
       price: (data['price'] ?? 0).toDouble(),
-      imageUrl: data['imageUrl'],
+      imageUrl: image,
       isAvailable: data['isAvailable'] ?? true,
       category: data['category'],
       description: data['description'],
@@ -54,7 +57,7 @@ class MenuItemModel {
       'shopId': shopId,
       'name': name,
       'price': price,
-      'imageUrl': imageUrl,
+      'image': imageUrl, // Use 'image' to match existing web app data structure
       'isAvailable': isAvailable,
       'category': category,
       'description': description,

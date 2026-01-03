@@ -98,6 +98,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
   // Payment settings
   bool _onlinePaymentsEnabled = true;
   bool _codEnabled = true;
+  String? _selectedAuditShopId;
   StreamSubscription? _paymentSettingsSubscription;
 
   @override
@@ -616,57 +617,344 @@ class _DeveloperPanelState extends State<DeveloperPanel>
       subtitle: 'Monitor collections and settlements across all shops',
       icon: Icons.payments,
       iconColor: AppTheme.success,
-      child: StreamBuilder<List<CashTransactionModel>>(
-        stream: _orderService.getCashTransactions(),
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          final transactions = snapshot.data!;
-          if (transactions.isEmpty) {
-            return const Center(child: Text('No cash transactions found'));
-          }
+      child: Column(
+        children: [
+          // Shop selection row
+          _buildAuditShopSelector(),
+          const SizedBox(height: 16),
 
-          return ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: transactions.length,
-            itemBuilder: (context, index) {
-              final tx = transactions[index];
-              return ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: CircleAvatar(
-                  backgroundColor: tx.type == CashTransactionType.collection
-                      ? AppTheme.success.withValues(alpha: 0.1)
-                      : AppTheme.primaryBlue.withValues(alpha: 0.1),
-                  child: Icon(
-                    tx.type == CashTransactionType.collection
-                        ? Icons.add
-                        : Icons.handshake,
-                    color: tx.type == CashTransactionType.collection
-                        ? AppTheme.success
-                        : AppTheme.primaryBlue,
-                    size: 20,
-                  ),
-                ),
-                title: Text(
-                  '${tx.type == CashTransactionType.collection ? "Collected" : "Settled"}: ${tx.formattedAmount}',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                subtitle: Text(
-                  'By ${tx.userName} • ${DateFormat('MMM dd, HH:mm').format(tx.timestamp)}',
-                ),
-                trailing: Text(
-                  'Order #${tx.orderId.substring(tx.orderId.length - 4)}',
-                  style: const TextStyle(
-                    fontSize: 10,
-                    color: AppTheme.textSecondary,
-                  ),
-                ),
+          StreamBuilder<List<CashTransactionModel>>(
+            stream: _orderService.getCashTransactions(
+              shopId: _selectedAuditShopId,
+            ),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              final transactions = snapshot.data ?? [];
+
+              // Calculate summary stats
+              double collected = 0;
+              double settled = 0;
+              for (var tx in transactions) {
+                if (tx.type == CashTransactionType.collection) {
+                  collected += tx.amount;
+                } else if (tx.type == CashTransactionType.settlement) {
+                  settled += tx.amount;
+                }
+              }
+
+              return Column(
+                children: [
+                  // Summary cards
+                  _buildAuditSummary(collected, settled),
+                  const SizedBox(height: 20),
+
+                  // Action buttons
+                  if (_selectedAuditShopId != null && (collected - settled) > 0)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: ElevatedButton.icon(
+                        onPressed: () => _showBatchSettlementConfirm(),
+                        icon: const Icon(Icons.handshake),
+                        label: Text(
+                          'Settle All Shop Cash (₹${(collected - settled).toStringAsFixed(0)})',
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.success,
+                          minimumSize: const Size(double.infinity, 48),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ),
+
+                  const Divider(),
+                  const SizedBox(height: 8),
+
+                  if (transactions.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 32),
+                      child: Center(
+                        child: Column(
+                          children: [
+                            Icon(
+                              Icons.receipt_long_outlined,
+                              size: 48,
+                              color: AppTheme.textTertiary,
+                            ),
+                            SizedBox(height: 8),
+                            Text(
+                              'No transactions found',
+                              style: TextStyle(color: AppTheme.textSecondary),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  else
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: transactions.length,
+                      itemBuilder: (context, index) {
+                        final tx = transactions[index];
+                        return _buildTransactionTile(tx);
+                      },
+                    ),
+                ],
               );
             },
-          );
-        },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAuditShopSelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Filter by Shop',
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: AppTheme.textSecondary,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            color: AppTheme.background,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppTheme.border),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: _selectedAuditShopId,
+              isExpanded: true,
+              hint: const Text('All Shops'),
+              items: [
+                const DropdownMenuItem(
+                  value: null,
+                  child: Text('All Shops (Aggregate View)'),
+                ),
+                ..._cachedShops.map(
+                  (s) => DropdownMenuItem(value: s.id, child: Text(s.name)),
+                ),
+              ],
+              onChanged: (val) => setState(() => _selectedAuditShopId = val),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAuditSummary(double collected, double settled) {
+    final pending = collected - settled;
+    return Row(
+      children: [
+        Expanded(
+          child: _AuditSummaryCard(
+            label: 'Collected',
+            amount: collected,
+            color: AppTheme.success,
+            icon: Icons.add_circle_outline,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _AuditSummaryCard(
+            label: 'Settled',
+            amount: settled,
+            color: AppTheme.primaryBlue,
+            icon: Icons.handshake_outlined,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _AuditSummaryCard(
+            label: 'Outstanding',
+            amount: pending,
+            color: pending > 0 ? AppTheme.warning : AppTheme.textSecondary,
+            icon: Icons.account_balance_wallet_outlined,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTransactionTile(CashTransactionModel tx) {
+    final isCollection = tx.type == CashTransactionType.collection;
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: CircleAvatar(
+        backgroundColor: isCollection
+            ? AppTheme.success.withValues(alpha: 0.1)
+            : AppTheme.primaryBlue.withValues(alpha: 0.1),
+        child: Icon(
+          isCollection ? Icons.add : Icons.handshake,
+          color: isCollection ? AppTheme.success : AppTheme.primaryBlue,
+          size: 20,
+        ),
+      ),
+      title: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            isCollection ? "Collected" : "Settled",
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+          ),
+          Text(
+            tx.formattedAmount,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 15,
+              color: isCollection ? AppTheme.success : AppTheme.primaryBlue,
+            ),
+          ),
+        ],
+      ),
+      subtitle: Text(
+        'By ${tx.userName} • ${DateFormat('MMM dd, HH:mm').format(tx.timestamp)}',
+        style: const TextStyle(fontSize: 11),
+      ),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: AppTheme.background,
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text(
+              '#${tx.orderId.length > 4 ? tx.orderId.substring(tx.orderId.length - 4) : tx.orderId}',
+              style: const TextStyle(
+                fontSize: 9,
+                color: AppTheme.textSecondary,
+              ),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(
+              Icons.delete_outline,
+              size: 18,
+              color: AppTheme.error,
+            ),
+            onPressed: () => _showDeleteTransactionConfirm(tx),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            visualDensity: VisualDensity.compact,
+            tooltip: 'Delete Transaction',
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showBatchSettlementConfirm() {
+    final shop = _cachedShops.firstWhere((s) => s.id == _selectedAuditShopId);
+    final user = Provider.of<AuthProvider>(context, listen: false).userData;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirm Batch Settlement'),
+        content: Text(
+          'Are you sure you want to mark all collected cash for ${shop.name} as settled with the owner?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              if (user == null) return;
+
+              try {
+                final count = await _orderService.settleAllCashForShop(
+                  shop.id,
+                  user.uid,
+                  user.displayName ?? 'Developer',
+                );
+
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'Successfully settled $count orders for ${shop.name}',
+                      ),
+                      backgroundColor: AppTheme.success,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error: $e'),
+                      backgroundColor: AppTheme.error,
+                    ),
+                  );
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.success),
+            child: const Text('Settle All'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDeleteTransactionConfirm(CashTransactionModel tx) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Transaction'),
+        content: Text(
+          'Are you sure you want to permanently delete this ${tx.type.name} record of ${tx.formattedAmount}? This action only removes the audit log, it DOES NOT change the order status.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              try {
+                await _orderService.deleteCashTransaction(tx.id);
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Transaction deleted successfully'),
+                      backgroundColor: AppTheme.success,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error: $e'),
+                      backgroundColor: AppTheme.error,
+                    ),
+                  );
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.error),
+            child: const Text('Delete'),
+          ),
+        ],
       ),
     );
   }
@@ -5007,6 +5295,51 @@ class _RoleBadge extends StatelessWidget {
           fontWeight: FontWeight.bold,
           color: color,
         ),
+      ),
+    );
+  }
+}
+
+class _AuditSummaryCard extends StatelessWidget {
+  final String label;
+  final double amount;
+  final Color color;
+  final IconData icon;
+
+  const _AuditSummaryCard({
+    required this.label,
+    required this.amount,
+    required this.color,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 16, color: color),
+          const SizedBox(height: 8),
+          Text(
+            '₹${amount.toStringAsFixed(0)}',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 10, color: AppTheme.textSecondary),
+          ),
+        ],
       ),
     );
   }

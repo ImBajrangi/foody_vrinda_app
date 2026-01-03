@@ -8,9 +8,11 @@ import 'dart:ui' as ui;
 import '../../config/theme.dart';
 import '../../models/order_model.dart';
 import '../../models/user_model.dart';
+import '../../models/cash_transaction_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/order_service.dart';
 import '../../widgets/animations.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 /// Dashboard view for delivery staff showing performance metrics
 class DeliveryDashboardView extends StatefulWidget {
@@ -87,6 +89,10 @@ class _DeliveryDashboardViewState extends State<DeliveryDashboardView> {
               _buildAllTimeStats(),
               const SizedBox(height: 20),
 
+              // Cash Management Panel
+              _buildCashPanel(userData?.uid),
+              const SizedBox(height: 20),
+
               // Recent Deliveries
               _buildRecentDeliveries(),
               const SizedBox(height: 20),
@@ -107,18 +113,43 @@ class _DeliveryDashboardViewState extends State<DeliveryDashboardView> {
           width: 56,
           height: 56,
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                AppTheme.success,
-                AppTheme.success.withValues(alpha: 0.7),
-              ],
-            ),
+            color: AppTheme.primaryBlue.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: AppTheme.primaryBlue.withValues(alpha: 0.2),
+              width: 2,
+            ),
           ),
-          child: const Icon(
-            Icons.delivery_dining,
-            color: Colors.white,
-            size: 28,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(14),
+            child: userData?.photoURL != null && userData!.photoURL!.isNotEmpty
+                ? CachedNetworkImage(
+                    imageUrl: userData.photoURL!,
+                    fit: BoxFit.cover,
+                    placeholder: (context, url) => const Center(
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                    errorWidget: (context, url, error) => Center(
+                      child: Text(
+                        userData.initials,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.primaryBlue,
+                        ),
+                      ),
+                    ),
+                  )
+                : Center(
+                    child: Text(
+                      userData?.initials ?? 'D',
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.primaryBlue,
+                      ),
+                    ),
+                  ),
           ),
         ),
         const SizedBox(width: 16),
@@ -845,6 +876,172 @@ class _DeliveryDashboardViewState extends State<DeliveryDashboardView> {
     return orders
         .where((o) => o.paymentMethod == PaymentMethod.cash)
         .fold(0.0, (sum, order) => sum + order.totalAmount);
+  }
+
+  Widget _buildCashPanel(String? userId) {
+    if (userId == null) return const SizedBox();
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppTheme.cardBackground,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Cash in Hand',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              Icon(
+                Icons.account_balance_wallet,
+                color: AppTheme.primaryBlue.withValues(alpha: 0.5),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          StreamBuilder<List<CashTransactionModel>>(
+            stream: _orderService.getCashTransactions(userId: userId),
+            builder: (context, snapshot) {
+              double collected = 0;
+              double settled = 0;
+              if (snapshot.hasData) {
+                for (var tx in snapshot.data!) {
+                  if (tx.type == CashTransactionType.collection) {
+                    collected += tx.amount;
+                  } else if (tx.type == CashTransactionType.settlement) {
+                    settled += tx.amount;
+                  }
+                }
+              }
+              final pending = collected - settled;
+
+              return Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _CashSummaryCard(
+                          label: 'Collected',
+                          amount: collected,
+                          color: AppTheme.success,
+                          icon: Icons.add_circle_outline,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _CashSummaryCard(
+                          label: 'Settled',
+                          amount: settled,
+                          color: AppTheme.primaryBlue,
+                          icon: Icons.handshake_outlined,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: pending > 0
+                          ? AppTheme.warning.withValues(alpha: 0.1)
+                          : AppTheme.background,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: pending > 0
+                            ? AppTheme.warning.withValues(alpha: 0.2)
+                            : AppTheme.border,
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        const Text(
+                          'PENDING SETTLEMENT',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.2,
+                            color: AppTheme.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '₹${pending.toStringAsFixed(0)}',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: pending > 0
+                                ? AppTheme.warning
+                                : AppTheme.textPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CashSummaryCard extends StatelessWidget {
+  final String label;
+  final double amount;
+  final Color color;
+  final IconData icon;
+
+  const _CashSummaryCard({
+    required this.label,
+    required this.amount,
+    required this.color,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 16, color: color),
+          const SizedBox(height: 8),
+          Text(
+            '₹${amount.toStringAsFixed(0)}',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 10, color: AppTheme.textSecondary),
+          ),
+        ],
+      ),
+    );
   }
 }
 

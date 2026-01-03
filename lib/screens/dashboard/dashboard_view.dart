@@ -5,6 +5,7 @@ import '../../config/theme.dart';
 import '../../models/order_model.dart';
 import '../../models/user_model.dart';
 import '../../models/shop_model.dart';
+import '../../models/cash_transaction_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/order_service.dart';
 import '../../widgets/animations.dart';
@@ -587,6 +588,60 @@ class _DashboardViewState extends State<DashboardView> {
             'Confirm and settle cash payments collected by your delivery team.',
             style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
           ),
+          const SizedBox(height: 16),
+
+          // Summary Statistics
+          StreamBuilder<List<CashTransactionModel>>(
+            stream: _orderService.getCashTransactions(shopId: shopId),
+            builder: (context, txSnapshot) {
+              double collected = 0;
+              double settled = 0;
+              if (txSnapshot.hasData) {
+                for (var tx in txSnapshot.data!) {
+                  if (tx.type == CashTransactionType.collection) {
+                    collected += tx.amount;
+                  } else if (tx.type == CashTransactionType.settlement) {
+                    settled += tx.amount;
+                  }
+                }
+              }
+              final outstanding = collected - settled;
+
+              return Row(
+                children: [
+                  Expanded(
+                    child: _CashSummaryCard(
+                      label: 'Collected',
+                      amount: collected,
+                      color: AppTheme.success,
+                      icon: Icons.add_circle_outline,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _CashSummaryCard(
+                      label: 'Settled',
+                      amount: settled,
+                      color: AppTheme.primaryBlue,
+                      icon: Icons.handshake_outlined,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _CashSummaryCard(
+                      label: 'Outstanding',
+                      amount: outstanding,
+                      color: outstanding > 0
+                          ? AppTheme.warning
+                          : AppTheme.textSecondary,
+                      icon: Icons.account_balance_wallet_outlined,
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+
           const Divider(height: 32),
           StreamBuilder<List<OrderModel>>(
             stream: _orderService.getUnsettledCashOrders(shopId),
@@ -1264,6 +1319,51 @@ class _CompletedOrderTile extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CashSummaryCard extends StatelessWidget {
+  final String label;
+  final double amount;
+  final Color color;
+  final IconData icon;
+
+  const _CashSummaryCard({
+    required this.label,
+    required this.amount,
+    required this.color,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 16, color: color),
+          const SizedBox(height: 8),
+          Text(
+            '₹${amount.toStringAsFixed(0)}',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 10, color: AppTheme.textSecondary),
           ),
         ],
       ),

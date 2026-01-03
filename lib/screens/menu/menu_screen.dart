@@ -8,6 +8,7 @@ import '../../models/menu_item_model.dart';
 import '../../models/review_model.dart';
 import '../../services/shop_service.dart';
 import '../../services/review_service.dart';
+import '../../services/resource_cache_service.dart';
 import '../../providers/cart_provider.dart';
 import '../../widgets/cards.dart';
 import '../cart/cart_screen.dart';
@@ -236,6 +237,16 @@ class _MenuScreenState extends State<MenuScreen> {
                                     'This shop hasn\'t added any items yet.',
                                 animationType: 'data',
                               );
+                            }
+
+                            // Proactively cache menu item images
+                            final menuImages = menuItems
+                                .map((i) => i.imageUrl)
+                                .where((url) => url != null && url.isNotEmpty)
+                                .cast<String>()
+                                .toList();
+                            if (menuImages.isNotEmpty) {
+                              ResourceCacheService().cacheImages(menuImages);
                             }
 
                             return GridView.builder(

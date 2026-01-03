@@ -11,6 +11,7 @@ import '../../services/order_notification_manager.dart';
 import '../../services/notification_service.dart';
 import '../../widgets/order_widgets.dart';
 import '../../widgets/animations.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class KitchenView extends StatefulWidget {
   final String? shopId;
@@ -154,6 +155,8 @@ class _KitchenViewState extends State<KitchenView> {
   }
 
   Widget _buildHeader(bool isDeveloper) {
+    final userData = Provider.of<AuthProvider>(context, listen: false).userData;
+
     return Container(
       padding: const EdgeInsets.all(16),
       child: Row(
@@ -162,10 +165,45 @@ class _KitchenViewState extends State<KitchenView> {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: Colors.black,
+              color: AppTheme.primaryBlue.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: AppTheme.primaryBlue.withValues(alpha: 0.2),
+                width: 1.5,
+              ),
             ),
-            child: const Icon(Icons.kitchen, color: Colors.white),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child:
+                  userData?.photoURL != null && userData!.photoURL!.isNotEmpty
+                  ? CachedNetworkImage(
+                      imageUrl: userData.photoURL!,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => const Center(
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                      errorWidget: (context, url, error) => Center(
+                        child: Text(
+                          userData.initials,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.primaryBlue,
+                          ),
+                        ),
+                      ),
+                    )
+                  : Center(
+                      child: Text(
+                        userData?.initials ?? 'K',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.primaryBlue,
+                        ),
+                      ),
+                    ),
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(

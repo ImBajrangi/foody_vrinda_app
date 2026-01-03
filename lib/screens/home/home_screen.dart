@@ -9,6 +9,7 @@ import '../../providers/cart_provider.dart';
 import '../../models/user_model.dart';
 import '../../models/shop_model.dart';
 import '../../services/shop_service.dart';
+import '../../services/resource_cache_service.dart';
 import '../../widgets/cards.dart';
 import '../menu/menu_screen.dart';
 import '../cart/cart_screen.dart';
@@ -225,33 +226,52 @@ class _HomeScreenState extends State<HomeScreen> {
                           decoration: BoxDecoration(
                             color: AppTheme.primaryBlue.withValues(alpha: 0.2),
                             shape: BoxShape.circle,
+                            border: Border.all(
+                              color: AppTheme.primaryBlue.withValues(
+                                alpha: 0.3,
+                              ),
+                              width: 1,
+                            ),
                           ),
-                          child: userData?.photoURL != null
-                              ? ClipOval(
-                                  child: Image.network(
-                                    userData!.photoURL!,
+                          child: ClipOval(
+                            child:
+                                userData?.photoURL != null &&
+                                    userData!.photoURL!.isNotEmpty
+                                ? CachedNetworkImage(
+                                    imageUrl: userData.photoURL!,
                                     fit: BoxFit.cover,
-                                    errorBuilder:
-                                        (context, error, stackTrace) => Center(
+                                    placeholder: (context, url) => const Center(
+                                      child: SizedBox(
+                                        width: 14,
+                                        height: 14,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 1.5,
+                                        ),
+                                      ),
+                                    ),
+                                    errorWidget: (context, url, error) =>
+                                        Center(
                                           child: Text(
                                             userData.initials,
                                             style: const TextStyle(
+                                              fontSize: 10,
                                               fontWeight: FontWeight.w600,
                                               color: AppTheme.primaryBlue,
                                             ),
                                           ),
                                         ),
-                                  ),
-                                )
-                              : Center(
-                                  child: Text(
-                                    userData?.initials ?? 'G',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                      color: AppTheme.primaryBlue,
+                                  )
+                                : Center(
+                                    child: Text(
+                                      userData?.initials ?? 'G',
+                                      style: const TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppTheme.primaryBlue,
+                                      ),
                                     ),
                                   ),
-                                ),
+                          ),
                         ),
                         const SizedBox(width: 8),
                         Flexible(
@@ -548,45 +568,61 @@ class _HomeScreenState extends State<HomeScreen> {
           );
         }
 
-        return ListView(
+        // Proactively cache shop images in the background
+        final shopImages = shops
+            .map((s) => s.imageUrl)
+            .where((url) => url != null && url.isNotEmpty)
+            .cast<String>()
+            .toList();
+        if (shopImages.isNotEmpty) {
+          ResourceCacheService().cacheImages(shopImages);
+        }
+
+        return ListView.builder(
           padding: const EdgeInsets.all(16),
-          children: [
-            Text(
-              'Shop Now 🍽️',
-              style: Theme.of(context).textTheme.displaySmall,
-            ),
-            const SizedBox(height: 16),
-
-            Text(
-              "Choose where you'd like to order from.",
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: AppTheme.textSecondary),
-            ),
-            const SizedBox(height: 20),
-
-            // Shop list
-            ...shops.map(
-              (shop) => Padding(
+          itemCount: shops.length + 2, // Header items + list
+          itemBuilder: (context, index) {
+            if (index == 0) {
+              return Padding(
                 padding: const EdgeInsets.only(bottom: 16),
-                child: ShopCard(
-                  name: shop.name,
-                  address: shop.address,
-                  imageUrl: shop.imageUrl,
-                  isOpen: shop.isOpen,
-                  schedule: shop.schedule.displaySchedule,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => MenuScreen(shop: shop),
-                      ),
-                    );
-                  },
+                child: Text(
+                  'Shop Now 🍽️',
+                  style: Theme.of(context).textTheme.displaySmall,
                 ),
+              );
+            }
+            if (index == 1) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 20),
+                child: Text(
+                  "Choose where you'd like to order from.",
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppTheme.textSecondary,
+                  ),
+                ),
+              );
+            }
+
+            final shop = shops[index - 2];
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: ShopCard(
+                name: shop.name,
+                address: shop.address,
+                imageUrl: shop.imageUrl,
+                isOpen: shop.isOpen,
+                schedule: shop.schedule.displaySchedule,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => MenuScreen(shop: shop),
+                    ),
+                  );
+                },
               ),
-            ),
-          ],
+            );
+          },
         );
       },
     );
@@ -644,29 +680,38 @@ class _HomeScreenState extends State<HomeScreen> {
 
             if (authProvider.isAuthenticated) ...[
               // Animated Profile Icon
-              SizedBox(
+              // Profile Avatar
+              Container(
+                width: 120,
                 height: 120,
-                child: Lottie.network(
-                  LottieAssets.profile,
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      color: AppTheme.primaryBlue.withValues(alpha: 0.2),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Center(
-                      child: Text(
-                        authProvider.userData?.initials ?? 'U',
-                        style: const TextStyle(
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.primaryBlue,
-                        ),
-                      ),
-                    ),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryBlue.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: AppTheme.primaryBlue.withValues(alpha: 0.2),
+                    width: 4,
                   ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: ClipOval(
+                  child:
+                      authProvider.userData?.photoURL != null &&
+                          authProvider.userData!.photoURL!.isNotEmpty
+                      ? CachedNetworkImage(
+                          imageUrl: authProvider.userData!.photoURL!,
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) =>
+                              const Center(child: CircularProgressIndicator()),
+                          errorWidget: (context, url, error) =>
+                              _buildLottieProfile(),
+                        )
+                      : _buildLottieProfile(),
                 ),
               ),
               const SizedBox(height: 16),
@@ -812,6 +857,32 @@ class _HomeScreenState extends State<HomeScreen> {
 
             const SizedBox(height: 16),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLottieProfile() {
+    return Container(
+      color: AppTheme.primaryBlue.withValues(alpha: 0.1),
+      child: Center(
+        child: Lottie.network(
+          LottieAssets.profile,
+          width: 80,
+          height: 80,
+          fit: BoxFit.contain,
+          errorBuilder: (context, error, stackTrace) => Text(
+            Provider.of<AuthProvider>(
+                  context,
+                  listen: false,
+                ).userData?.initials ??
+                'U',
+            style: const TextStyle(
+              fontSize: 32,
+              fontWeight: FontWeight.bold,
+              color: AppTheme.primaryBlue,
+            ),
+          ),
         ),
       ),
     );
