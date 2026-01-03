@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../config/theme.dart';
@@ -430,7 +431,14 @@ class _DeliveryOrderCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppTheme.cardBackground,
         borderRadius: BorderRadius.circular(16),
-        border: isReady ? Border.all(color: AppTheme.success, width: 2) : null,
+        border: isReady
+            ? Border.all(color: AppTheme.success, width: 2)
+            : (order.paymentMethod == PaymentMethod.cash
+                  ? Border.all(
+                      color: AppTheme.warning.withValues(alpha: 0.5),
+                      width: 1.5,
+                    )
+                  : null),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -452,67 +460,111 @@ class _DeliveryOrderCard extends StatelessWidget {
                 top: Radius.circular(16),
               ),
             ),
-            child: Row(
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Text(
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Flexible(
+                          child: Text(
                             order.orderNumber,
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
-                              fontSize: 18,
+                              fontSize: 16,
                             ),
+                            overflow: TextOverflow.ellipsis,
                           ),
+                        ),
+                        if (order.totalAmount >= 500) ...[
                           const SizedBox(width: 8),
-                          // Priority badge for large orders
-                          if (order.totalAmount >= 500)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppTheme.warning.withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.star,
-                                    size: 12,
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppTheme.warning.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.star,
+                                  size: 10,
+                                  color: AppTheme.warning,
+                                ),
+                                SizedBox(width: 2),
+                                Text(
+                                  'Large',
+                                  style: TextStyle(
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.bold,
                                     color: AppTheme.warning,
                                   ),
-                                  SizedBox(width: 4),
-                                  Text(
-                                    'Large Order',
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w600,
-                                      color: AppTheme.warning,
-                                    ),
-                                  ),
-                                ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      order.timeAgo,
+                      style: const TextStyle(
+                        color: AppTheme.textSecondary,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 4,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    OrderStatusTag(status: order.status),
+                    if (order.paymentMethod == PaymentMethod.cash)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppTheme.warning.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.payments,
+                              size: 12,
+                              color: AppTheme.warning,
+                            ),
+                            SizedBox(width: 4),
+                            Text(
+                              'CASH',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.warning,
                               ),
                             ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        order.timeAgo,
-                        style: const TextStyle(
-                          color: AppTheme.textSecondary,
-                          fontSize: 12,
+                          ],
                         ),
                       ),
-                    ],
-                  ),
+                  ],
                 ),
-                OrderStatusTag(status: order.status),
               ],
             ),
           ),
@@ -566,16 +618,21 @@ class _DeliveryOrderCard extends StatelessWidget {
                     ),
                     // Call button
                     IconButton(
-                      onPressed: () => _callCustomer(order.customerPhone),
+                      onPressed: () => _callCustomer(context, order),
                       icon: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
                           color: AppTheme.success.withValues(alpha: 0.1),
                           shape: BoxShape.circle,
+                          border: order.contactAttempts.length >= 3
+                              ? Border.all(color: AppTheme.error, width: 2)
+                              : null,
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.phone,
-                          color: AppTheme.success,
+                          color: order.contactAttempts.length >= 3
+                              ? AppTheme.error
+                              : AppTheme.success,
                           size: 20,
                         ),
                       ),
@@ -598,7 +655,34 @@ class _DeliveryOrderCard extends StatelessWidget {
                     ),
                   ],
                 ),
-
+                if (order.contactAttempts.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8, left: 12),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.history,
+                          size: 14,
+                          color: order.contactAttempts.length >= 3
+                              ? AppTheme.error
+                              : AppTheme.textSecondary,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Call attempts: ${order.contactAttempts.length} (Last: ${DateFormat('hh:mm a').format(order.contactAttempts.last)})',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: order.contactAttempts.length >= 3
+                                ? AppTheme.error
+                                : AppTheme.textSecondary,
+                            fontWeight: order.contactAttempts.length >= 3
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 const SizedBox(height: 16),
 
                 // Delivery address
@@ -624,7 +708,11 @@ class _DeliveryOrderCard extends StatelessWidget {
                         ),
                       ),
                       IconButton(
-                        onPressed: () => _openMaps(order.deliveryAddress),
+                        onPressed: () => _openMaps(
+                          order.deliveryAddress,
+                          lat: order.customerLatitude,
+                          lng: order.customerLongitude,
+                        ),
                         icon: const Icon(
                           Icons.directions,
                           color: AppTheme.primaryBlue,
@@ -713,14 +801,43 @@ class _DeliveryOrderCard extends StatelessWidget {
                   ),
                 ] else if (isOutForDelivery) ...[
                   Expanded(
+                    flex: 3,
                     child: ElevatedButton.icon(
-                      onPressed: () => onStatusUpdate(OrderStatus.completed),
-                      icon: const Icon(Icons.check_circle, size: 20),
-                      label: const Text('Complete Delivery'),
+                      onPressed: () {
+                        if (order.paymentMethod == PaymentMethod.cash) {
+                          _showCashCollectionDialog(context, order);
+                        } else {
+                          onStatusUpdate(OrderStatus.completed);
+                        }
+                      },
+                      icon: Icon(
+                        order.paymentMethod == PaymentMethod.cash
+                            ? Icons.payments
+                            : Icons.check_circle,
+                        size: 20,
+                      ),
+                      label: Text(
+                        order.paymentMethod == PaymentMethod.cash
+                            ? 'Collect Cash & Complete'
+                            : 'Complete Delivery',
+                      ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppTheme.success,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    flex: 1,
+                    child: OutlinedButton(
+                      onPressed: () => _showReturnToShopDialog(context, order),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppTheme.error,
+                        side: const BorderSide(color: AppTheme.error),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                      child: const Icon(Icons.assignment_return),
                     ),
                   ),
                 ],
@@ -732,17 +849,30 @@ class _DeliveryOrderCard extends StatelessWidget {
     );
   }
 
-  Future<void> _callCustomer(String phone) async {
-    final uri = Uri.parse('tel:$phone');
+  Future<void> _callCustomer(BuildContext context, OrderModel order) async {
+    final uri = Uri.parse('tel:${order.customerPhone}');
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
+      // Log the attempt after calling
+      try {
+        await OrderService().logContactAttempt(order.id);
+      } catch (e) {
+        // Silently fail or log
+      }
     }
   }
 
-  Future<void> _openMaps(String address) async {
-    final uri = Uri.parse(
-      'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(address)}',
-    );
+  Future<void> _openMaps(String address, {double? lat, double? lng}) async {
+    Uri uri;
+    if (lat != null && lng != null) {
+      uri = Uri.parse(
+        'https://www.google.com/maps/search/?api=1&query=$lat,$lng',
+      );
+    } else {
+      uri = Uri.parse(
+        'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(address)}',
+      );
+    }
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
@@ -758,5 +888,192 @@ class _DeliveryOrderCard extends StatelessWidget {
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
+  }
+
+  void _showCashCollectionDialog(BuildContext context, OrderModel order) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Cash Collection'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Please collect cash from customer:'),
+            const SizedBox(height: 12),
+            Text(
+              order.formattedTotal,
+              style: const TextStyle(
+                fontSize: 32,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.success,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Confirm that you have received the exact amount.',
+              style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              final authProvider = Provider.of<AuthProvider>(
+                context,
+                listen: false,
+              );
+              final orderService = OrderService();
+
+              try {
+                await orderService.collectCash(
+                  order.id,
+                  authProvider.user?.uid ?? 'unknown',
+                  authProvider.userData?.displayName ?? 'Delivery Partner',
+                );
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Cash collected and order completed!'),
+                      backgroundColor: AppTheme.success,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error: $e'),
+                      backgroundColor: AppTheme.error,
+                    ),
+                  );
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.success),
+            child: const Text('Confirm Collection'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showReturnToShopDialog(BuildContext context, OrderModel order) {
+    String reason = '';
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.assignment_return, color: AppTheme.error),
+            SizedBox(width: 12),
+            Text('Return to Shop'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Critical: Failure to Deliver',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: AppTheme.error,
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Please provide a reason why this order is being returned to the shop:',
+              style: TextStyle(fontSize: 14),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              onChanged: (val) => reason = val,
+              controller: TextEditingController(
+                text: order.contactAttempts.length >= 3
+                    ? 'Customer Unreachable (Tried ${order.contactAttempts.length} times)'
+                    : '',
+              ),
+              decoration: InputDecoration(
+                hintText: 'e.g., Customer Refused, No response at door',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              maxLines: 2,
+            ),
+            const SizedBox(height: 16),
+            StreamBuilder<ShopModel?>(
+              stream: ShopService().shopStream(order.shopId),
+              builder: (context, snapshot) {
+                final shop = snapshot.data;
+                if (shop?.phoneNumber == null) return const SizedBox.shrink();
+                return SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () => _openWhatsApp(shop!.phoneNumber!),
+                    icon: const Icon(Icons.videocam, size: 20),
+                    label: const Text('Video Call Shop for Assistance'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppTheme.primaryBlue,
+                      side: const BorderSide(color: AppTheme.primaryBlue),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (reason.trim().isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Please provide a reason')),
+                );
+                return;
+              }
+              Navigator.pop(context);
+              try {
+                final orderService = OrderService();
+                await orderService.markOrderAsReturned(order.id, reason.trim());
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Order marked as Returned to Shop'),
+                      backgroundColor: AppTheme.error,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error: $e'),
+                      backgroundColor: AppTheme.error,
+                    ),
+                  );
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.error),
+            child: const Text('Confirm Return'),
+          ),
+        ],
+      ),
+    );
   }
 }

@@ -1,11 +1,12 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 /// Service for Google Maps APIs (Places, Distance Matrix, Geocoding)
 class LocationService {
   // Use the same API key from AndroidManifest
-  static const String _apiKey = 'AIzaSyByssOBUO2hCb_dcm4xJqYrn-5hhBzXdSE';
+  static const String _apiKey = 'AIzaSyDWEKXSvzY2bMStntZKoGmGh0W6Pa7YUXM';
 
   /// Get place predictions for address autocomplete
   static Future<List<PlacePrediction>> getPlacePredictions(String input) async {
@@ -90,8 +91,8 @@ class LocationService {
   }) async {
     final url = Uri.parse(
       'https://maps.googleapis.com/maps/api/distancematrix/json'
-      '?origins=${origin.lat},${origin.lng}'
-      '&destinations=${destination.lat},${destination.lng}'
+      '?origins=${origin.latitude},${origin.longitude}'
+      '&destinations=${destination.latitude},${destination.longitude}'
       '&mode=driving'
       '&key=$_apiKey',
     );
@@ -127,12 +128,12 @@ class LocationService {
     if (destinations.isEmpty) return [];
 
     final destinationsStr = destinations
-        .map((d) => '${d.lat},${d.lng}')
+        .map((d) => '${d.latitude},${d.longitude}')
         .join('|');
 
     final url = Uri.parse(
       'https://maps.googleapis.com/maps/api/distancematrix/json'
-      '?origins=${origin.lat},${origin.lng}'
+      '?origins=${origin.latitude},${origin.longitude}'
       '&destinations=$destinationsStr'
       '&mode=driving'
       '&key=$_apiKey',
@@ -162,17 +163,6 @@ class LocationService {
       return [];
     }
   }
-}
-
-/// Simple LatLng class for coordinates
-class LatLng {
-  final double lat;
-  final double lng;
-
-  LatLng(this.lat, this.lng);
-
-  @override
-  String toString() => 'LatLng($lat, $lng)';
 }
 
 /// Place prediction from autocomplete

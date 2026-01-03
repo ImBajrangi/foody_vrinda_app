@@ -11,7 +11,7 @@ class OrderStatusTag extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         color: _getColor().withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
@@ -21,20 +21,20 @@ class OrderStatusTag extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 8,
-            height: 8,
+            width: 6,
+            height: 6,
             decoration: BoxDecoration(
               color: _getColor(),
               shape: BoxShape.circle,
             ),
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: 4),
           Text(
             status.displayName,
             style: TextStyle(
               color: _getColor(),
               fontWeight: FontWeight.w600,
-              fontSize: 12,
+              fontSize: 11,
             ),
           ),
         ],
@@ -54,6 +54,10 @@ class OrderStatusTag extends StatelessWidget {
         return AppTheme.ownerColor;
       case OrderStatus.completed:
         return AppTheme.success;
+      case OrderStatus.cancelled:
+        return AppTheme.error;
+      case OrderStatus.returned:
+        return Colors.deepPurple;
     }
   }
 }
@@ -118,6 +122,10 @@ class OrderTimeline extends StatelessWidget {
         return Icons.delivery_dining;
       case OrderStatus.completed:
         return Icons.check_circle;
+      case OrderStatus.cancelled:
+        return Icons.cancel;
+      case OrderStatus.returned:
+        return Icons.keyboard_return;
     }
   }
 }

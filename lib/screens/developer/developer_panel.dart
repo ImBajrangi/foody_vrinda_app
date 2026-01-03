@@ -9,6 +9,7 @@ import '../../models/shop_model.dart';
 import '../../models/user_model.dart';
 import '../../models/menu_item_model.dart';
 import '../../models/cart_item_model.dart';
+import '../../models/cash_transaction_model.dart';
 import '../../services/order_service.dart';
 import '../../services/shop_service.dart';
 import 'package:lottie/lottie.dart';
@@ -94,7 +95,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 6, vsync: this);
+    _tabController = TabController(length: 7, vsync: this);
 
     // Start loading immediately - don't wait for frame callback
     _loadAllDataInParallel();
@@ -478,6 +479,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
               icon: Icon(Icons.shopping_bag_outlined),
             ),
             Tab(text: 'Analytics', icon: Icon(Icons.analytics_outlined)),
+            Tab(text: 'Cash Audit', icon: Icon(Icons.payments_outlined)),
             Tab(text: 'UX & Assets', icon: Icon(Icons.movie_filter_outlined)),
           ],
         ),
@@ -520,9 +522,71 @@ class _DeveloperPanelState extends State<DeveloperPanel>
           // Tab 4: Analytics
           _buildResponsiveTab([_buildViewShopDashboard()]),
 
-          // Tab 5: UX & Assets
+          // Tab 5: Cash Audit
+          _buildResponsiveTab([_buildCashAuditPanel()]),
+
+          // Tab 6: UX & Assets
           _buildResponsiveTab([_buildUXAssetsTab()]),
         ],
+      ),
+    );
+  }
+
+  Widget _buildCashAuditPanel() {
+    return _DevCard(
+      title: 'Cash Flow Audit',
+      subtitle: 'Monitor collections and settlements across all shops',
+      icon: Icons.payments,
+      iconColor: AppTheme.success,
+      child: StreamBuilder<List<CashTransactionModel>>(
+        stream: _orderService.getCashTransactions(),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData)
+            return const Center(child: CircularProgressIndicator());
+          final transactions = snapshot.data!;
+          if (transactions.isEmpty)
+            return const Center(child: Text('No cash transactions found'));
+
+          return ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: transactions.length,
+            itemBuilder: (context, index) {
+              final tx = transactions[index];
+              return ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: CircleAvatar(
+                  backgroundColor: tx.type == CashTransactionType.collection
+                      ? AppTheme.success.withValues(alpha: 0.1)
+                      : AppTheme.primaryBlue.withValues(alpha: 0.1),
+                  child: Icon(
+                    tx.type == CashTransactionType.collection
+                        ? Icons.add
+                        : Icons.handshake,
+                    color: tx.type == CashTransactionType.collection
+                        ? AppTheme.success
+                        : AppTheme.primaryBlue,
+                    size: 20,
+                  ),
+                ),
+                title: Text(
+                  '${tx.type == CashTransactionType.collection ? "Collected" : "Settled"}: ${tx.formattedAmount}',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                subtitle: Text(
+                  'By ${tx.userName} • ${DateFormat('MMM dd, HH:mm').format(tx.timestamp)}',
+                ),
+                trailing: Text(
+                  'Order #${tx.orderId.substring(tx.orderId.length - 4)}',
+                  style: const TextStyle(
+                    fontSize: 10,
+                    color: AppTheme.textSecondary,
+                  ),
+                ),
+              );
+            },
+          );
+        },
       ),
     );
   }
@@ -4375,6 +4439,10 @@ Color _getStatusColor(OrderStatus status) {
       return AppTheme.ownerColor;
     case OrderStatus.completed:
       return AppTheme.success;
+    case OrderStatus.cancelled:
+      return AppTheme.error;
+    case OrderStatus.returned:
+      return Colors.deepPurple;
   }
 }
 

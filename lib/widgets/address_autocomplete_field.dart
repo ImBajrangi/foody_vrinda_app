@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../config/theme.dart';
 import '../services/location_service.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 /// A text field with address autocomplete powered by Google Places API
 class AddressAutocompleteField extends StatefulWidget {

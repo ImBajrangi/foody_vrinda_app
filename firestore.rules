@@ -111,5 +111,17 @@ service cloud.firestore {
                                  request.auth.uid == resource.data.userId ||
                                  isStaff();
     }
+
+    // 6. Cash Transactions (Audit Log)
+    match /cash_transactions/{transactionId} {
+        // Staff can read transactions for their shop. Developers can read all.
+        allow read: if isDeveloper() || (isStaff() && resource.data.shopId == getUserData().shopId);
+        
+        // Staff can create audit entries
+        allow create: if isStaff();
+        
+        // Audit entries should be immutable - no update/delete
+        allow update, delete: if isDeveloper();
+    }
   }
 }

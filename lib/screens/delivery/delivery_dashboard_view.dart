@@ -739,15 +739,15 @@ class _DeliveryDashboardViewState extends State<DeliveryDashboardView> {
                         Column(
                           children: [
                             Text(
-                              '₹${_calculateTotalAmount(filteredOrders).toStringAsFixed(0)}',
+                              '₹${_calculateTotalCash(filteredOrders).toStringAsFixed(0)}',
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 20,
-                                color: AppTheme.success,
+                                color: AppTheme.warning,
                               ),
                             ),
                             const Text(
-                              'Total Value',
+                              'Cash to Hand',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: AppTheme.textSecondary,
@@ -841,8 +841,10 @@ class _DeliveryDashboardViewState extends State<DeliveryDashboardView> {
     }
   }
 
-  double _calculateTotalAmount(List<OrderModel> orders) {
-    return orders.fold(0.0, (sum, order) => sum + order.totalAmount);
+  double _calculateTotalCash(List<OrderModel> orders) {
+    return orders
+        .where((o) => o.paymentMethod == PaymentMethod.cash)
+        .fold(0.0, (sum, order) => sum + order.totalAmount);
   }
 }
 
@@ -975,6 +977,33 @@ class _RecentDeliveryTile extends StatelessWidget {
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color:
+                        (order.paymentMethod == PaymentMethod.cash
+                                ? AppTheme.warning
+                                : AppTheme.primaryBlue)
+                            .withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    order.paymentMethod == PaymentMethod.cash
+                        ? 'CASH'
+                        : 'ONLINE',
+                    style: TextStyle(
+                      fontSize: 8,
+                      fontWeight: FontWeight.bold,
+                      color: order.paymentMethod == PaymentMethod.cash
+                          ? AppTheme.warning
+                          : AppTheme.primaryBlue,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -1309,13 +1338,21 @@ class _DeliveryMapViewState extends State<_DeliveryMapView> {
         );
       }
 
+      final hasLocation =
+          order.customerLatitude != null && order.customerLongitude != null;
+
+      // Use actual coordinates if available, otherwise fall back to offset
+      final position = hasLocation
+          ? LatLng(order.customerLatitude!, order.customerLongitude!)
+          : LatLng(
+              _defaultLocation.latitude + (i * 0.01) - 0.02,
+              _defaultLocation.longitude + (i * 0.008) - 0.01,
+            );
+
       newMarkers.add(
         Marker(
           markerId: MarkerId(order.id),
-          position: LatLng(
-            _defaultLocation.latitude + (i * 0.01) - 0.02,
-            _defaultLocation.longitude + (i * 0.008) - 0.01,
-          ),
+          position: position,
           icon: icon,
           infoWindow: InfoWindow(
             title: order.customerName,
@@ -1453,7 +1490,11 @@ class _DeliveryMapViewState extends State<_DeliveryMapView> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: () => _openNavigation(order.deliveryAddress),
+                onPressed: () => _openNavigation(
+                  order.deliveryAddress,
+                  lat: order.customerLatitude,
+                  lng: order.customerLongitude,
+                ),
                 icon: const Icon(Icons.navigation),
                 label: const Text('Start Navigation'),
                 style: ElevatedButton.styleFrom(
@@ -1472,10 +1513,21 @@ class _DeliveryMapViewState extends State<_DeliveryMapView> {
     );
   }
 
-  Future<void> _openNavigation(String address) async {
-    final uri = Uri.parse(
-      'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(address)}',
-    );
+  Future<void> _openNavigation(
+    String address, {
+    double? lat,
+    double? lng,
+  }) async {
+    Uri uri;
+    if (lat != null && lng != null) {
+      uri = Uri.parse(
+        'https://www.google.com/maps/search/?api=1&query=$lat,$lng',
+      );
+    } else {
+      uri = Uri.parse(
+        'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(address)}',
+      );
+    }
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }

@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/order_model.dart';
 import '../models/cart_item_model.dart';
+import '../models/cash_transaction_model.dart';
 
 class OrderService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -15,6 +16,9 @@ class OrderService {
     required List<CartItemModel> cartItems,
     String? paymentId,
     bool isTestOrder = false,
+    PaymentMethod paymentMethod = PaymentMethod.cash,
+    double? customerLatitude,
+    double? customerLongitude,
   }) async {
     try {
       print('OrderService: Creating order for shop $shopId');
@@ -54,6 +58,12 @@ class OrderService {
         'status': 'new',
         'paymentId': paymentId,
         'isTestOrder': isTestOrder,
+        'customerLatitude': customerLatitude,
+        'customerLongitude': customerLongitude,
+        'paymentMethod': paymentMethod.value,
+        'cashStatus': paymentMethod == PaymentMethod.online
+            ? CashStatus.none.value
+            : CashStatus.pending.value,
         'orderNumber': orderNumber,
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
@@ -318,8 +328,15 @@ class OrderService {
     int preparing = 0;
     int ready = 0;
     int completed = 0;
+    int unreachable = 0;
 
     for (final order in allOrders) {
+      if (order.isUnreachable &&
+          order.status != OrderStatus.completed &&
+          order.status != OrderStatus.cancelled &&
+          order.status != OrderStatus.returned) {
+        unreachable++;
+      }
       switch (order.status) {
         case OrderStatus.newOrder:
           pending++;
@@ -335,6 +352,9 @@ class OrderService {
           break;
         case OrderStatus.completed:
           completed++;
+          break;
+        case OrderStatus.cancelled:
+        case OrderStatus.returned:
           break;
       }
     }
@@ -385,6 +405,7 @@ class OrderService {
       'preparing': preparing,
       'ready': ready,
       'delivered': completed,
+      'unreachable': unreachable,
       'weeklySales': weeklySales,
     };
   }
@@ -436,7 +457,10 @@ class OrderService {
         if (orderDate.isAfter(startOfToday) ||
             orderDate.isAtSameMomentAs(startOfToday)) {
           todayDeliveries++;
-          todayCollections += order.totalAmount;
+          // Only add to collections if it's a cash payment
+          if (order.paymentMethod == PaymentMethod.cash) {
+            todayCollections += order.totalAmount;
+          }
         }
 
         // Weekly stats
@@ -455,9 +479,13 @@ class OrderService {
         .where((o) => o.status == OrderStatus.completed)
         .length;
 
-    // Total collections (all time)
+    // Total collections (all time) - only cash payments
     final totalCollections = allOrders
-        .where((o) => o.status == OrderStatus.completed)
+        .where(
+          (o) =>
+              o.status == OrderStatus.completed &&
+              o.paymentMethod == PaymentMethod.cash,
+        )
         .fold<double>(0, (sum, o) => sum + o.totalAmount);
 
     return {
@@ -468,5 +496,176 @@ class OrderService {
       'totalDeliveries': totalDeliveries,
       'totalCollections': totalCollections,
     };
+  }
+
+  // Collect cash (used by delivery staff)
+  Future<void> collectCash(
+    String orderId,
+    String userId,
+    String userName,
+  ) async {
+    try {
+      final doc = await _firestore.collection('orders').doc(orderId).get();
+      if (!doc.exists) return;
+      final order = OrderModel.fromFirestore(doc);
+
+      final batch = _firestore.batch();
+
+      // Update order
+      batch.update(_firestore.collection('orders').doc(orderId), {
+        'status': OrderStatus.completed.value,
+        'cashStatus': CashStatus.collected.value,
+        'collectedBy': userId,
+        'cashCollectedAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      // Create audit transaction
+      final transactionRef = _firestore.collection('cash_transactions').doc();
+      final transaction = CashTransactionModel(
+        id: transactionRef.id,
+        orderId: orderId,
+        shopId: order.shopId,
+        amount: order.totalAmount,
+        type: CashTransactionType.collection,
+        userId: userId,
+        userName: userName,
+        timestamp: DateTime.now(),
+        notes: 'Cash collected by delivery partner',
+      );
+      batch.set(transactionRef, transaction.toFirestore());
+
+      await batch.commit();
+      print('OrderService: Cash collected for $orderId');
+    } catch (e) {
+      print('OrderService: Error collecting cash: $e');
+      rethrow;
+    }
+  }
+
+  // Settle cash (used by shop owner)
+  Future<void> settleCash(
+    String orderId,
+    String userId,
+    String userName,
+  ) async {
+    try {
+      final doc = await _firestore.collection('orders').doc(orderId).get();
+      if (!doc.exists) return;
+      final order = OrderModel.fromFirestore(doc);
+
+      final batch = _firestore.batch();
+
+      // Update order
+      batch.update(_firestore.collection('orders').doc(orderId), {
+        'cashStatus': CashStatus.settled.value,
+        'settledBy': userId,
+        'cashSettledAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      // Create audit transaction
+      final transactionRef = _firestore.collection('cash_transactions').doc();
+      final transaction = CashTransactionModel(
+        id: transactionRef.id,
+        orderId: orderId,
+        shopId: order.shopId,
+        amount: order.totalAmount,
+        type: CashTransactionType.settlement,
+        userId: userId,
+        userName: userName,
+        timestamp: DateTime.now(),
+        notes: 'Cash settled with owner',
+      );
+      batch.set(transactionRef, transaction.toFirestore());
+
+      await batch.commit();
+      print('OrderService: Cash settled for $orderId');
+    } catch (e) {
+      print('OrderService: Error settling cash: $e');
+      rethrow;
+    }
+  }
+
+  // Get cash transactions for audit
+  Stream<List<CashTransactionModel>> getCashTransactions({
+    String? shopId,
+    int limit = 100,
+  }) {
+    Query<Map<String, dynamic>> query = _firestore.collection(
+      'cash_transactions',
+    );
+    if (shopId != null) {
+      query = query.where('shopId', isEqualTo: shopId);
+    }
+    return query
+        .orderBy('timestamp', descending: true)
+        .limit(limit)
+        .snapshots()
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => CashTransactionModel.fromFirestore(doc))
+              .toList(),
+        );
+  }
+
+  // Get unsettled cash orders (for shop owner)
+  Stream<List<OrderModel>> getUnsettledCashOrders(String shopId) {
+    return _firestore
+        .collection('orders')
+        .where('shopId', isEqualTo: shopId)
+        .where('paymentMethod', isEqualTo: PaymentMethod.cash.value)
+        .where('cashStatus', isEqualTo: CashStatus.collected.value)
+        .snapshots()
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => OrderModel.fromFirestore(doc))
+              .toList(),
+        );
+  }
+
+  // Get returned orders for shop owner to acknowledge
+  Stream<List<OrderModel>> getReturnedOrders(String shopId) {
+    return _firestore
+        .collection('orders')
+        .where('shopId', isEqualTo: shopId)
+        .where('status', isEqualTo: OrderStatus.returned.value)
+        .snapshots()
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => OrderModel.fromFirestore(doc))
+              .toList(),
+        );
+  }
+
+  // Mark order as returned to shop
+  Future<void> markOrderAsReturned(String orderId, String reason) async {
+    try {
+      await _firestore.collection('orders').doc(orderId).update({
+        'status': OrderStatus.returned.value,
+        'returnedAt': FieldValue.serverTimestamp(),
+        'returnReason': reason,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+      print('OrderService: Order $orderId marked as returned');
+    } catch (e) {
+      print('OrderService: Error marking order as returned: $e');
+      rethrow;
+    }
+  }
+
+  // Log a contact attempt (call) to the customer
+  Future<void> logContactAttempt(String orderId) async {
+    try {
+      await _firestore.collection('orders').doc(orderId).update({
+        'contactAttempts': FieldValue.arrayUnion([Timestamp.now()]),
+        'isUnreachable':
+            true, // Mark as unreachable if at least one attempt is made
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      print('OrderService: Error logging contact attempt: $e');
+      rethrow;
+    }
   }
 }

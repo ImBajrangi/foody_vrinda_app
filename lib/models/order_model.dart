@@ -8,6 +8,17 @@ enum OrderStatus {
   readyForPickup,
   outForDelivery,
   completed,
+  cancelled,
+  returned,
+}
+
+enum PaymentMethod { cash, online }
+
+enum CashStatus {
+  none, // For online payments
+  pending, // COD order not yet delivered
+  collected, // Delivered and cash collected by delivery staff
+  settled, // Cash handed over to owner/shop
 }
 
 extension OrderStatusExtension on OrderStatus {
@@ -23,6 +34,10 @@ extension OrderStatusExtension on OrderStatus {
         return 'out_for_delivery';
       case OrderStatus.completed:
         return 'completed';
+      case OrderStatus.cancelled:
+        return 'cancelled';
+      case OrderStatus.returned:
+        return 'returned';
     }
   }
 
@@ -38,6 +53,10 @@ extension OrderStatusExtension on OrderStatus {
         return 'Out for Delivery';
       case OrderStatus.completed:
         return 'Completed';
+      case OrderStatus.cancelled:
+        return 'Cancelled';
+      case OrderStatus.returned:
+        return 'Returned to Shop';
     }
   }
 
@@ -51,10 +70,28 @@ extension OrderStatusExtension on OrderStatus {
         return OrderStatus.outForDelivery;
       case 'completed':
         return OrderStatus.completed;
+      case 'cancelled':
+        return OrderStatus.cancelled;
+      case 'returned':
+        return OrderStatus.returned;
       default:
         return OrderStatus.newOrder;
     }
   }
+}
+
+extension PaymentMethodExtension on PaymentMethod {
+  String get value => name;
+  static PaymentMethod fromString(String? val) =>
+      val == 'online' ? PaymentMethod.online : PaymentMethod.cash;
+}
+
+extension CashStatusExtension on CashStatus {
+  String get value => name;
+  static CashStatus fromString(String? val) => CashStatus.values.firstWhere(
+    (e) => e.name == val,
+    orElse: () => CashStatus.none,
+  );
 }
 
 class OrderItem {
@@ -105,6 +142,18 @@ class OrderModel {
   final OrderStatus status;
   final String? paymentId;
   final bool isTestOrder;
+  final PaymentMethod paymentMethod;
+  final CashStatus cashStatus;
+  final String? collectedBy;
+  final String? settledBy;
+  final DateTime? cashCollectedAt;
+  final DateTime? cashSettledAt;
+  final DateTime? returnedAt;
+  final String? returnReason;
+  final List<DateTime> contactAttempts;
+  final bool isUnreachable;
+  final double? customerLatitude;
+  final double? customerLongitude;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -120,6 +169,18 @@ class OrderModel {
     this.status = OrderStatus.newOrder,
     this.paymentId,
     this.isTestOrder = false,
+    this.paymentMethod = PaymentMethod.cash,
+    this.cashStatus = CashStatus.pending,
+    this.collectedBy,
+    this.settledBy,
+    this.cashCollectedAt,
+    this.cashSettledAt,
+    this.returnedAt,
+    this.returnReason,
+    this.contactAttempts = const [],
+    this.isUnreachable = false,
+    this.customerLatitude,
+    this.customerLongitude,
     this.createdAt,
     this.updatedAt,
   });
@@ -157,6 +218,28 @@ class OrderModel {
       status: OrderStatusExtension.fromString(data['status']),
       paymentId: data['paymentId'],
       isTestOrder: data['isTestOrder'] ?? false,
+      paymentMethod: PaymentMethodExtension.fromString(data['paymentMethod']),
+      cashStatus: CashStatusExtension.fromString(data['cashStatus']),
+      collectedBy: data['collectedBy'],
+      settledBy: data['settledBy'],
+      cashCollectedAt: data['cashCollectedAt'] != null
+          ? (data['cashCollectedAt'] as Timestamp).toDate()
+          : null,
+      cashSettledAt: data['cashSettledAt'] != null
+          ? (data['cashSettledAt'] as Timestamp).toDate()
+          : null,
+      returnedAt: data['returnedAt'] != null
+          ? (data['returnedAt'] as Timestamp).toDate()
+          : null,
+      returnReason: data['returnReason'],
+      contactAttempts:
+          (data['contactAttempts'] as List<dynamic>?)
+              ?.map((t) => (t as Timestamp).toDate())
+              .toList() ??
+          [],
+      isUnreachable: data['isUnreachable'] ?? false,
+      customerLatitude: (data['customerLatitude'] as num?)?.toDouble(),
+      customerLongitude: (data['customerLongitude'] as num?)?.toDouble(),
       createdAt: data['createdAt'] != null
           ? (data['createdAt'] as Timestamp).toDate()
           : null,
@@ -178,6 +261,24 @@ class OrderModel {
       'status': status.value,
       'paymentId': paymentId,
       'isTestOrder': isTestOrder,
+      'paymentMethod': paymentMethod.value,
+      'cashStatus': cashStatus.value,
+      'collectedBy': collectedBy,
+      'settledBy': settledBy,
+      'cashCollectedAt': cashCollectedAt != null
+          ? Timestamp.fromDate(cashCollectedAt!)
+          : null,
+      'cashSettledAt': cashSettledAt != null
+          ? Timestamp.fromDate(cashSettledAt!)
+          : null,
+      'returnedAt': returnedAt != null ? Timestamp.fromDate(returnedAt!) : null,
+      'returnReason': returnReason,
+      'contactAttempts': contactAttempts
+          .map((t) => Timestamp.fromDate(t))
+          .toList(),
+      'isUnreachable': isUnreachable,
+      'customerLatitude': customerLatitude,
+      'customerLongitude': customerLongitude,
       'createdAt': createdAt != null
           ? Timestamp.fromDate(createdAt!)
           : FieldValue.serverTimestamp(),
@@ -197,6 +298,18 @@ class OrderModel {
     OrderStatus? status,
     String? paymentId,
     bool? isTestOrder,
+    PaymentMethod? paymentMethod,
+    CashStatus? cashStatus,
+    String? collectedBy,
+    String? settledBy,
+    DateTime? cashCollectedAt,
+    DateTime? cashSettledAt,
+    DateTime? returnedAt,
+    String? returnReason,
+    List<DateTime>? contactAttempts,
+    bool? isUnreachable,
+    double? customerLatitude,
+    double? customerLongitude,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -212,6 +325,18 @@ class OrderModel {
       status: status ?? this.status,
       paymentId: paymentId ?? this.paymentId,
       isTestOrder: isTestOrder ?? this.isTestOrder,
+      paymentMethod: paymentMethod ?? this.paymentMethod,
+      cashStatus: cashStatus ?? this.cashStatus,
+      collectedBy: collectedBy ?? this.collectedBy,
+      settledBy: settledBy ?? this.settledBy,
+      cashCollectedAt: cashCollectedAt ?? this.cashCollectedAt,
+      cashSettledAt: cashSettledAt ?? this.cashSettledAt,
+      returnedAt: returnedAt ?? this.returnedAt,
+      returnReason: returnReason ?? this.returnReason,
+      contactAttempts: contactAttempts ?? this.contactAttempts,
+      isUnreachable: isUnreachable ?? this.isUnreachable,
+      customerLatitude: customerLatitude ?? this.customerLatitude,
+      customerLongitude: customerLongitude ?? this.customerLongitude,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -263,5 +388,43 @@ class OrderModel {
     if (totalAmount >= 500) return const Color(0xFFE53935); // Important Red
     if (totalAmount >= 200) return const Color(0xFFFB8C00); // Orange
     return const Color(0xFF43A047); // Green
+  }
+
+  String get statusMessage {
+    switch (status) {
+      case OrderStatus.newOrder:
+        return 'Order Received';
+      case OrderStatus.preparing:
+        return 'Chef is Cooking';
+      case OrderStatus.readyForPickup:
+        return 'Ready for Pickup';
+      case OrderStatus.outForDelivery:
+        return 'Out for Delivery';
+      case OrderStatus.completed:
+        return 'Order Delivered';
+      case OrderStatus.cancelled:
+        return 'Order Cancelled';
+      case OrderStatus.returned:
+        return 'Returned to Shop';
+    }
+  }
+
+  String get statusDetails {
+    switch (status) {
+      case OrderStatus.newOrder:
+        return 'The shop has received your order and will start preparing it soon.';
+      case OrderStatus.preparing:
+        return 'Your meal is being prepared with care in the kitchen.';
+      case OrderStatus.readyForPickup:
+        return 'Great news! Your order is ready. A delivery partner is being assigned.';
+      case OrderStatus.outForDelivery:
+        return 'Your order is on the way! Please be ready to receive it.';
+      case OrderStatus.completed:
+        return 'Enjoy your meal! Thank you for ordering with us.';
+      case OrderStatus.cancelled:
+        return 'This order was cancelled. Please contact the shop if you have questions.';
+      case OrderStatus.returned:
+        return 'The order could not be delivered and has been returned to the shop.';
+    }
   }
 }

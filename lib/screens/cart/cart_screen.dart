@@ -13,9 +13,11 @@ import '../../services/shop_service.dart';
 import '../../widgets/buttons.dart';
 import '../../widgets/inputs.dart';
 import '../../widgets/address_autocomplete_field.dart';
-import '../../services/location_service.dart';
+import '../../widgets/location_picker_dialog.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../order/order_tracking_screen.dart';
 import '../auth/login_screen.dart';
+import '../../models/order_model.dart';
 
 class CartScreen extends StatefulWidget {
   final ShopModel? shop;
@@ -45,6 +47,7 @@ class _CartScreenState extends State<CartScreen> {
   String? _pendingCustomerPhone;
   String? _pendingDeliveryAddress;
   LatLng? _deliveryLocation; // Store coordinates for distance calculation
+  PaymentMethod? _selectedPaymentMethod;
 
   @override
   void initState() {
@@ -373,6 +376,40 @@ class _CartScreenState extends State<CartScreen> {
                               });
                             },
                           ),
+                          const SizedBox(height: 8),
+                          // Pick on Map button
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton.icon(
+                              onPressed: () async {
+                                final LatLng? picked = await showDialog<LatLng>(
+                                  context: context,
+                                  builder: (context) => LocationPickerDialog(
+                                    initialLocation: _deliveryLocation,
+                                  ),
+                                );
+                                if (picked != null) {
+                                  setState(() {
+                                    _deliveryLocation = picked;
+                                    // If address is empty, we set a placeholder or hint
+                                    if (_addressController.text.isEmpty) {
+                                      _addressController.text =
+                                          'Pinned Location (${picked.latitude.toStringAsFixed(4)}, ${picked.longitude.toStringAsFixed(4)})';
+                                    }
+                                  });
+                                }
+                              },
+                              icon: const Icon(Icons.map_outlined),
+                              label: const Text('Pick on Map'),
+                              style: TextButton.styleFrom(
+                                foregroundColor: AppTheme.primaryBlue,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 8,
+                                ),
+                              ),
+                            ),
+                          ),
                           // Validation message for address
                           if (_addressController.text.isEmpty)
                             const Padding(
@@ -387,6 +424,40 @@ class _CartScreenState extends State<CartScreen> {
                             ),
                         ],
                       ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // Payment Method Selection
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppTheme.cardBackground,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Payment Method',
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        const SizedBox(height: 16),
+                        _buildPaymentOption(
+                          title: 'Cash on Delivery',
+                          subtitle: 'Pay when you receive your food',
+                          icon: Icons.payments_outlined,
+                          method: PaymentMethod.cash,
+                        ),
+                        const Divider(height: 24),
+                        _buildPaymentOption(
+                          title: 'Online Payment',
+                          subtitle: 'Pay securely via Razorpay',
+                          icon: Icons.account_balance_wallet_outlined,
+                          method: PaymentMethod.online,
+                        ),
+                      ],
                     ),
                   ),
 
@@ -410,7 +481,11 @@ class _CartScreenState extends State<CartScreen> {
               ),
               child: SafeArea(
                 child: AppButton(
-                  text: 'Pay & Place Order • ${cartProvider.formattedTotal}',
+                  text: _selectedPaymentMethod == null
+                      ? 'Select Payment Method • ${cartProvider.formattedTotal}'
+                      : (_selectedPaymentMethod == PaymentMethod.online
+                            ? 'Pay & Place Order • ${cartProvider.formattedTotal}'
+                            : 'Confirm Order • ${cartProvider.formattedTotal}'),
                   isFullWidth: true,
                   isLoading: _isLoading,
                   height: 52,
@@ -449,6 +524,16 @@ class _CartScreenState extends State<CartScreen> {
       return;
     }
 
+    if (_selectedPaymentMethod == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select a payment method'),
+          backgroundColor: AppTheme.warning,
+        ),
+      );
+      return;
+    }
+
     // Check if user is logged in (anonymous users cannot pay)
     if (!authProvider.isAuthenticated ||
         (authProvider.user?.isAnonymous ?? true)) {
@@ -460,6 +545,11 @@ class _CartScreenState extends State<CartScreen> {
     _pendingCustomerName = _nameController.text.trim();
     _pendingCustomerPhone = _phoneController.text.trim();
     _pendingDeliveryAddress = _addressController.text.trim();
+
+    if (_selectedPaymentMethod == PaymentMethod.cash) {
+      await _createOrder();
+      return;
+    }
 
     // Check if on web - Razorpay doesn't work on web
     if (kIsWeb) {
@@ -496,6 +586,84 @@ class _CartScreenState extends State<CartScreen> {
           backgroundColor: AppTheme.error,
         ),
       );
+    }
+  }
+
+  Future<void> _createOrder({String? paymentId}) async {
+    setState(() => _isLoading = true);
+
+    final cartProvider = Provider.of<CartProvider>(context, listen: false);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    try {
+      final orderId = await _orderService.createOrder(
+        shopId: _shop!.id,
+        userId: authProvider.user?.uid,
+        customerName: _pendingCustomerName!,
+        customerPhone: _pendingCustomerPhone!,
+        deliveryAddress: _pendingDeliveryAddress!,
+        cartItems: cartProvider.items,
+        paymentId: paymentId,
+        paymentMethod: _selectedPaymentMethod!,
+        customerLatitude: _deliveryLocation?.latitude,
+        customerLongitude: _deliveryLocation?.longitude,
+      );
+
+      debugPrint('CartScreen: Order created successfully - $orderId');
+
+      // Update user's phone number in Firestore if not already set
+      if (authProvider.isAuthenticated &&
+          (authProvider.userData?.phoneNumber == null ||
+              authProvider.userData!.phoneNumber!.isEmpty)) {
+        FirebaseFirestore.instance
+            .collection('users')
+            .doc(authProvider.user!.uid)
+            .update({'phoneNumber': _pendingCustomerPhone});
+      }
+
+      cartProvider.clear();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.white),
+                const SizedBox(width: 8),
+                Text(
+                  _selectedPaymentMethod == PaymentMethod.online
+                      ? 'Payment successful! Order placed.'
+                      : 'Order placed successfully!',
+                ),
+              ],
+            ),
+            backgroundColor: AppTheme.success,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => OrderTrackingScreen(orderId: orderId),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('CartScreen: Error creating order - $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Order creation failed. Please contact support. Error: $e',
+            ),
+            backgroundColor: AppTheme.error,
+            duration: const Duration(seconds: 6),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -572,74 +740,7 @@ class _CartScreenState extends State<CartScreen> {
   /// Called on successful Razorpay payment
   void _handlePaymentSuccess(PaymentSuccessResponse response) async {
     debugPrint('CartScreen: Payment successful - ${response.paymentId}');
-    setState(() => _isLoading = true);
-
-    final cartProvider = Provider.of<CartProvider>(context, listen: false);
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-
-    try {
-      final orderId = await _orderService.createOrder(
-        shopId: _shop!.id,
-        userId: authProvider.user?.uid,
-        customerName: _pendingCustomerName!,
-        customerPhone: _pendingCustomerPhone!,
-        deliveryAddress: _pendingDeliveryAddress!,
-        cartItems: cartProvider.items,
-        paymentId: response.paymentId,
-      );
-
-      debugPrint('CartScreen: Order created successfully - $orderId');
-
-      // Update user's phone number in Firestore if not already set
-      if (authProvider.isAuthenticated &&
-          (authProvider.userData?.phoneNumber == null ||
-              authProvider.userData!.phoneNumber!.isEmpty)) {
-        FirebaseFirestore.instance
-            .collection('users')
-            .doc(authProvider.user!.uid)
-            .update({'phoneNumber': _pendingCustomerPhone});
-      }
-
-      cartProvider.clear();
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Row(
-              children: [
-                Icon(Icons.check_circle, color: Colors.white),
-                SizedBox(width: 8),
-                Text('Payment successful! Order placed.'),
-              ],
-            ),
-            backgroundColor: AppTheme.success,
-            duration: Duration(seconds: 2),
-          ),
-        );
-
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => OrderTrackingScreen(orderId: orderId),
-          ),
-        );
-      }
-    } catch (e) {
-      debugPrint('CartScreen: Error creating order after payment - $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Payment received but order creation failed. Please contact support. Error: $e',
-            ),
-            backgroundColor: AppTheme.error,
-            duration: const Duration(seconds: 6),
-          ),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
+    _createOrder(paymentId: response.paymentId);
   }
 
   /// Called on Razorpay payment error
@@ -670,5 +771,76 @@ class _CartScreenState extends State<CartScreen> {
   void _handleExternalWallet(ExternalWalletResponse response) {
     debugPrint('CartScreen: External wallet selected - ${response.walletName}');
     // This is informational; actual payment flow will continue through Razorpay
+  }
+
+  Widget _buildPaymentOption({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required PaymentMethod method,
+  }) {
+    final isSelected = _selectedPaymentMethod == method;
+    return InkWell(
+      onTap: () => setState(() => _selectedPaymentMethod = method),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color:
+                    (isSelected ? AppTheme.primaryBlue : AppTheme.textTertiary)
+                        .withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                icon,
+                color: isSelected
+                    ? AppTheme.primaryBlue
+                    : AppTheme.textTertiary,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontWeight: isSelected
+                          ? FontWeight.bold
+                          : FontWeight.w500,
+                      fontSize: 16,
+                      color: isSelected
+                          ? AppTheme.primaryBlue
+                          : AppTheme.textPrimary,
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppTheme.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Radio<PaymentMethod>(
+              value: method,
+              groupValue: _selectedPaymentMethod,
+              onChanged: (val) {
+                if (val != null) setState(() => _selectedPaymentMethod = val);
+              },
+              activeColor: AppTheme.primaryBlue,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

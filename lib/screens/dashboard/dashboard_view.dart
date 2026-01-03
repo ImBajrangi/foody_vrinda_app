@@ -78,6 +78,12 @@ class _DashboardViewState extends State<DashboardView> {
             _buildKPICards(),
             const SizedBox(height: 24),
 
+            // Returned Orders (Critical Losses)
+            if (activeShopId != null) ...[
+              _buildReturnedOrders(activeShopId),
+              const SizedBox(height: 24),
+            ],
+
             // Charts Row
             _buildChartsRow(),
             const SizedBox(height: 24),
@@ -85,6 +91,12 @@ class _DashboardViewState extends State<DashboardView> {
             // Order History
             _buildOrderHistory(activeShopId),
             const SizedBox(height: 24),
+
+            // Cash Management (Owner Settlement)
+            if (activeShopId != null) ...[
+              _buildCashManagement(activeShopId),
+              const SizedBox(height: 24),
+            ],
 
             // Staff Management
             _buildStaffManagement(activeShopId),
@@ -149,6 +161,155 @@ class _DashboardViewState extends State<DashboardView> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildReturnedOrders(String shopId) {
+    return StreamBuilder<List<OrderModel>>(
+      stream: _orderService.getReturnedOrders(shopId),
+      builder: (context, snapshot) {
+        final orders = snapshot.data ?? [];
+        if (orders.isEmpty) return const SizedBox.shrink();
+
+        return Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: AppTheme.error.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: AppTheme.error.withValues(alpha: 0.2)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.assignment_return, color: AppTheme.error),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Returned Orders (Loss)',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      color: AppTheme.error,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppTheme.error,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '${orders.length}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'These orders were not delivered. Verify items are returned to stock.',
+                style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+              ),
+              const Divider(height: 24),
+              ...orders.map((order) => _buildReturnedOrderTile(order)),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildReturnedOrderTile(OrderModel order) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Order ${order.orderNumber}',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  'Reason: ${order.returnReason ?? "No reason provided"}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppTheme.error,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            order.formattedTotal,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: AppTheme.textPrimary,
+            ),
+          ),
+          const SizedBox(width: 12),
+          TextButton(
+            onPressed: () => _acknowledgeReturn(order),
+            style: TextButton.styleFrom(
+              foregroundColor: AppTheme.primaryBlue,
+              padding: EdgeInsets.zero,
+            ),
+            child: const Text('Acknowledge'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _acknowledgeReturn(OrderModel order) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Acknowledge Return'),
+        content: Text(
+          'Acknowledge that Order ${order.orderNumber} items have been received back at the shop? This will move it to history.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              try {
+                // We keep it as 'returned' but we could update some flag like 'acknowledgedByOwner'
+                // For now, let's just mark it as 'cancelled' or just leave it.
+                // The user said "this situation is very critical for loss of all".
+                // Let's mark it as 'cancelled' so it leaves the red-alert list and goes to history.
+                await _orderService.updateOrderStatus(
+                  order.id,
+                  OrderStatus.cancelled,
+                );
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Return acknowledged.')),
+                  );
+                }
+              } catch (e) {
+                // ...
+              }
+            },
+            child: const Text('Confirm'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -372,6 +533,189 @@ class _DashboardViewState extends State<DashboardView> {
                 ),
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCashManagement(String shopId) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppTheme.cardBackground,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Cash Management',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: AppTheme.warning.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.payments, size: 14, color: AppTheme.warning),
+                    SizedBox(width: 4),
+                    Text(
+                      'Collection Mode',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.warning,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Confirm and settle cash payments collected by your delivery team.',
+            style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+          ),
+          const Divider(height: 32),
+          StreamBuilder<List<OrderModel>>(
+            stream: _orderService.getUnsettledCashOrders(shopId),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              final orders = snapshot.data ?? [];
+              if (orders.isEmpty) {
+                return const Center(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: 24),
+                    child: Text(
+                      'No unsettled cash collections.',
+                      style: TextStyle(color: AppTheme.textSecondary),
+                    ),
+                  ),
+                );
+              }
+
+              return Column(
+                children: orders
+                    .map(
+                      (order) => Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Order ${order.orderNumber}',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Collected by ${order.collectedBy ?? "Staff"}',
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: AppTheme.textSecondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Text(
+                              order.formattedTotal,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.success,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            ElevatedButton(
+                              onPressed: () => _showSettlementConfirm(order),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppTheme.primaryBlue,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                ),
+                                minimumSize: const Size(80, 36),
+                              ),
+                              child: const Text(
+                                'Settle',
+                                style: TextStyle(fontSize: 12),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                    .toList(),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showSettlementConfirm(OrderModel order) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirm Settlement'),
+        content: Text(
+          'Confirm that you have received ${order.formattedTotal} in cash for Order ${order.orderNumber}?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              final authProvider = Provider.of<AuthProvider>(
+                context,
+                listen: false,
+              );
+              try {
+                await _orderService.settleCash(
+                  order.id,
+                  authProvider.user?.uid ?? 'unknown',
+                  authProvider.userData?.displayName ?? 'Owner',
+                );
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Cash settled successfully!'),
+                      backgroundColor: AppTheme.success,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error: $e'),
+                      backgroundColor: AppTheme.error,
+                    ),
+                  );
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.success),
+            child: const Text('Confirm Receipt'),
           ),
         ],
       ),
