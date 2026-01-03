@@ -541,11 +541,13 @@ class _DeveloperPanelState extends State<DeveloperPanel>
       child: StreamBuilder<List<CashTransactionModel>>(
         stream: _orderService.getCashTransactions(),
         builder: (context, snapshot) {
-          if (!snapshot.hasData)
+          if (!snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
+          }
           final transactions = snapshot.data!;
-          if (transactions.isEmpty)
+          if (transactions.isEmpty) {
             return const Center(child: Text('No cash transactions found'));
+          }
 
           return ListView.builder(
             shrinkWrap: true,
