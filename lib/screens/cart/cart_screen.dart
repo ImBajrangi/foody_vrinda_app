@@ -908,8 +908,9 @@ class _CartScreenState extends State<CartScreen> {
                 groupValue: _selectedPaymentMethod,
                 onChanged: isEnabled
                     ? (val) {
-                        if (val != null)
+                        if (val != null) {
                           setState(() => _selectedPaymentMethod = val);
+                        }
                       }
                     : null,
                 activeColor: AppTheme.primaryBlue,

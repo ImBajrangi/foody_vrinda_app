@@ -1422,7 +1422,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
                         value,
                       );
                     },
-                    activeColor: AppTheme.success,
+                    activeThumbColor: AppTheme.success,
                     materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
                 ),
@@ -1525,7 +1525,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
                     onChanged: (value) async {
                       await _updatePaymentSetting('codEnabled', value);
                     },
-                    activeColor: Colors.amber.shade700,
+                    activeThumbColor: Colors.amber.shade700,
                     materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
                 ),
