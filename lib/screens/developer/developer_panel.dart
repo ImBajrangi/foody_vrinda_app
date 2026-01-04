@@ -3433,10 +3433,10 @@ class _DeveloperPanelState extends State<DeveloperPanel>
 
   Future<void> _updateUserRole(String userId, String role) async {
     try {
-      final updateData = {'role': role};
+      final Map<String, dynamic> updateData = {'role': role};
       // If setting to customer or developer, clear shop assignment
       if (role == 'customer' || role == 'developer') {
-        updateData['shopId'] = FieldValue.delete() as dynamic;
+        updateData['shopId'] = FieldValue.delete();
       }
       await _firestore.collection('users').doc(userId).update(updateData);
       _loadAllUsers();
