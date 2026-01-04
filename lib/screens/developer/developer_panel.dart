@@ -1634,7 +1634,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             crossAxisCount: 3,
-            childAspectRatio: 1.8,
+            childAspectRatio: 1.4,
             mainAxisSpacing: 8,
             crossAxisSpacing: 8,
             children: [
@@ -3104,6 +3104,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
                             'kitchen',
                             'delivery',
                             'owner',
+                            'developer',
                           ].contains(user.role.value)
                           ? user.role.value
                           : 'customer';
@@ -5048,7 +5049,7 @@ class _ConsistencyTile extends StatelessWidget {
                   label,
                   style: const TextStyle(
                     fontWeight: FontWeight.w500,
-                    fontSize: 10,
+                    fontSize: 9.5,
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.visible,
@@ -5056,7 +5057,7 @@ class _ConsistencyTile extends StatelessWidget {
               ),
               const SizedBox(width: 4),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                 decoration: BoxDecoration(
                   color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(6),
@@ -5065,7 +5066,7 @@ class _ConsistencyTile extends StatelessWidget {
                   isOk ? '✓ OK' : status,
                   style: TextStyle(
                     color: color,
-                    fontSize: 9,
+                    fontSize: 8.5,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
