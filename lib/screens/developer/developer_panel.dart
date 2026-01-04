@@ -1634,7 +1634,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             crossAxisCount: 3,
-            childAspectRatio: 2.5,
+            childAspectRatio: 1.8,
             mainAxisSpacing: 8,
             crossAxisSpacing: 8,
             children: [
@@ -5030,7 +5030,7 @@ class _ConsistencyTile extends StatelessWidget {
     bool isOk = status == 'OK';
 
     return Container(
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
       decoration: BoxDecoration(
         color: AppTheme.background,
         borderRadius: BorderRadius.circular(8),
@@ -5041,17 +5041,20 @@ class _ConsistencyTile extends StatelessWidget {
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
                 child: Text(
                   label,
                   style: const TextStyle(
                     fontWeight: FontWeight.w500,
-                    fontSize: 11,
+                    fontSize: 10,
                   ),
-                  overflow: TextOverflow.ellipsis,
+                  maxLines: 2,
+                  overflow: TextOverflow.visible,
                 ),
               ),
+              const SizedBox(width: 4),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
