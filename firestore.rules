@@ -128,5 +128,14 @@ service cloud.firestore {
         // Audit entries should be immutable - no update/delete
         allow update, delete: if isDeveloper();
     }
+
+    // 7. Settings (Payment configuration, etc.)
+    match /settings/{settingId} {
+        // Anyone can read settings (needed for payment method availability check)
+        allow read: if true;
+        
+        // Only developers can update settings
+        allow create, update, delete: if isDeveloper();
+    }
   }
 }
