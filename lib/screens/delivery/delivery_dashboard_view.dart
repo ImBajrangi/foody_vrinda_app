@@ -1560,13 +1560,18 @@ class _DeliveryMapViewState extends State<_DeliveryMapView> {
       );
     }
 
+    // Only update if markers changed - use addPostFrameCallback to avoid setState during build
     if (_markers.length != newMarkers.length || _shopIcon != null) {
-      setState(() {
-        _markers = newMarkers;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            _markers = newMarkers;
+          });
+          if (_markers.isNotEmpty && _mapController != null) {
+            _fitMarkers();
+          }
+        }
       });
-      if (_markers.isNotEmpty && _mapController != null) {
-        _fitMarkers();
-      }
     }
   }
 

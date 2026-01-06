@@ -19,6 +19,10 @@ class OrderService {
     PaymentMethod paymentMethod = PaymentMethod.cash,
     double? customerLatitude,
     double? customerLongitude,
+    double subtotal = 0.0,
+    double deliveryCharge = 0.0,
+    double gstAmount = 0.0,
+    double? totalAmount,
   }) async {
     try {
       print('OrderService: Creating order for shop $shopId');
@@ -36,12 +40,18 @@ class OrderService {
           )
           .toList();
 
-      final totalAmount = cartItems.fold<double>(
-        0,
-        (sum, item) => sum + item.total,
-      );
+      // Calculate subtotal from items if not provided
+      final calculatedSubtotal = subtotal > 0
+          ? subtotal
+          : cartItems.fold<double>(0, (sum, item) => sum + item.total);
 
-      print('OrderService: Total amount: $totalAmount');
+      // Calculate total if not provided
+      final calculatedTotal =
+          totalAmount ?? (calculatedSubtotal + deliveryCharge + gstAmount);
+
+      print(
+        'OrderService: Subtotal: $calculatedSubtotal, Delivery: $deliveryCharge, GST: $gstAmount, Total: $calculatedTotal',
+      );
 
       // Generate order number based on timestamp
       final now = DateTime.now();
@@ -54,7 +64,10 @@ class OrderService {
         'customerPhone': customerPhone,
         'deliveryAddress': deliveryAddress,
         'items': items.map((item) => item.toMap()).toList(),
-        'totalAmount': totalAmount,
+        'subtotal': calculatedSubtotal,
+        'deliveryCharge': deliveryCharge,
+        'gstAmount': gstAmount,
+        'totalAmount': calculatedTotal,
         'status': 'new',
         'paymentId': paymentId,
         'isTestOrder': isTestOrder,

@@ -138,7 +138,10 @@ class OrderModel {
   final String customerPhone;
   final String deliveryAddress;
   final List<OrderItem> items;
-  final double totalAmount;
+  final double subtotal; // Sum of item prices
+  final double deliveryCharge; // Delivery fee
+  final double gstAmount; // GST amount
+  final double totalAmount; // subtotal + deliveryCharge + gstAmount
   final OrderStatus status;
   final String? paymentId;
   final bool isTestOrder;
@@ -165,6 +168,9 @@ class OrderModel {
     required this.customerPhone,
     required this.deliveryAddress,
     required this.items,
+    this.subtotal = 0.0,
+    this.deliveryCharge = 0.0,
+    this.gstAmount = 0.0,
     required this.totalAmount,
     this.status = OrderStatus.newOrder,
     this.paymentId,
@@ -214,6 +220,9 @@ class OrderModel {
       customerPhone: data['customerPhone'] ?? '',
       deliveryAddress: data['deliveryAddress'] ?? '',
       items: items,
+      subtotal: (data['subtotal'] ?? 0.0).toDouble(),
+      deliveryCharge: (data['deliveryCharge'] ?? 0.0).toDouble(),
+      gstAmount: (data['gstAmount'] ?? 0.0).toDouble(),
       totalAmount: (data['totalAmount'] ?? 0).toDouble(),
       status: OrderStatusExtension.fromString(data['status']),
       paymentId: data['paymentId'],
@@ -257,6 +266,9 @@ class OrderModel {
       'customerPhone': customerPhone,
       'deliveryAddress': deliveryAddress,
       'items': items.map((item) => item.toMap()).toList(),
+      'subtotal': subtotal,
+      'deliveryCharge': deliveryCharge,
+      'gstAmount': gstAmount,
       'totalAmount': totalAmount,
       'status': status.value,
       'paymentId': paymentId,
@@ -294,6 +306,9 @@ class OrderModel {
     String? customerPhone,
     String? deliveryAddress,
     List<OrderItem>? items,
+    double? subtotal,
+    double? deliveryCharge,
+    double? gstAmount,
     double? totalAmount,
     OrderStatus? status,
     String? paymentId,
@@ -321,6 +336,9 @@ class OrderModel {
       customerPhone: customerPhone ?? this.customerPhone,
       deliveryAddress: deliveryAddress ?? this.deliveryAddress,
       items: items ?? this.items,
+      subtotal: subtotal ?? this.subtotal,
+      deliveryCharge: deliveryCharge ?? this.deliveryCharge,
+      gstAmount: gstAmount ?? this.gstAmount,
       totalAmount: totalAmount ?? this.totalAmount,
       status: status ?? this.status,
       paymentId: paymentId ?? this.paymentId,

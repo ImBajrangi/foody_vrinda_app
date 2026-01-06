@@ -290,6 +290,9 @@ class ShopModel {
   final bool showOrderQueue;
   final int estimatedWaitTime;
   final bool showWaitTime;
+  final double minimumOrderAmount; // Minimum order value required
+  final double deliveryCharge; // Delivery fee
+  final double gstPercentage; // GST percentage
 
   ShopModel({
     required this.id,
@@ -308,6 +311,9 @@ class ShopModel {
     this.showOrderQueue = false,
     this.estimatedWaitTime = 15,
     this.showWaitTime = false,
+    this.minimumOrderAmount = 0.0,
+    this.deliveryCharge = 0.0,
+    this.gstPercentage = 5.0,
   }) : schedule = schedule ?? ShopSchedule(),
        alarmSettings = alarmSettings ?? AlarmSettings();
 
@@ -363,6 +369,9 @@ class ShopModel {
       showOrderQueue: data['showOrderQueue'] ?? false,
       estimatedWaitTime: data['estimatedWaitTime'] ?? 15,
       showWaitTime: data['showWaitTime'] ?? false,
+      minimumOrderAmount: (data['minimumOrderAmount'] ?? 0.0).toDouble(),
+      deliveryCharge: (data['deliveryCharge'] ?? 0.0).toDouble(),
+      gstPercentage: (data['gstPercentage'] ?? 5.0).toDouble(),
     );
   }
 
@@ -385,6 +394,9 @@ class ShopModel {
       'showOrderQueue': showOrderQueue,
       'estimatedWaitTime': estimatedWaitTime,
       'showWaitTime': showWaitTime,
+      'minimumOrderAmount': minimumOrderAmount,
+      'deliveryCharge': deliveryCharge,
+      'gstPercentage': gstPercentage,
     };
   }
 
@@ -405,6 +417,9 @@ class ShopModel {
     bool? showOrderQueue,
     int? estimatedWaitTime,
     bool? showWaitTime,
+    double? minimumOrderAmount,
+    double? deliveryCharge,
+    double? gstPercentage,
   }) {
     return ShopModel(
       id: id ?? this.id,
@@ -423,6 +438,9 @@ class ShopModel {
       showOrderQueue: showOrderQueue ?? this.showOrderQueue,
       estimatedWaitTime: estimatedWaitTime ?? this.estimatedWaitTime,
       showWaitTime: showWaitTime ?? this.showWaitTime,
+      minimumOrderAmount: minimumOrderAmount ?? this.minimumOrderAmount,
+      deliveryCharge: deliveryCharge ?? this.deliveryCharge,
+      gstPercentage: gstPercentage ?? this.gstPercentage,
     );
   }
 

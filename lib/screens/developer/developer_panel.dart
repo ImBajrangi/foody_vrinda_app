@@ -72,6 +72,12 @@ class _DeveloperPanelState extends State<DeveloperPanel>
   String _orderFilter = 'all';
   String _searchQuery = '';
 
+  // Search queries for each section
+  final String _shopSearch = '';
+  final String _menuSearch = '';
+  String _userSearch = '';
+  final String _staffSearch = '';
+
   // Menu management
   String? _selectedMenuShopId;
 
@@ -586,6 +592,8 @@ class _DeveloperPanelState extends State<DeveloperPanel>
               if (_hasPerm(user, 'shops')) _buildShopManagement(),
               if (_hasPerm(user, 'shops')) const SizedBox(height: 16),
               if (_hasPerm(user, 'shops')) _buildShopScheduleManagement(),
+              if (_hasPerm(user, 'shops')) const SizedBox(height: 16),
+              if (_hasPerm(user, 'shops')) _buildShopPricingManagement(),
               if (_hasPerm(user, 'menu')) const SizedBox(height: 16),
               if (_hasPerm(user, 'menu')) _buildMenuManagement(),
             ]),
@@ -1713,166 +1721,193 @@ class _DeveloperPanelState extends State<DeveloperPanel>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Create shop form
-          const Text(
-            'Create New Shop',
-            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: nameController,
-            decoration: _inputDecoration(
-              'Shop Name (e.g., Vrinda Foods - Downtown)',
+          // Create shop form - collapsible
+          Container(
+            decoration: BoxDecoration(
+              color: AppTheme.background,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppTheme.borderLight),
             ),
-          ),
-          const SizedBox(height: 8),
-          TextField(
-            controller: addressController,
-            decoration: _inputDecoration('Shop Address'),
-          ),
-          const SizedBox(height: 8),
-          TextField(
-            controller: phoneController,
-            decoration: _inputDecoration('Shop Phone Number'),
-            keyboardType: TextInputType.phone,
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    TextField(
-                      controller: latController,
-                      decoration: _inputDecoration('Latitude (e.g. 28.61)'),
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: lngController,
-                      decoration: _inputDecoration('Longitude (e.g. 77.21)'),
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                    ),
-                  ],
+            child: Theme(
+              data: Theme.of(
+                context,
+              ).copyWith(dividerColor: Colors.transparent),
+              child: ExpansionTile(
+                tilePadding: const EdgeInsets.symmetric(horizontal: 16),
+                childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                leading: const Icon(
+                  Icons.add_business,
+                  size: 20,
+                  color: AppTheme.success,
                 ),
-              ),
-              const SizedBox(width: 12),
-              Column(
+                title: const Text(
+                  'Create New Shop',
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                ),
                 children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      color: AppTheme.primaryBlue.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: IconButton(
-                      icon: const Icon(
-                        Icons.map,
-                        color: AppTheme.primaryBlue,
-                        size: 28,
-                      ),
-                      onPressed: () async {
-                        final LatLng? picked = await showDialog<LatLng>(
-                          context: context,
-                          builder: (context) => LocationPickerDialog(
-                            initialLocation:
-                                latController.text.isNotEmpty &&
-                                    lngController.text.isNotEmpty
-                                ? LatLng(
-                                    double.tryParse(latController.text) ??
-                                        28.6139,
-                                    double.tryParse(lngController.text) ??
-                                        77.2090,
-                                  )
-                                : null,
+                  TextField(
+                    controller: nameController,
+                    decoration: _inputDecoration('Shop Name'),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: addressController,
+                    decoration: _inputDecoration('Shop Address'),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: phoneController,
+                    decoration: _inputDecoration('Phone Number'),
+                    keyboardType: TextInputType.phone,
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: latController,
+                          decoration: _inputDecoration('Latitude'),
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
                           ),
-                        );
-                        if (picked != null) {
-                          latController.text = picked.latitude.toStringAsFixed(
-                            6,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: TextField(
+                          controller: lngController,
+                          decoration: _inputDecoration('Longitude'),
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(
+                          Icons.map,
+                          color: AppTheme.primaryBlue,
+                        ),
+                        onPressed: () async {
+                          final LatLng? picked = await showDialog<LatLng>(
+                            context: context,
+                            builder: (context) => LocationPickerDialog(
+                              initialLocation:
+                                  latController.text.isNotEmpty &&
+                                      lngController.text.isNotEmpty
+                                  ? LatLng(
+                                      double.tryParse(latController.text) ??
+                                          28.6139,
+                                      double.tryParse(lngController.text) ??
+                                          77.2090,
+                                    )
+                                  : null,
+                            ),
                           );
-                          lngController.text = picked.longitude.toStringAsFixed(
-                            6,
+                          if (picked != null) {
+                            latController.text = picked.latitude
+                                .toStringAsFixed(6);
+                            lngController.text = picked.longitude
+                                .toStringAsFixed(6);
+                          }
+                        },
+                        tooltip: 'Pick on Map',
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: imageController,
+                    decoration: _inputDecoration('Image URL (Optional)'),
+                  ),
+                  const SizedBox(height: 12),
+                  ElevatedButton(
+                    onPressed: () async {
+                      if (nameController.text.isNotEmpty) {
+                        await _shopService.createShop(
+                          name: nameController.text,
+                          address: addressController.text.isNotEmpty
+                              ? addressController.text
+                              : null,
+                          phoneNumber: phoneController.text.isNotEmpty
+                              ? phoneController.text
+                              : null,
+                          latitude: double.tryParse(latController.text),
+                          longitude: double.tryParse(lngController.text),
+                          imageUrl: imageController.text.isNotEmpty
+                              ? imageController.text
+                              : null,
+                        );
+                        nameController.clear();
+                        addressController.clear();
+                        phoneController.clear();
+                        latController.clear();
+                        lngController.clear();
+                        imageController.clear();
+                        _loadSummary();
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Shop created!'),
+                              backgroundColor: AppTheme.success,
+                            ),
                           );
                         }
-                      },
-                      tooltip: 'Pick on Map',
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.success,
+                      minimumSize: const Size.fromHeight(40),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'Map Picker',
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: AppTheme.primaryBlue,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    child: const Text('Create Shop'),
                   ),
                 ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          // Existing shops - compact list
+          Row(
+            children: [
+              const Icon(
+                Icons.storefront,
+                size: 16,
+                color: AppTheme.primaryBlue,
+              ),
+              const SizedBox(width: 8),
+              const Text(
+                'Existing Shops',
+                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+              ),
+              const Spacer(),
+              StreamBuilder<List<ShopModel>>(
+                stream: _shopsStream,
+                builder: (context, snapshot) {
+                  final count = snapshot.data?.length ?? 0;
+                  return Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryBlue.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      '$count',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.primaryBlue,
+                      ),
+                    ),
+                  );
+                },
               ),
             ],
           ),
           const SizedBox(height: 8),
-          TextField(
-            controller: imageController,
-            decoration: _inputDecoration('Shop Image URL (Optional)'),
-          ),
-          const SizedBox(height: 12),
-          ElevatedButton(
-            onPressed: () async {
-              if (nameController.text.isNotEmpty) {
-                await _shopService.createShop(
-                  name: nameController.text,
-                  address: addressController.text.isNotEmpty
-                      ? addressController.text
-                      : null,
-                  phoneNumber: phoneController.text.isNotEmpty
-                      ? phoneController.text
-                      : null,
-                  latitude: double.tryParse(latController.text),
-                  longitude: double.tryParse(lngController.text),
-                  imageUrl: imageController.text.isNotEmpty
-                      ? imageController.text
-                      : null,
-                );
-                nameController.clear();
-                addressController.clear();
-                phoneController.clear();
-                latController.clear();
-                lngController.clear();
-                imageController.clear();
-                _loadSummary();
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Shop created!'),
-                      backgroundColor: AppTheme.success,
-                    ),
-                  );
-                }
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.success,
-              minimumSize: const Size.fromHeight(44),
-            ),
-            child: const Text('Create Shop'),
-          ),
-          const SizedBox(height: 24),
-          const Divider(),
-          const SizedBox(height: 16),
-          // Existing shops
-          const Text(
-            'Existing Shops',
-            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            height: 200,
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: 150),
             child: StreamBuilder<List<ShopModel>>(
               stream: _shopsStream,
               builder: (context, snapshot) {
@@ -1883,19 +1918,29 @@ class _DeveloperPanelState extends State<DeveloperPanel>
                 if (shops.isEmpty) {
                   return const Center(child: Text('No shops found.'));
                 }
-                return ListView.builder(
+                return ListView.separated(
+                  shrinkWrap: true,
                   itemCount: shops.length,
+                  separatorBuilder: (_, __) => const Divider(height: 1),
                   itemBuilder: (context, index) {
                     final shop = shops[index];
                     return ListTile(
                       dense: true,
+                      visualDensity: VisualDensity.compact,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 8),
                       leading: const Icon(
                         Icons.store,
                         color: AppTheme.primaryBlue,
+                        size: 18,
                       ),
-                      title: Text(shop.name, overflow: TextOverflow.ellipsis),
+                      title: Text(
+                        shop.name,
+                        style: const TextStyle(fontSize: 13),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                       subtitle: Text(
                         shop.address ?? 'No address',
+                        style: const TextStyle(fontSize: 11),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -1903,11 +1948,11 @@ class _DeveloperPanelState extends State<DeveloperPanel>
                         icon: const Icon(
                           Icons.delete,
                           color: AppTheme.error,
-                          size: 20,
+                          size: 18,
                         ),
                         onPressed: () => _showConfirmDialog(
                           'Delete Shop',
-                          'Delete "${shop.name}"? This will also delete all menu items and orders for this shop.',
+                          'Delete "${shop.name}"? This will also delete all menu items and orders.',
                           () async {
                             await _shopService.deleteShop(shop.id);
                             _loadSummary();
@@ -1937,7 +1982,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
           if (snapshot.hasError) {
             return Center(
               child: Text(
-                'Error loading shops: ${snapshot.error}',
+                'Error: ${snapshot.error}',
                 style: const TextStyle(color: AppTheme.error),
               ),
             );
@@ -1950,241 +1995,220 @@ class _DeveloperPanelState extends State<DeveloperPanel>
             return const Text('Create a shop first to manage schedules.');
           }
 
-          // Auto-select first shop if only one exists and none selected
-          if (shops.length == 1 && _selectedScheduleShopId == null) {
-            final shop = shops.first;
-            final schedule = shop.schedule;
-            // Use Future.microtask to avoid calling setState during build
-            Future.microtask(() {
-              if (mounted) {
-                setState(() {
-                  _selectedScheduleShopId = shop.id;
-                  _openTime = schedule.openTime != null
-                      ? _parseTimeString(schedule.openTime!)
-                      : const TimeOfDay(hour: 9, minute: 0);
-                  _closeTime = schedule.closeTime != null
-                      ? _parseTimeString(schedule.closeTime!)
-                      : const TimeOfDay(hour: 21, minute: 0);
-                  _selectedDays = Set<String>.from(schedule.daysOpen);
-                });
-              }
-            });
-          }
+          return ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: shops.length > 3 ? 350 : double.infinity,
+            ),
+            child: ListView.builder(
+              shrinkWrap: shops.length <= 3,
+              itemCount: shops.length,
+              itemBuilder: (context, index) {
+                final shop = shops[index];
+                final schedule = shop.schedule;
+                final openTime = schedule.openTime ?? 'Not set';
+                final closeTime = schedule.closeTime ?? 'Not set';
+                final daysOpen = schedule.daysOpen.isEmpty
+                    ? 'No days'
+                    : schedule.daysOpen.join(', ');
 
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Shop selector
-              DropdownButtonFormField<String>(
-                decoration: _inputDecoration('Select Shop to Update Schedule'),
-                initialValue: _selectedScheduleShopId,
-                items: [
-                  const DropdownMenuItem(
-                    value: null,
-                    child: Text('-- Select a Shop --'),
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  decoration: BoxDecoration(
+                    color: AppTheme.background,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppTheme.borderLight),
                   ),
-                  ...shops.map(
-                    (s) => DropdownMenuItem(value: s.id, child: Text(s.name)),
+                  child: Theme(
+                    data: Theme.of(
+                      context,
+                    ).copyWith(dividerColor: Colors.transparent),
+                    child: ExpansionTile(
+                      tilePadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 4,
+                      ),
+                      childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                      leading: const Icon(
+                        Icons.schedule,
+                        size: 20,
+                        color: AppTheme.warning,
+                      ),
+                      title: Text(
+                        shop.name,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      subtitle: Text(
+                        '$openTime - $closeTime • $daysOpen',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                      onExpansionChanged: (expanded) {
+                        if (expanded) {
+                          setState(() {
+                            _selectedScheduleShopId = shop.id;
+                            _openTime = schedule.openTime != null
+                                ? _parseTimeString(schedule.openTime!)
+                                : const TimeOfDay(hour: 9, minute: 0);
+                            _closeTime = schedule.closeTime != null
+                                ? _parseTimeString(schedule.closeTime!)
+                                : const TimeOfDay(hour: 21, minute: 0);
+                            _selectedDays = Set<String>.from(schedule.daysOpen);
+                          });
+                        }
+                      },
+                      children: [
+                        // Time pickers row - compact
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildCompactTimePicker(
+                                label: 'Open',
+                                time: _openTime,
+                                icon: Icons.access_time,
+                                iconColor: AppTheme.success,
+                                onTap: () async {
+                                  final picked = await showTimePicker(
+                                    context: context,
+                                    initialTime:
+                                        _openTime ??
+                                        const TimeOfDay(hour: 9, minute: 0),
+                                  );
+                                  if (picked != null) {
+                                    setState(() => _openTime = picked);
+                                  }
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _buildCompactTimePicker(
+                                label: 'Close',
+                                time: _closeTime,
+                                icon: Icons.access_time,
+                                iconColor: AppTheme.error,
+                                onTap: () async {
+                                  final picked = await showTimePicker(
+                                    context: context,
+                                    initialTime:
+                                        _closeTime ??
+                                        const TimeOfDay(hour: 21, minute: 0),
+                                  );
+                                  if (picked != null) {
+                                    setState(() => _closeTime = picked);
+                                  }
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        // Days selector - compact chips
+                        Wrap(
+                          spacing: 4,
+                          runSpacing: 4,
+                          children:
+                              [
+                                'Mon',
+                                'Tue',
+                                'Wed',
+                                'Thu',
+                                'Fri',
+                                'Sat',
+                                'Sun',
+                              ].map((day) {
+                                final isSelected = _selectedDays.contains(day);
+                                return FilterChip(
+                                  label: Text(
+                                    day,
+                                    style: const TextStyle(fontSize: 11),
+                                  ),
+                                  selected: isSelected,
+                                  onSelected: (selected) => setState(
+                                    () => selected
+                                        ? _selectedDays.add(day)
+                                        : _selectedDays.remove(day),
+                                  ),
+                                  selectedColor: AppTheme.success.withValues(
+                                    alpha: 0.2,
+                                  ),
+                                  checkmarkColor: AppTheme.success,
+                                  backgroundColor: AppTheme.background,
+                                  visualDensity: VisualDensity.compact,
+                                  padding: EdgeInsets.zero,
+                                  labelPadding: const EdgeInsets.symmetric(
+                                    horizontal: 4,
+                                  ),
+                                );
+                              }).toList(),
+                        ),
+                        const SizedBox(height: 12),
+                        // Update button
+                        ElevatedButton.icon(
+                          onPressed: () => _updateShopSchedule(shop.id),
+                          icon: const Icon(Icons.save, size: 16),
+                          label: const Text('Save Schedule'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.primaryBlue,
+                            minimumSize: const Size(double.infinity, 36),
+                            textStyle: const TextStyle(fontSize: 13),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ],
-                onChanged: (value) {
-                  if (value != null) {
-                    final shop = shops.firstWhere((s) => s.id == value);
-                    // Load existing schedule if any
-                    final schedule = shop.schedule;
-                    setState(() {
-                      _selectedScheduleShopId = value;
-                      _openTime = schedule.openTime != null
-                          ? _parseTimeString(schedule.openTime!)
-                          : const TimeOfDay(hour: 9, minute: 0);
-                      _closeTime = schedule.closeTime != null
-                          ? _parseTimeString(schedule.closeTime!)
-                          : const TimeOfDay(hour: 21, minute: 0);
-                      _selectedDays = Set<String>.from(schedule.daysOpen);
-                    });
-                  } else {
-                    setState(() => _selectedScheduleShopId = null);
-                  }
-                },
-              ),
+                );
+              },
+            ),
+          );
+        },
+      ),
+    );
+  }
 
-              if (_selectedScheduleShopId != null) ...[
-                const SizedBox(height: 20),
-
-                // Time pickers row
-                Row(
-                  children: [
-                    // Open Time
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Open Time',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 13,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          InkWell(
-                            onTap: () async {
-                              final picked = await showTimePicker(
-                                context: context,
-                                initialTime:
-                                    _openTime ??
-                                    const TimeOfDay(hour: 9, minute: 0),
-                              );
-                              if (picked != null) {
-                                setState(() => _openTime = picked);
-                              }
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 14,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppTheme.background,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: AppTheme.borderLight),
-                              ),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    _openTime?.format(context) ?? '09:00 AM',
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                  const Icon(
-                                    Icons.access_time,
-                                    color: AppTheme.success,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    // Close Time
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Close Time',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 13,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          InkWell(
-                            onTap: () async {
-                              final picked = await showTimePicker(
-                                context: context,
-                                initialTime:
-                                    _closeTime ??
-                                    const TimeOfDay(hour: 21, minute: 0),
-                              );
-                              if (picked != null) {
-                                setState(() => _closeTime = picked);
-                              }
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 14,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppTheme.background,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: AppTheme.borderLight),
-                              ),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    _closeTime?.format(context) ?? '09:00 PM',
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                  const Icon(
-                                    Icons.access_time,
-                                    color: AppTheme.error,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+  Widget _buildCompactTimePicker({
+    required String label,
+    required TimeOfDay? time,
+    required IconData icon,
+    required Color iconColor,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: AppTheme.cardBackground,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: AppTheme.borderLight),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
                 ),
-
-                const SizedBox(height: 20),
-
-                // Days selector
-                const Text(
-                  'Operating Days:',
-                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-                ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-                      .map((day) {
-                        final isSelected = _selectedDays.contains(day);
-                        return FilterChip(
-                          label: Text(day),
-                          selected: isSelected,
-                          onSelected: (selected) {
-                            setState(() {
-                              if (selected) {
-                                _selectedDays.add(day);
-                              } else {
-                                _selectedDays.remove(day);
-                              }
-                            });
-                          },
-                          selectedColor: AppTheme.success.withValues(
-                            alpha: 0.2,
-                          ),
-                          checkmarkColor: AppTheme.success,
-                          backgroundColor: AppTheme.background,
-                        );
-                      })
-                      .toList(),
-                ),
-
-                const SizedBox(height: 20),
-
-                // Update button
-                ElevatedButton.icon(
-                  onPressed: () =>
-                      _updateShopSchedule(_selectedScheduleShopId!),
-                  icon: const Icon(Icons.save),
-                  label: const Text('Update Schedule'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryBlue,
-                    minimumSize: const Size(double.infinity, 48),
+                Text(
+                  time?.format(context) ?? '--:--',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
-            ],
-          );
-        },
+            ),
+            Icon(icon, color: iconColor, size: 18),
+          ],
+        ),
       ),
     );
   }
@@ -2243,6 +2267,257 @@ class _DeveloperPanelState extends State<DeveloperPanel>
         );
       }
     }
+  }
+
+  // ========== SHOP PRICING MANAGEMENT ==========
+  Widget _buildShopPricingManagement() {
+    return _DevCard(
+      title: 'Shop Pricing Management',
+      subtitle: 'Configure minimum order, delivery charges & GST',
+      icon: Icons.currency_rupee,
+      iconColor: AppTheme.success,
+      child: StreamBuilder<List<ShopModel>>(
+        stream: _shopsStream,
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return Center(
+              child: Text(
+                'Error loading shops: ${snapshot.error}',
+                style: const TextStyle(color: AppTheme.error),
+              ),
+            );
+          }
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          final shops = snapshot.data!;
+          if (shops.isEmpty) {
+            return const Text('Create a shop first to manage pricing.');
+          }
+
+          // Use a constrained scrollable list for many shops
+          return ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: shops.length > 3 ? 400 : double.infinity,
+            ),
+            child: ListView.builder(
+              shrinkWrap: shops.length <= 3,
+              itemCount: shops.length,
+              itemBuilder: (context, index) {
+                final shop = shops[index];
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  decoration: BoxDecoration(
+                    color: AppTheme.background,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppTheme.borderLight),
+                  ),
+                  child: Theme(
+                    data: Theme.of(
+                      context,
+                    ).copyWith(dividerColor: Colors.transparent),
+                    child: ExpansionTile(
+                      tilePadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 4,
+                      ),
+                      childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                      leading: const Icon(
+                        Icons.store,
+                        size: 20,
+                        color: AppTheme.primaryBlue,
+                      ),
+                      title: Text(
+                        shop.name,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      subtitle: Text(
+                        'Min: ₹${shop.minimumOrderAmount.toInt()} • Delivery: ₹${shop.deliveryCharge.toInt()} • GST: ${shop.gstPercentage.toInt()}%',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                      children: [
+                        _buildPricingRow(
+                          label: 'Minimum Order',
+                          value: shop.minimumOrderAmount,
+                          suffix: '',
+                          prefix: '₹',
+                          step: 50,
+                          min: 0,
+                          max: 1000,
+                          onChanged: (value) => _updateShopPricing(
+                            shop.id,
+                            'minimumOrderAmount',
+                            value,
+                            'Minimum Order',
+                            '₹',
+                            '',
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        _buildPricingRow(
+                          label: 'Delivery Charge',
+                          value: shop.deliveryCharge,
+                          suffix: '',
+                          prefix: '₹',
+                          step: 10,
+                          min: 0,
+                          max: 200,
+                          onChanged: (value) => _updateShopPricing(
+                            shop.id,
+                            'deliveryCharge',
+                            value,
+                            'Delivery Charge',
+                            '₹',
+                            '',
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        _buildPricingRow(
+                          label: 'GST',
+                          value: shop.gstPercentage,
+                          suffix: '%',
+                          prefix: '',
+                          step: 1,
+                          min: 0,
+                          max: 18,
+                          onChanged: (value) => _updateShopPricing(
+                            shop.id,
+                            'gstPercentage',
+                            value,
+                            'GST',
+                            '',
+                            '%',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _updateShopPricing(
+    String shopId,
+    String field,
+    double value,
+    String label,
+    String prefix,
+    String suffix,
+  ) async {
+    try {
+      await _firestore.collection('shops').doc(shopId).update({field: value});
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('$label updated to $prefix${value.toInt()}$suffix'),
+            backgroundColor: AppTheme.success,
+            duration: const Duration(seconds: 1),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to update $label: $e'),
+            backgroundColor: AppTheme.error,
+          ),
+        );
+      }
+    }
+  }
+
+  Widget _buildPricingRow({
+    required String label,
+    required double value,
+    required String suffix,
+    required String prefix,
+    required double step,
+    required double min,
+    required double max,
+    required Function(double) onChanged,
+  }) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Expanded(
+          child: Text(
+            label,
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+          ),
+        ),
+        Container(
+          decoration: BoxDecoration(
+            color: AppTheme.cardBackground,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: AppTheme.borderLight),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: const BorderRadius.horizontal(
+                    left: Radius.circular(7),
+                  ),
+                  onTap: () {
+                    if (value >= min + step) {
+                      onChanged(value - step);
+                    }
+                  },
+                  child: const Padding(
+                    padding: EdgeInsets.all(10),
+                    child: Icon(Icons.remove, size: 16),
+                  ),
+                ),
+              ),
+              Container(
+                constraints: const BoxConstraints(minWidth: 55),
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Text(
+                  '$prefix${value.toInt()}$suffix',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: const BorderRadius.horizontal(
+                    right: Radius.circular(7),
+                  ),
+                  onTap: () {
+                    if (value <= max - step) {
+                      onChanged(value + step);
+                    }
+                  },
+                  child: const Padding(
+                    padding: EdgeInsets.all(10),
+                    child: Icon(Icons.add, size: 16),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _buildMenuManagement() {
@@ -2842,100 +3117,117 @@ class _DeveloperPanelState extends State<DeveloperPanel>
   Widget _buildAddStaffSection() {
     return _DevCard(
       title: 'Add New Staff',
-      subtitle: 'Pre-create staff accounts (Kitchen, Delivery, Owner)',
+      subtitle: 'Pre-create staff accounts',
       icon: Icons.person_add,
       iconColor: AppTheme.primaryBlue,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Register Staff Details',
-            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _staffNameController,
-            decoration: _inputDecoration('Full Name'),
-          ),
-          const SizedBox(height: 8),
-          TextField(
-            controller: _staffEmailController,
-            decoration: _inputDecoration('Email Address'),
-            keyboardType: TextInputType.emailAddress,
-          ),
-          const SizedBox(height: 8),
-          TextField(
-            controller: _staffPhoneController,
-            decoration: _inputDecoration('Phone Number'),
-            keyboardType: TextInputType.phone,
-          ),
-          const SizedBox(height: 12),
-          const Text(
-            'Assign Role & Shop',
-            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-          ),
-          const SizedBox(height: 8),
-          Row(
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppTheme.background,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppTheme.borderLight),
+        ),
+        child: Theme(
+          data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+          child: ExpansionTile(
+            tilePadding: const EdgeInsets.symmetric(horizontal: 16),
+            childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            leading: const Icon(
+              Icons.person_add_alt,
+              size: 20,
+              color: AppTheme.success,
+            ),
+            title: const Text(
+              'Register New Staff',
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+            ),
+            subtitle: const Text(
+              'Kitchen, Delivery, Owner',
+              style: TextStyle(fontSize: 11),
+            ),
             children: [
-              Expanded(
-                child: DropdownButtonFormField<String>(
-                  initialValue: _staffRole,
-                  decoration: _inputDecoration('Role'),
-                  items: const [
-                    DropdownMenuItem(
-                      value: 'kitchen',
-                      child: Text('Kitchen Staff'),
+              TextField(
+                controller: _staffNameController,
+                decoration: _inputDecoration('Full Name'),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _staffEmailController,
+                decoration: _inputDecoration('Email'),
+                keyboardType: TextInputType.emailAddress,
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _staffPhoneController,
+                decoration: _inputDecoration('Phone'),
+                keyboardType: TextInputType.phone,
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Flexible(
+                    child: DropdownButtonFormField<String>(
+                      initialValue: _staffRole,
+                      decoration: _inputDecoration('Role'),
+                      isExpanded: true,
+                      items: const [
+                        DropdownMenuItem(
+                          value: 'kitchen',
+                          child: Text('Kitchen'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'delivery',
+                          child: Text('Delivery'),
+                        ),
+                        DropdownMenuItem(value: 'owner', child: Text('Owner')),
+                      ],
+                      onChanged: (value) => setState(() => _staffRole = value!),
                     ),
-                    DropdownMenuItem(
-                      value: 'delivery',
-                      child: Text('Delivery Boy'),
+                  ),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: DropdownButtonFormField<String>(
+                      initialValue: _staffShopId,
+                      decoration: _inputDecoration('Shop'),
+                      isExpanded: true,
+                      items: _cachedShops
+                          .map(
+                            (shop) => DropdownMenuItem(
+                              value: shop.id,
+                              child: Text(
+                                shop.name,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (value) =>
+                          setState(() => _staffShopId = value),
                     ),
-                    DropdownMenuItem(value: 'owner', child: Text('Shop Owner')),
-                  ],
-                  onChanged: (value) => setState(() => _staffRole = value!),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              ElevatedButton.icon(
+                onPressed: _addStaffUser,
+                icon: const Icon(Icons.check_circle_outline, size: 18),
+                label: const Text('Add Staff Record'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryBlue,
+                  minimumSize: const Size.fromHeight(40),
                 ),
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: DropdownButtonFormField<String>(
-                  initialValue: _staffShopId,
-                  decoration: _inputDecoration('Primary Shop'),
-                  items: _cachedShops
-                      .map(
-                        (shop) => DropdownMenuItem(
-                          value: shop.id,
-                          child: Text(
-                            shop.name,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (value) => setState(() => _staffShopId = value),
+              const SizedBox(height: 6),
+              Text(
+                'Staff must sign up with the same email to link their account.',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: Colors.grey.shade600,
+                  fontStyle: FontStyle.italic,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          ElevatedButton.icon(
-            onPressed: _addStaffUser,
-            icon: const Icon(Icons.check_circle_outline),
-            label: const Text('Add Staff Record'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryBlue,
-              minimumSize: const Size.fromHeight(48),
-            ),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Note: This creates a Firestore record. Staff must sign up with the same email to link their account.',
-            style: TextStyle(
-              fontSize: 11,
-              color: AppTheme.textSecondary,
-              fontStyle: FontStyle.italic,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -2994,7 +3286,6 @@ class _DeveloperPanelState extends State<DeveloperPanel>
   }
 
   Widget _buildUserRoleManagement() {
-    // Show all users but maybe label the developers
     final managableUsers = _allUsers;
 
     return _DevCard(
@@ -3006,169 +3297,255 @@ class _DeveloperPanelState extends State<DeveloperPanel>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
+              const Icon(
+                Icons.people_outline,
+                size: 16,
+                color: AppTheme.primaryBlue,
+              ),
+              const SizedBox(width: 8),
               Text(
                 'Total Users: ${managableUsers.length}',
-                style: const TextStyle(fontWeight: FontWeight.w600),
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                ),
               ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryBlue.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '${managableUsers.length}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.primaryBlue,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
               IconButton(
                 onPressed: _loadAllUsers,
-                icon: const Icon(Icons.refresh, color: AppTheme.primaryBlue),
-                tooltip: 'Refresh User List',
+                icon: const Icon(
+                  Icons.refresh,
+                  color: AppTheme.primaryBlue,
+                  size: 20,
+                ),
+                tooltip: 'Refresh',
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
               ),
             ],
           ),
+          const SizedBox(height: 8),
+          // Search bar
+          TextField(
+            decoration: InputDecoration(
+              hintText: 'Search users by email or name...',
+              prefixIcon: const Icon(Icons.search, size: 18),
+              isDense: true,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 10,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              suffixIcon: _userSearch.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.clear, size: 18),
+                      onPressed: () => setState(() => _userSearch = ''),
+                    )
+                  : null,
+            ),
+            onChanged: (value) => setState(() => _userSearch = value),
+          ),
           const SizedBox(height: 12),
-          managableUsers.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.people_outline,
-                        size: 48,
-                        color: AppTheme.textTertiary,
-                      ),
-                      const SizedBox(height: 12),
-                      const Text('No users found or permission denied.'),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Click "Fix My Role" button above to set developer permissions.',
-                        style: TextStyle(
-                          color: AppTheme.textSecondary,
-                          fontSize: 12,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          _fixDeveloperRole();
-                        },
-                        icon: const Icon(Icons.admin_panel_settings, size: 18),
-                        label: const Text('Fix My Role'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.warning,
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              : SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: DataTable(
-                    columnSpacing: 24,
-                    columns: const [
-                      DataColumn(
-                        label: Text(
-                          'User Email',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      DataColumn(
-                        label: Text(
-                          'Current Role',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      DataColumn(
-                        label: Text(
-                          'Assign Role',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      DataColumn(
-                        label: Text(
-                          'Shop Assignment',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      DataColumn(
-                        label: Text(
-                          'Actions',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      DataColumn(
-                        label: Text(
-                          'Perms',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ],
-                    rows: managableUsers.map((user) {
-                      // Ensure the value is one of the available options
-                      final roleValue =
-                          [
-                            'customer',
-                            'kitchen',
-                            'delivery',
-                            'owner',
-                            'developer',
-                          ].contains(user.role.value)
-                          ? user.role.value
-                          : 'customer';
+          Builder(
+            builder: (context) {
+              // Apply search filter
+              var filteredUsers = managableUsers;
+              if (_userSearch.isNotEmpty) {
+                filteredUsers = managableUsers
+                    .where(
+                      (u) =>
+                          u.email.toLowerCase().contains(
+                            _userSearch.toLowerCase(),
+                          ) ||
+                          (u.displayName?.toLowerCase().contains(
+                                _userSearch.toLowerCase(),
+                              ) ??
+                              false),
+                    )
+                    .toList();
+              }
 
-                      return DataRow(
-                        cells: [
-                          DataCell(
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(user.email),
-                                if (user.role == UserRole.developer)
-                                  const Text(
-                                    'DEVELOPER',
+              if (filteredUsers.isEmpty) {
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(
+                      _userSearch.isNotEmpty
+                          ? 'No users found for "$_userSearch"'
+                          : 'No users found or permission denied.',
+                      style: const TextStyle(color: AppTheme.textSecondary),
+                    ),
+                  ),
+                );
+              }
+
+              return ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: filteredUsers.length > 5 ? 350 : double.infinity,
+                ),
+                child: ListView.builder(
+                  shrinkWrap: filteredUsers.length <= 5,
+                  itemCount: filteredUsers.length,
+                  itemBuilder: (context, index) {
+                    final user = filteredUsers[index];
+                    final roleValue =
+                        [
+                          'customer',
+                          'kitchen',
+                          'delivery',
+                          'owner',
+                          'developer',
+                        ].contains(user.role.value)
+                        ? user.role.value
+                        : 'customer';
+
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 6),
+                      decoration: BoxDecoration(
+                        color: AppTheme.background,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppTheme.borderLight),
+                      ),
+                      child: Theme(
+                        data: Theme.of(
+                          context,
+                        ).copyWith(dividerColor: Colors.transparent),
+                        child: ExpansionTile(
+                          tilePadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 0,
+                          ),
+                          childrenPadding: const EdgeInsets.fromLTRB(
+                            12,
+                            0,
+                            12,
+                            12,
+                          ),
+                          leading: CircleAvatar(
+                            radius: 14,
+                            backgroundColor: _getRoleColor(
+                              user.role,
+                            ).withValues(alpha: 0.2),
+                            child: Text(
+                              user.email.substring(0, 1).toUpperCase(),
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: _getRoleColor(user.role),
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          title: Text(
+                            user.email,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          subtitle: Row(
+                            children: [
+                              _RoleBadge(role: user.role),
+                              if (user.shopId != null) ...[
+                                const SizedBox(width: 6),
+                                Flexible(
+                                  child: Text(
+                                    '• ${_getShopName(user.shopId)}',
                                     style: TextStyle(
-                                      fontSize: 9,
-                                      color: AppTheme.error,
-                                      fontWeight: FontWeight.bold,
+                                      fontSize: 10,
+                                      color: Colors.grey.shade600,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                          children: [
+                            // Role Selector
+                            Row(
+                              children: [
+                                const Text(
+                                  'Role:',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                const Spacer(),
+                                DropdownButton<String>(
+                                  value: roleValue,
+                                  isDense: true,
+                                  underline: const SizedBox(),
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.black,
+                                  ),
+                                  items: const [
+                                    DropdownMenuItem(
+                                      value: 'customer',
+                                      child: Text('Customer'),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 'kitchen',
+                                      child: Text('Kitchen'),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 'delivery',
+                                      child: Text('Delivery'),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 'owner',
+                                      child: Text('Owner'),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 'developer',
+                                      child: Text('Developer'),
+                                    ),
+                                  ],
+                                  onChanged:
+                                      user.role == UserRole.developer &&
+                                          user.email == AppConfig.developerEmail
+                                      ? null
+                                      : (value) =>
+                                            _updateUserRole(user.uid, value!),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            // Shop Assignment
+                            if (user.role == UserRole.kitchen ||
+                                user.role == UserRole.owner)
+                              Row(
+                                children: [
+                                  const Text(
+                                    'Shop:',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
                                     ),
                                   ),
-                              ],
-                            ),
-                          ),
-                          DataCell(_RoleBadge(role: user.role)),
-                          DataCell(
-                            DropdownButton<String>(
-                              value: roleValue,
-                              isDense: true,
-                              underline: const SizedBox(),
-                              items: const [
-                                DropdownMenuItem(
-                                  value: 'customer',
-                                  child: Text('Customer'),
-                                ),
-                                DropdownMenuItem(
-                                  value: 'kitchen',
-                                  child: Text('Kitchen'),
-                                ),
-                                DropdownMenuItem(
-                                  value: 'delivery',
-                                  child: Text('Delivery'),
-                                ),
-                                DropdownMenuItem(
-                                  value: 'owner',
-                                  child: Text('Owner'),
-                                ),
-                                DropdownMenuItem(
-                                  value: 'developer',
-                                  child: Text('Developer'),
-                                ),
-                              ],
-                              onChanged:
-                                  user.role == UserRole.developer &&
-                                      user.email == AppConfig.developerEmail
-                                  ? null // Don't allow changing master developer role
-                                  : (value) =>
-                                        _updateUserRole(user.uid, value!),
-                            ),
-                          ),
-                          DataCell(
-                            user.role == UserRole.kitchen ||
-                                    user.role == UserRole.owner
-                                ? DropdownButton<String>(
+                                  const Spacer(),
+                                  DropdownButton<String>(
                                     value:
                                         _cachedShops.any(
                                           (s) => s.id == user.shopId,
@@ -3177,93 +3554,123 @@ class _DeveloperPanelState extends State<DeveloperPanel>
                                         : null,
                                     hint: const Text(
                                       'Select Shop',
-                                      style: TextStyle(fontSize: 12),
+                                      style: TextStyle(fontSize: 11),
                                     ),
                                     isDense: true,
                                     underline: const SizedBox(),
-                                    items: [
-                                      ..._cachedShops.map(
-                                        (shop) => DropdownMenuItem(
-                                          value: shop.id,
-                                          child: Text(
-                                            shop.name,
-                                            style: const TextStyle(
-                                              fontSize: 12,
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.black,
+                                    ),
+                                    items: _cachedShops
+                                        .map(
+                                          (shop) => DropdownMenuItem(
+                                            value: shop.id,
+                                            child: Text(
+                                              shop.name,
+                                              style: const TextStyle(
+                                                fontSize: 12,
+                                              ),
                                             ),
                                           ),
-                                        ),
-                                      ),
-                                    ],
+                                        )
+                                        .toList(),
                                     onChanged: (value) =>
                                         _updateUserShop(user.uid, value!),
-                                  )
-                                : user.role == UserRole.delivery
-                                ? Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        '${user.shopIds?.length ?? 0} Shops',
-                                        style: const TextStyle(fontSize: 12),
-                                      ),
-                                      IconButton(
-                                        icon: const Icon(
-                                          Icons.edit_location_alt_outlined,
-                                          size: 18,
-                                          color: AppTheme.primaryBlue,
-                                        ),
-                                        onPressed: () =>
-                                            _showMultiShopSelectionDialog(user),
-                                        tooltip: 'Manage Shop Assignments',
-                                        padding: EdgeInsets.zero,
-                                        constraints: const BoxConstraints(),
-                                      ),
-                                    ],
-                                  )
-                                : const Text(
-                                    'N/A',
-                                    style: TextStyle(
-                                      color: AppTheme.textTertiary,
+                                  ),
+                                ],
+                              ),
+                            if (user.role == UserRole.delivery)
+                              Row(
+                                children: [
+                                  Text(
+                                    'Shops: ${user.shopIds?.length ?? 0} assigned',
+                                    style: const TextStyle(fontSize: 12),
+                                  ),
+                                  const Spacer(),
+                                  TextButton.icon(
+                                    onPressed: () =>
+                                        _showMultiShopSelectionDialog(user),
+                                    icon: const Icon(
+                                      Icons.edit_location_alt_outlined,
+                                      size: 14,
+                                    ),
+                                    label: const Text(
+                                      'Manage',
+                                      style: TextStyle(fontSize: 11),
+                                    ),
+                                    style: TextButton.styleFrom(
+                                      padding: EdgeInsets.zero,
+                                      minimumSize: const Size(60, 30),
                                     ),
                                   ),
-                          ),
-                          DataCell(
-                            IconButton(
-                              icon: const Icon(
-                                Icons.save,
-                                color: AppTheme.success,
+                                ],
                               ),
-                              onPressed: () => _loadAllUsers(),
-                              tooltip: 'Refresh to verify',
-                            ),
-                          ),
-                          DataCell(
-                            user.role == UserRole.owner
-                                ? IconButton(
-                                    icon: const Icon(
-                                      Icons.security_outlined,
-                                      color: AppTheme.primaryBlue,
-                                      size: 20,
+                            if (user.role == UserRole.owner)
+                              Row(
+                                children: [
+                                  const Text(
+                                    'Permissions',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
                                     ),
+                                  ),
+                                  const Spacer(),
+                                  TextButton.icon(
                                     onPressed: () =>
                                         _showPermissionsDialog(user),
-                                    tooltip: 'Manage Dev Permissions',
-                                  )
-                                : const Text(
-                                    'N/A',
-                                    style: TextStyle(
-                                      color: AppTheme.textTertiary,
-                                      fontSize: 10,
+                                    icon: const Icon(
+                                      Icons.security_outlined,
+                                      size: 14,
+                                    ),
+                                    label: const Text(
+                                      'Manage',
+                                      style: TextStyle(fontSize: 11),
+                                    ),
+                                    style: TextButton.styleFrom(
+                                      padding: EdgeInsets.zero,
+                                      minimumSize: const Size(60, 30),
                                     ),
                                   ),
-                          ),
-                        ],
-                      );
-                    }).toList(),
-                  ),
+                                ],
+                              ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
                 ),
+              );
+            },
+          ),
         ],
       ),
     );
+  }
+
+  Color _getRoleColor(UserRole role) {
+    switch (role) {
+      case UserRole.developer:
+        return AppTheme.error;
+      case UserRole.owner:
+        return AppTheme.primaryBlue;
+      case UserRole.kitchen:
+        return AppTheme.success;
+      case UserRole.delivery:
+        return AppTheme.warning;
+      default:
+        return AppTheme.textSecondary;
+    }
+  }
+
+  String _getShopName(String? shopId) {
+    if (shopId == null || _cachedShops.isEmpty) return 'Unknown';
+    final shop = _cachedShops.firstWhere(
+      (s) => s.id == shopId,
+      orElse: () => _cachedShops.first,
+    );
+    return shop.name;
   }
 
   void _showPermissionsDialog(UserModel user) {

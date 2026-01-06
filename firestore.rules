@@ -114,8 +114,13 @@ service cloud.firestore {
 
     // 6. Cash Transactions (Audit Log)
     match /cash_transactions/{transactionId} {
-        // Staff can read transactions for their shop. Developers can read all.
-        allow read: if isDeveloper() || (isStaff() && resource.data.shopId == getUserData().shopId);
+        // Staff can read:
+        // - Their own transactions (by userId)
+        // - Transactions for their shop (by shopId)
+        // Developers can read all.
+        allow read: if isDeveloper() || 
+          (isAuthenticated() && resource.data.userId == request.auth.uid) ||
+          (isStaff() && resource.data.shopId == getUserData().shopId);
         
         // Staff can create audit entries
         allow create: if isStaff();

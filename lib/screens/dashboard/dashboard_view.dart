@@ -1157,6 +1157,229 @@ class _DashboardViewState extends State<DashboardView> {
                       ],
                     ),
                   ],
+
+                  // ========== ORDER PRICING SETTINGS ==========
+                  const Divider(height: 32),
+                  const Row(
+                    children: [
+                      Icon(
+                        Icons.currency_rupee,
+                        size: 18,
+                        color: AppTheme.success,
+                      ),
+                      SizedBox(width: 8),
+                      Text(
+                        'Order Pricing',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                          color: AppTheme.success,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Minimum Order Amount
+                  Row(
+                    children: [
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Minimum Order Amount',
+                              style: TextStyle(fontWeight: FontWeight.w500),
+                            ),
+                            Text(
+                              'Orders below this amount won\'t be accepted',
+                              style: TextStyle(
+                                color: AppTheme.textSecondary,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: AppTheme.background,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.remove, size: 20),
+                              onPressed: () async {
+                                final current = shop?.minimumOrderAmount ?? 0;
+                                if (current >= 50) {
+                                  await FirebaseFirestore.instance
+                                      .collection('shops')
+                                      .doc(shopId)
+                                      .update({
+                                        'minimumOrderAmount': current - 50,
+                                      });
+                                }
+                              },
+                            ),
+                            Text(
+                              '₹${(shop?.minimumOrderAmount ?? 0).toInt()}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.add, size: 20),
+                              onPressed: () async {
+                                final current = shop?.minimumOrderAmount ?? 0;
+                                if (current < 1000) {
+                                  await FirebaseFirestore.instance
+                                      .collection('shops')
+                                      .doc(shopId)
+                                      .update({
+                                        'minimumOrderAmount': current + 50,
+                                      });
+                                }
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Delivery Charge
+                  Row(
+                    children: [
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Delivery Charge',
+                              style: TextStyle(fontWeight: FontWeight.w500),
+                            ),
+                            Text(
+                              'Fee added to each order',
+                              style: TextStyle(
+                                color: AppTheme.textSecondary,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: AppTheme.background,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.remove, size: 20),
+                              onPressed: () async {
+                                final current = shop?.deliveryCharge ?? 0;
+                                if (current >= 10) {
+                                  await FirebaseFirestore.instance
+                                      .collection('shops')
+                                      .doc(shopId)
+                                      .update({'deliveryCharge': current - 10});
+                                }
+                              },
+                            ),
+                            Text(
+                              '₹${(shop?.deliveryCharge ?? 0).toInt()}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.add, size: 20),
+                              onPressed: () async {
+                                final current = shop?.deliveryCharge ?? 0;
+                                if (current < 200) {
+                                  await FirebaseFirestore.instance
+                                      .collection('shops')
+                                      .doc(shopId)
+                                      .update({'deliveryCharge': current + 10});
+                                }
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // GST Percentage
+                  Row(
+                    children: [
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'GST Percentage',
+                              style: TextStyle(fontWeight: FontWeight.w500),
+                            ),
+                            Text(
+                              'Tax applied on food items',
+                              style: TextStyle(
+                                color: AppTheme.textSecondary,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: AppTheme.background,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.remove, size: 20),
+                              onPressed: () async {
+                                final current = shop?.gstPercentage ?? 5;
+                                if (current >= 1) {
+                                  await FirebaseFirestore.instance
+                                      .collection('shops')
+                                      .doc(shopId)
+                                      .update({'gstPercentage': current - 1});
+                                }
+                              },
+                            ),
+                            Text(
+                              '${(shop?.gstPercentage ?? 5).toInt()}%',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.add, size: 20),
+                              onPressed: () async {
+                                final current = shop?.gstPercentage ?? 5;
+                                if (current < 18) {
+                                  await FirebaseFirestore.instance
+                                      .collection('shops')
+                                      .doc(shopId)
+                                      .update({'gstPercentage': current + 1});
+                                }
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               );
             },

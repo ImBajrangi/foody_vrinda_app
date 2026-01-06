@@ -319,25 +319,158 @@ class _CartScreenState extends State<CartScreen> {
 
                         const Divider(height: 24),
 
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text(
-                              'Total',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            Text(
-                              cartProvider.formattedTotal,
-                              style: const TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.w700,
-                                color: AppTheme.primaryBlue,
-                              ),
-                            ),
-                          ],
+                        // ========== PRICING BREAKDOWN ==========
+                        Builder(
+                          builder: (context) {
+                            final subtotal = cartProvider.totalAmount;
+                            final deliveryCharge = _shop?.deliveryCharge ?? 0.0;
+                            final gstPercentage = _shop?.gstPercentage ?? 5.0;
+                            final gstAmount = subtotal * (gstPercentage / 100);
+                            final total = subtotal + deliveryCharge + gstAmount;
+                            final minimumOrder =
+                                _shop?.minimumOrderAmount ?? 0.0;
+                            final isBelowMinimum =
+                                subtotal < minimumOrder && minimumOrder > 0;
+
+                            return Column(
+                              children: [
+                                // Minimum order warning
+                                if (isBelowMinimum) ...[
+                                  Container(
+                                    padding: const EdgeInsets.all(12),
+                                    margin: const EdgeInsets.only(bottom: 12),
+                                    decoration: BoxDecoration(
+                                      color: AppTheme.warning.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: AppTheme.warning.withOpacity(
+                                          0.3,
+                                        ),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        const Icon(
+                                          Icons.warning_amber_rounded,
+                                          color: AppTheme.warning,
+                                          size: 20,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            'Minimum order: ₹${minimumOrder.toInt()}. Add ₹${(minimumOrder - subtotal).toInt()} more.',
+                                            style: const TextStyle(
+                                              color: AppTheme.warning,
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+
+                                // Subtotal
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text(
+                                      'Subtotal',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: AppTheme.textSecondary,
+                                      ),
+                                    ),
+                                    Text(
+                                      '₹${subtotal.toStringAsFixed(0)}',
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+
+                                // Delivery Charge
+                                if (deliveryCharge > 0) ...[
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      const Text(
+                                        'Delivery Charge',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: AppTheme.textSecondary,
+                                        ),
+                                      ),
+                                      Text(
+                                        '₹${deliveryCharge.toStringAsFixed(0)}',
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                ],
+
+                                // GST
+                                if (gstPercentage > 0) ...[
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        'GST (${gstPercentage.toStringAsFixed(0)}%)',
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          color: AppTheme.textSecondary,
+                                        ),
+                                      ),
+                                      Text(
+                                        '₹${gstAmount.toStringAsFixed(0)}',
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 12),
+                                ],
+
+                                // Total
+                                const Divider(height: 1),
+                                const SizedBox(height: 12),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text(
+                                      'Total',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                    Text(
+                                      '₹${total.toStringAsFixed(0)}',
+                                      style: const TextStyle(
+                                        fontSize: 22,
+                                        fontWeight: FontWeight.w700,
+                                        color: AppTheme.primaryBlue,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            );
+                          },
                         ),
                       ],
                     ),
@@ -515,16 +648,30 @@ class _CartScreenState extends State<CartScreen> {
                 ],
               ),
               child: SafeArea(
-                child: AppButton(
-                  text: _selectedPaymentMethod == null
-                      ? 'Select Payment Method • ${cartProvider.formattedTotal}'
-                      : (_selectedPaymentMethod == PaymentMethod.online
-                            ? 'Pay & Place Order • ${cartProvider.formattedTotal}'
-                            : 'Confirm Order • ${cartProvider.formattedTotal}'),
-                  isFullWidth: true,
-                  isLoading: _isLoading,
-                  height: 52,
-                  onPressed: (_shop?.isOpen ?? false) ? _placeOrder : null,
+                child: Builder(
+                  builder: (context) {
+                    final subtotal = cartProvider.totalAmount;
+                    final deliveryCharge = _shop?.deliveryCharge ?? 0.0;
+                    final gstPercentage = _shop?.gstPercentage ?? 5.0;
+                    final gstAmount = subtotal * (gstPercentage / 100);
+                    final total = subtotal + deliveryCharge + gstAmount;
+                    final formattedTotal = '₹${total.toStringAsFixed(0)}';
+                    final minimumOrder = _shop?.minimumOrderAmount ?? 0.0;
+                    final isBelowMinimum =
+                        subtotal < minimumOrder && minimumOrder > 0;
+
+                    return AppButton(
+                      text: isBelowMinimum
+                          ? 'Add ₹${(minimumOrder - subtotal).toInt()} more'
+                          : 'Review Order • $formattedTotal',
+                      isFullWidth: true,
+                      isLoading: _isLoading,
+                      height: 52,
+                      onPressed: (_shop?.isOpen ?? false) && !isBelowMinimum
+                          ? _showOrderConfirmation
+                          : null,
+                    );
+                  },
                 ),
               ),
             ),
@@ -538,6 +685,333 @@ class _CartScreenState extends State<CartScreen> {
       animationType: 'cart',
       actionLabel: 'Browse Menu',
       onAction: () => Navigator.pop(context),
+    );
+  }
+
+  /// Show order confirmation sheet before placing order
+  void _showOrderConfirmation() {
+    // First validate the form - address is required
+    if (!_formKey.currentState!.validate()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please fill in all delivery details'),
+          backgroundColor: AppTheme.warning,
+        ),
+      );
+      return;
+    }
+
+    // Check if address is provided
+    if (_addressController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter your delivery address'),
+          backgroundColor: AppTheme.warning,
+        ),
+      );
+      return;
+    }
+
+    final cartProvider = Provider.of<CartProvider>(context, listen: false);
+    final subtotal = cartProvider.totalAmount;
+    final deliveryCharge = _shop?.deliveryCharge ?? 0.0;
+    final gstPercentage = _shop?.gstPercentage ?? 0.0;
+    final gstAmount = gstPercentage > 0
+        ? subtotal * (gstPercentage / 100)
+        : 0.0;
+    final total = subtotal + deliveryCharge + gstAmount;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: const BoxDecoration(
+          color: AppTheme.cardBackground,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Handle bar
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Title
+            Row(
+              children: [
+                const Icon(
+                  Icons.receipt_long,
+                  color: AppTheme.primaryBlue,
+                  size: 24,
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  'Order Summary',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            // Delivery Address
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppTheme.background,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppTheme.borderLight),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.location_on,
+                    color: AppTheme.success,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Delivery To',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: AppTheme.textSecondary,
+                          ),
+                        ),
+                        Text(
+                          _addressController.text.trim(),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w500,
+                            fontSize: 13,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Cart Items
+            const Text(
+              'Items',
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+            ),
+            const SizedBox(height: 8),
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.25,
+              ),
+              child: ListView.separated(
+                shrinkWrap: true,
+                itemCount: cartProvider.items.length,
+                separatorBuilder: (_, __) => const Divider(height: 16),
+                itemBuilder: (context, index) {
+                  final item = cartProvider.items[index];
+                  return Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryBlue.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          '${item.quantity}x',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.primaryBlue,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          item.menuItem.name,
+                          style: const TextStyle(fontSize: 13),
+                        ),
+                      ),
+                      Text(
+                        '₹${(item.menuItem.price * item.quantity).toStringAsFixed(0)}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+            const Divider(height: 24),
+            // Pricing Breakdown
+            _buildPriceRow('Subtotal', subtotal),
+            if (gstPercentage > 0)
+              _buildPriceRow(
+                'GST (${gstPercentage.toStringAsFixed(0)}%)',
+                gstAmount,
+              ),
+            if (deliveryCharge > 0)
+              _buildPriceRow('Delivery Charge', deliveryCharge),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Total',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                ),
+                Text(
+                  '₹${total.toStringAsFixed(0)}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
+                    color: AppTheme.primaryBlue,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            // Payment Method Selection
+            const Text(
+              'Payment Method',
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildPaymentChip(
+                    'Cash on Delivery',
+                    Icons.payments_outlined,
+                    PaymentMethod.cash,
+                    _codEnabled,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _buildPaymentChip(
+                    'Online Pay',
+                    Icons.account_balance_wallet_outlined,
+                    PaymentMethod.online,
+                    _onlinePaymentsEnabled,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            // Confirm Button
+            AppButton(
+              text: _selectedPaymentMethod == PaymentMethod.online
+                  ? 'Pay & Place Order'
+                  : 'Confirm Order',
+              isFullWidth: true,
+              height: 50,
+              onPressed: _selectedPaymentMethod == null
+                  ? null
+                  : () {
+                      Navigator.pop(context);
+                      _placeOrder();
+                    },
+            ),
+            SizedBox(height: MediaQuery.of(context).padding.bottom),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPriceRow(String label, double amount) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+          ),
+          Text(
+            '₹${amount.toStringAsFixed(0)}',
+            style: const TextStyle(fontSize: 13),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPaymentChip(
+    String label,
+    IconData icon,
+    PaymentMethod method,
+    bool isEnabled,
+  ) {
+    final isSelected = _selectedPaymentMethod == method;
+    return GestureDetector(
+      onTap: isEnabled
+          ? () => setState(() => _selectedPaymentMethod = method)
+          : null,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppTheme.primaryBlue.withValues(alpha: 0.1)
+              : (isEnabled ? AppTheme.background : Colors.grey.shade200),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? AppTheme.primaryBlue : AppTheme.borderLight,
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 18,
+              color: isEnabled
+                  ? (isSelected ? AppTheme.primaryBlue : AppTheme.textSecondary)
+                  : Colors.grey,
+            ),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                  color: isEnabled
+                      ? (isSelected
+                            ? AppTheme.primaryBlue
+                            : AppTheme.textPrimary)
+                      : Colors.grey,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -597,6 +1071,21 @@ class _CartScreenState extends State<CartScreen> {
       return;
     }
 
+    // ========== MINIMUM ORDER VALIDATION ==========
+    final subtotal = cartProvider.totalAmount;
+    final minimumOrder = _shop?.minimumOrderAmount ?? 0.0;
+    if (subtotal < minimumOrder && minimumOrder > 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Minimum order amount is ₹${minimumOrder.toInt()}. Add ₹${(minimumOrder - subtotal).toInt()} more.',
+          ),
+          backgroundColor: AppTheme.warning,
+        ),
+      );
+      return;
+    }
+
     // Store details for use after payment success
     _pendingCustomerName = _nameController.text.trim();
     _pendingCustomerPhone = _phoneController.text.trim();
@@ -613,8 +1102,14 @@ class _CartScreenState extends State<CartScreen> {
       return;
     }
 
+    // ========== CALCULATE COMPLETE TOTAL ==========
+    final deliveryCharge = _shop?.deliveryCharge ?? 0.0;
+    final gstPercentage = _shop?.gstPercentage ?? 5.0;
+    final gstAmount = subtotal * (gstPercentage / 100);
+    final totalAmount = subtotal + deliveryCharge + gstAmount;
+
     // Calculate total in paise (Razorpay expects amount in smallest currency unit)
-    final totalAmountInPaise = (cartProvider.totalAmount * 100).toInt();
+    final totalAmountInPaise = (totalAmount * 100).toInt();
 
     final options = {
       'key': 'rzp_test_RU9lPJQl5wqQFM', // Razorpay Test Key
@@ -651,6 +1146,13 @@ class _CartScreenState extends State<CartScreen> {
     final cartProvider = Provider.of<CartProvider>(context, listen: false);
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
+    // ========== CALCULATE PRICING BREAKDOWN ==========
+    final subtotal = cartProvider.totalAmount;
+    final deliveryCharge = _shop?.deliveryCharge ?? 0.0;
+    final gstPercentage = _shop?.gstPercentage ?? 5.0;
+    final gstAmount = subtotal * (gstPercentage / 100);
+    final totalAmount = subtotal + deliveryCharge + gstAmount;
+
     try {
       final orderId = await _orderService.createOrder(
         shopId: _shop!.id,
@@ -663,6 +1165,10 @@ class _CartScreenState extends State<CartScreen> {
         paymentMethod: _selectedPaymentMethod!,
         customerLatitude: _deliveryLocation?.latitude,
         customerLongitude: _deliveryLocation?.longitude,
+        subtotal: subtotal,
+        deliveryCharge: deliveryCharge,
+        gstAmount: gstAmount,
+        totalAmount: totalAmount,
       );
 
       debugPrint('CartScreen: Order created successfully - $orderId');
