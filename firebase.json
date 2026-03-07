@@ -1,0 +1,34 @@
+{
+    "flutter": {
+        "platforms": {
+            "android": {
+                "default": {
+                    "projectId": "vrinda-cloud-kitchen",
+                    "appId": "1:166281611781:android:9fcef8e41977b73931aa6c",
+                    "fileOutput": "android/app/google-services.json"
+                }
+            },
+            "ios": {
+                "default": {
+                    "projectId": "vrinda-cloud-kitchen",
+                    "appId": "1:166281611781:ios:a04ec6c6f376611731aa6c",
+                    "uploadDebugSymbols": false,
+                    "fileOutput": "ios/Runner/GoogleService-Info.plist"
+                }
+            },
+            "dart": {
+                "lib/firebase_options.dart": {
+                    "projectId": "vrinda-cloud-kitchen",
+                    "configurations": {
+                        "android": "1:166281611781:android:9fcef8e41977b73931aa6c",
+                        "ios": "1:166281611781:ios:a04ec6c6f376611731aa6c",
+                        "web": "1:166281611781:web:5090b4106e97e08931aa6c"
+                    }
+                }
+            }
+        }
+    },
+    "firestore": {
+        "rules": "firestore.rules"
+    }
+}

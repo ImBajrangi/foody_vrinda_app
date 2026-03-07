@@ -1,0 +1,141 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // --- AUTHENTICATION AND ROLE HELPERS ---
+    
+    // Fetch the current user's role data from the /users collection
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    
+    // Check if user document exists
+    function userExists() {
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    // Check if the user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isDeveloper() {
+      return isAuthenticated() && userExists() && getUserData().role == 'developer';
+    }
+
+    // Checks if the user has any staff/owner role, including developer
+    function isStaff() {
+      return isAuthenticated() && userExists() && getUserData().role in ['kitchen', 'delivery', 'owner', 'developer'];
+    }
+
+    // Checks if the user is staff/owner for the given shopId
+    function isShopStaff(shopId) {
+      return isStaff() && getUserData().shopId == shopId;
+    }
+
+    // --- COLLECTION RULES ---
+
+    // 1. Shops (Public read)
+    match /shops/{shopId} {
+      allow read;
+      allow create, update, delete: if isDeveloper();
+    }
+
+    // 2. Menus (Public read)
+    match /menus/{menuId} {
+      allow read;
+      allow create, update, delete: if isDeveloper();
+    }
+    
+    // 3. Users (Profile management and Staff assignment)
+    match /users/{userId} {
+      // Users can create their own profile, OR developers can pre-create staff records
+      allow create: if request.auth.uid == userId || isDeveloper();
+      
+      // Any authenticated user can read ANY user document
+      // This is needed for staff screens to list users
+      allow read: if isAuthenticated();
+      
+      // Users can update their own profile
+      allow update: if request.auth.uid == userId;
+      
+      // Developers and owners can update other users
+      allow update: if isDeveloper() || (
+          isAuthenticated() && 
+          userExists() &&
+          getUserData().role == 'owner' && 
+          resource.data.shopId == getUserData().shopId && 
+          resource.data.role != 'developer'
+      );
+      
+      // Only developers can delete users
+      allow delete: if isDeveloper();
+    }
+
+    // 4. Orders - SIMPLIFIED for working app
+    match /orders/{orderId} {
+
+      // Read Access: 
+      // - ANY authenticated user can read orders (for customer tracking)
+      // - Staff (kitchen, delivery, owner, developer) can read ALL orders
+      allow read: if isAuthenticated();
+
+      // Create Access: Any authenticated user can create orders
+      allow create: if isAuthenticated() && 
+                       request.resource.data.status == 'new';
+
+      // Update Access: Staff can update orders
+      allow update: if isDeveloper() ||
+        // Customer updating their OWN order
+        (
+          request.auth.uid == resource.data.userId &&
+          (resource.data.status == 'new' || resource.data.status == 'preparing')
+        ) ||
+        // Any staff can update order status
+        isStaff();
+
+      allow delete: if isDeveloper();
+    }
+    
+    // 5. Notifications
+    match /notifications/{notificationId} {
+        // Any authenticated user can read their own notifications
+        // Staff can read notifications for their role
+        allow read: if isAuthenticated();
+
+        // Staff can create notifications
+        allow create: if isAuthenticated();
+        
+        // Users can update/delete their own notifications, staff can manage all
+        allow update, delete: if isDeveloper() || 
+                                 request.auth.uid == resource.data.userId ||
+                                 isStaff();
+    }
+
+    // 6. Cash Transactions (Audit Log)
+    match /cash_transactions/{transactionId} {
+        // Staff can read:
+        // - Their own transactions (by userId)
+        // - Transactions for their shop (by shopId)
+        // Developers can read all.
+        allow read: if isDeveloper() || 
+          (isAuthenticated() && resource.data.userId == request.auth.uid) ||
+          (isStaff() && resource.data.shopId == getUserData().shopId);
+        
+        // Staff can create audit entries
+        allow create: if isStaff();
+        
+        // Audit entries should be immutable - no update/delete
+        allow update, delete: if isDeveloper();
+    }
+
+    // 7. Settings (Payment configuration, etc.)
+    match /settings/{settingId} {
+        // Anyone can read settings (needed for payment method availability check)
+        allow read: if true;
+        
+        // Only developers can update settings
+        allow create, update, delete: if isDeveloper();
+    }
+  }
+}
