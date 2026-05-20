@@ -179,7 +179,7 @@ class _NotificationSoundSettingsState extends State<NotificationSoundSettings> {
                   gradient: LinearGradient(
                     colors: [
                       AppTheme.primaryGreen.withValues(alpha: 0.1),
-                      AppTheme.primaryBlue.withValues(alpha: 0.1),
+                      AppTheme.primaryOrange.withValues(alpha: 0.1),
                     ],
                   ),
                   borderRadius: const BorderRadius.only(
@@ -260,7 +260,7 @@ class _NotificationSoundSettingsState extends State<NotificationSoundSettings> {
                               colors: isSelected
                                   ? [
                                       AppTheme.primaryGreen,
-                                      AppTheme.primaryBlue,
+                                      AppTheme.primaryOrange,
                                     ]
                                   : [
                                       Colors.grey.shade700,
@@ -388,7 +388,7 @@ class _NotificationSoundSettingsState extends State<NotificationSoundSettings> {
                 gradient: LinearGradient(
                   colors: [
                     AppTheme.primaryGreen.withValues(alpha: 0.1),
-                    AppTheme.primaryBlue.withValues(alpha: 0.1),
+                    AppTheme.primaryOrange.withValues(alpha: 0.1),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(16),
@@ -511,7 +511,7 @@ class _NotificationSoundSettingsState extends State<NotificationSoundSettings> {
                   height: 60,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [AppTheme.primaryGreen, AppTheme.primaryBlue],
+                      colors: [AppTheme.primaryGreen, AppTheme.primaryOrange],
                     ),
                     borderRadius: BorderRadius.circular(12),
                   ),

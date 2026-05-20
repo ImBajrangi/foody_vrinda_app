@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:lottie/lottie.dart';
 import '../config/lottie_assets.dart';
 import '../config/theme.dart';
@@ -31,7 +32,12 @@ class AppButton extends StatelessWidget {
     final button = SizedBox(
       height: height ?? 48,
       child: ElevatedButton(
-        onPressed: isLoading ? null : onPressed,
+        onPressed: isLoading || onPressed == null
+            ? null
+            : () {
+                HapticFeedback.lightImpact();
+                onPressed!.call();
+              },
         style: ElevatedButton.styleFrom(
           backgroundColor: backgroundColor ?? AppTheme.primaryOrange,
           foregroundColor: textColor ?? Colors.white,
@@ -97,7 +103,12 @@ class SecondaryButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return OutlinedButton(
-      onPressed: onPressed,
+      onPressed: onPressed == null
+          ? null
+          : () {
+              HapticFeedback.lightImpact();
+              onPressed!.call();
+            },
       style: OutlinedButton.styleFrom(
         backgroundColor: const Color(0xFFE2E8F0),
         foregroundColor: AppTheme.textPrimary,
@@ -132,7 +143,12 @@ class DangerButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ElevatedButton(
-      onPressed: isLoading ? null : onPressed,
+      onPressed: isLoading || onPressed == null
+          ? null
+          : () {
+              HapticFeedback.lightImpact();
+              onPressed!.call();
+            },
       style: ElevatedButton.styleFrom(
         backgroundColor: AppTheme.error,
         foregroundColor: Colors.white,
@@ -191,7 +207,12 @@ class StatusButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ElevatedButton(
-      onPressed: onPressed,
+      onPressed: onPressed == null
+          ? null
+          : () {
+              HapticFeedback.lightImpact();
+              onPressed!.call();
+            },
       style: ElevatedButton.styleFrom(
         backgroundColor: _getButtonColor(),
         foregroundColor: Colors.white,

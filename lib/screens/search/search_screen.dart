@@ -311,7 +311,7 @@ class _SearchScreenState extends State<SearchScreen> {
   }) {
     return Row(
       children: [
-        Icon(icon, size: 18, color: AppTheme.primaryBlue),
+        Icon(icon, size: 18, color: AppTheme.primaryOrange),
         const SizedBox(width: 8),
         Text(
           title,
@@ -473,7 +473,7 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget _buildSectionHeader(String title, IconData icon, int count) {
     return Row(
       children: [
-        Icon(icon, size: 20, color: AppTheme.primaryBlue),
+        Icon(icon, size: 20, color: AppTheme.primaryOrange),
         const SizedBox(width: 8),
         Text(
           title,
@@ -483,7 +483,7 @@ class _SearchScreenState extends State<SearchScreen> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
           decoration: BoxDecoration(
-            color: AppTheme.primaryBlue.withOpacity(0.1),
+            color: AppTheme.primaryOrange.withOpacity(0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Text(
@@ -491,7 +491,7 @@ class _SearchScreenState extends State<SearchScreen> {
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: AppTheme.primaryBlue,
+              color: AppTheme.primaryOrange,
             ),
           ),
         ),

@@ -149,7 +149,7 @@ class _DashboardViewState extends State<DashboardView> {
             title: 'Total Orders',
             value: '${_stats?['totalOrders'] ?? 0}',
             icon: Icons.receipt_long,
-            color: AppTheme.primaryBlue,
+            color: AppTheme.primaryOrange,
           ),
         ),
         const SizedBox(width: 12),
@@ -263,7 +263,7 @@ class _DashboardViewState extends State<DashboardView> {
           TextButton(
             onPressed: () => _acknowledgeReturn(order),
             style: TextButton.styleFrom(
-              foregroundColor: AppTheme.primaryBlue,
+              foregroundColor: AppTheme.primaryOrange,
               padding: EdgeInsets.zero,
             ),
             child: const Text('Acknowledge'),
@@ -622,7 +622,7 @@ class _DashboardViewState extends State<DashboardView> {
                     child: _CashSummaryCard(
                       label: 'Settled',
                       amount: settled,
-                      color: AppTheme.primaryBlue,
+                      color: AppTheme.primaryOrange,
                       icon: Icons.handshake_outlined,
                     ),
                   ),
@@ -700,7 +700,7 @@ class _DashboardViewState extends State<DashboardView> {
                             ElevatedButton(
                               onPressed: () => _showSettlementConfirm(order),
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: AppTheme.primaryBlue,
+                                backgroundColor: AppTheme.primaryOrange,
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 12,
                                 ),
@@ -820,7 +820,7 @@ class _DashboardViewState extends State<DashboardView> {
                 '₹${(_stats?['totalRevenue'] ?? 0).toStringAsFixed(0)}',
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
-                  color: AppTheme.primaryBlue,
+                  color: AppTheme.primaryOrange,
                   fontSize: 13,
                 ),
               ),
@@ -857,8 +857,8 @@ class _DashboardViewState extends State<DashboardView> {
                           begin: Alignment.bottomCenter,
                           end: Alignment.topCenter,
                           colors: [
-                            AppTheme.primaryBlue.withOpacity(0.8),
-                            AppTheme.primaryBlue.withOpacity(0.4),
+                            AppTheme.primaryOrange.withOpacity(0.8),
+                            AppTheme.primaryOrange.withOpacity(0.4),
                           ],
                         ),
                         borderRadius: BorderRadius.circular(6),
@@ -1061,7 +1061,7 @@ class _DashboardViewState extends State<DashboardView> {
                               .doc(shopId)
                               .update({'showOrderQueue': value});
                         },
-                        activeThumbColor: AppTheme.primaryBlue,
+                        activeThumbColor: AppTheme.primaryOrange,
                       ),
                     ],
                   ),
@@ -1097,7 +1097,7 @@ class _DashboardViewState extends State<DashboardView> {
                               .doc(shopId)
                               .update({'showWaitTime': value});
                         },
-                        activeThumbColor: AppTheme.primaryBlue,
+                        activeThumbColor: AppTheme.primaryOrange,
                       ),
                     ],
                   ),
@@ -1461,7 +1461,7 @@ class _FilterChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? AppTheme.primaryBlue : AppTheme.background,
+          color: isSelected ? AppTheme.primaryOrange : AppTheme.background,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(

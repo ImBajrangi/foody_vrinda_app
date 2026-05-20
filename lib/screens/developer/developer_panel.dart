@@ -452,7 +452,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Fixing data issues...'),
-        backgroundColor: AppTheme.primaryBlue,
+        backgroundColor: AppTheme.primaryOrange,
       ),
     );
 
@@ -612,8 +612,8 @@ class _DeveloperPanelState extends State<DeveloperPanel>
               controller: _tabController,
               isScrollable: true,
               tabAlignment: TabAlignment.start,
-              indicatorColor: AppTheme.primaryBlue,
-              labelColor: AppTheme.primaryBlue,
+              indicatorColor: AppTheme.primaryOrange,
+              labelColor: AppTheme.primaryOrange,
               unselectedLabelColor: AppTheme.textSecondary,
               labelStyle: const TextStyle(
                 fontSize: 13,
@@ -809,7 +809,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
           child: _AuditSummaryCard(
             label: 'Settled',
             amount: settled,
-            color: AppTheme.primaryBlue,
+            color: AppTheme.primaryOrange,
             icon: Icons.handshake_outlined,
           ),
         ),
@@ -833,10 +833,10 @@ class _DeveloperPanelState extends State<DeveloperPanel>
       leading: CircleAvatar(
         backgroundColor: isCollection
             ? AppTheme.success.withValues(alpha: 0.1)
-            : AppTheme.primaryBlue.withValues(alpha: 0.1),
+            : AppTheme.primaryOrange.withValues(alpha: 0.1),
         child: Icon(
           isCollection ? Icons.add : Icons.handshake,
-          color: isCollection ? AppTheme.success : AppTheme.primaryBlue,
+          color: isCollection ? AppTheme.success : AppTheme.primaryOrange,
           size: 20,
         ),
       ),
@@ -852,7 +852,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
             style: TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 15,
-              color: isCollection ? AppTheme.success : AppTheme.primaryBlue,
+              color: isCollection ? AppTheme.success : AppTheme.primaryOrange,
             ),
           ),
         ],
@@ -1123,7 +1123,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
         borderRadius: BorderRadius.circular(8),
         child: Padding(
           padding: const EdgeInsets.all(8.0),
-          child: Icon(icon, size: 20, color: AppTheme.primaryBlue),
+          child: Icon(icon, size: 20, color: AppTheme.primaryOrange),
         ),
       ),
     );
@@ -1156,12 +1156,12 @@ class _DeveloperPanelState extends State<DeveloperPanel>
               width: 32,
               height: 32,
               decoration: BoxDecoration(
-                color: AppTheme.primaryBlue.withValues(alpha: 0.1),
+                color: AppTheme.primaryOrange.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Icon(
                 Icons.storefront_outlined,
-                color: AppTheme.primaryBlue,
+                color: AppTheme.primaryOrange,
                 size: 18,
               ),
             ),
@@ -1315,7 +1315,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
                                     height: 40,
                                     decoration: BoxDecoration(
                                       color: isSelected
-                                          ? AppTheme.primaryBlue
+                                          ? AppTheme.primaryOrange
                                           : AppTheme.background,
                                       borderRadius: BorderRadius.circular(10),
                                     ),
@@ -1323,7 +1323,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
                                       Icons.storefront,
                                       color: isSelected
                                           ? Colors.white
-                                          : AppTheme.primaryBlue,
+                                          : AppTheme.primaryOrange,
                                       size: 20,
                                     ),
                                   ),
@@ -1341,7 +1341,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
                                                 : FontWeight.w500,
                                             fontSize: 15,
                                             color: isSelected
-                                                ? AppTheme.primaryBlue
+                                                ? AppTheme.primaryOrange
                                                 : AppTheme.textPrimary,
                                           ),
                                         ),
@@ -1361,7 +1361,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
                                   if (isSelected)
                                     const Icon(
                                       Icons.check_circle,
-                                      color: AppTheme.primaryBlue,
+                                      color: AppTheme.primaryOrange,
                                       size: 20,
                                     ),
                                 ],
@@ -1455,7 +1455,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
                 icon: const Icon(Icons.refresh, size: 18),
                 label: const Text('Run System Test'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryBlue,
+                  backgroundColor: AppTheme.primaryOrange,
                 ),
               ),
             ],
@@ -1525,7 +1525,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
                     );
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryBlue,
+                    backgroundColor: AppTheme.primaryOrange,
                     padding: const EdgeInsets.symmetric(
                       horizontal: 12,
                       vertical: 6,
@@ -1544,7 +1544,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
               ElevatedButton(
                 onPressed: _runSystemTests,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryBlue,
+                  backgroundColor: AppTheme.primaryOrange,
                 ),
                 child: const Text('Run Full System Test'),
               ),
@@ -1984,7 +1984,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
               ElevatedButton(
                 onPressed: _runDataConsistencyCheck,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryBlue,
+                  backgroundColor: AppTheme.primaryOrange,
                 ),
                 child: const Text('Check Data Consistency'),
               ),
@@ -2012,11 +2012,12 @@ class _DeveloperPanelState extends State<DeveloperPanel>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Create shop form - collapsible
-          Container(
-            decoration: BoxDecoration(
-              color: AppTheme.background,
+          Material(
+            color: AppTheme.background,
+            clipBehavior: Clip.antiAlias,
+            shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppTheme.borderLight),
+              side: const BorderSide(color: AppTheme.borderLight),
             ),
             child: Theme(
               data: Theme.of(
@@ -2075,7 +2076,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
                       IconButton(
                         icon: const Icon(
                           Icons.map,
-                          color: AppTheme.primaryBlue,
+                          color: AppTheme.primaryOrange,
                         ),
                         onPressed: () async {
                           final ll2.LatLng? picked =
@@ -2166,7 +2167,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
               const Icon(
                 Icons.storefront,
                 size: 16,
-                color: AppTheme.primaryBlue,
+                color: AppTheme.primaryOrange,
               ),
               const SizedBox(width: 8),
               const Text(
@@ -2192,7 +2193,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
                       vertical: 2,
                     ),
                     decoration: BoxDecoration(
-                      color: AppTheme.primaryBlue.withValues(alpha: 0.1),
+                      color: AppTheme.primaryOrange.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
@@ -2200,7 +2201,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
                       style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
-                        color: AppTheme.primaryBlue,
+                        color: AppTheme.primaryOrange,
                       ),
                     ),
                   );
@@ -2261,7 +2262,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
                       contentPadding: const EdgeInsets.symmetric(horizontal: 8),
                       leading: const Icon(
                         Icons.store,
-                        color: AppTheme.primaryBlue,
+                        color: AppTheme.primaryOrange,
                         size: 18,
                       ),
                       title: Text(
@@ -2455,7 +2456,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
                         icon: const Icon(Icons.save, size: 16),
                         label: const Text('Save Schedule'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.primaryBlue,
+                          backgroundColor: AppTheme.primaryOrange,
                           minimumSize: const Size(double.infinity, 36),
                           textStyle: const TextStyle(fontSize: 13),
                         ),
@@ -2931,12 +2932,12 @@ class _DeveloperPanelState extends State<DeveloperPanel>
                     height: 40,
                     margin: const EdgeInsets.only(right: 12),
                     decoration: BoxDecoration(
-                      color: AppTheme.primaryBlue.withValues(alpha: 0.1),
+                      color: AppTheme.primaryOrange.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Icon(
                       Icons.image_outlined,
-                      color: AppTheme.primaryBlue,
+                      color: AppTheme.primaryOrange,
                       size: 20,
                     ),
                   ),
@@ -3031,7 +3032,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
                         boxShadow: [
                           if (isSelected)
                             BoxShadow(
-                              color: AppTheme.primaryBlue.withValues(
+                              color: AppTheme.primaryOrange.withValues(
                                 alpha: 0.3,
                               ),
                               blurRadius: 8,
@@ -3040,7 +3041,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
                         ],
                         border: Border.all(
                           color: isSelected
-                              ? AppTheme.primaryBlue
+                              ? AppTheme.primaryOrange
                               : Colors.transparent,
                           width: 3,
                         ),
@@ -3264,27 +3265,27 @@ class _DeveloperPanelState extends State<DeveloperPanel>
       title: 'Test Order Flow (No Payment Required)',
       subtitle: 'Test the complete order workflow',
       icon: Icons.science,
-      iconColor: AppTheme.primaryBlue,
+      iconColor: AppTheme.primaryOrange,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppTheme.primaryBlue.withValues(alpha: 0.1),
+              color: AppTheme.primaryOrange.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: AppTheme.primaryBlue.withValues(alpha: 0.3),
+                color: AppTheme.primaryOrange.withValues(alpha: 0.3),
               ),
             ),
             child: const Row(
               children: [
-                Icon(Icons.info_outline, color: AppTheme.primaryBlue, size: 20),
+                Icon(Icons.info_outline, color: AppTheme.primaryOrange, size: 20),
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     'Test orders bypass payment and are for testing the complete workflow only.',
-                    style: TextStyle(color: AppTheme.primaryBlue, fontSize: 13),
+                    style: TextStyle(color: AppTheme.primaryOrange, fontSize: 13),
                   ),
                 ),
               ],
@@ -3670,12 +3671,13 @@ class _DeveloperPanelState extends State<DeveloperPanel>
       title: 'Add New Staff',
       subtitle: 'Pre-create staff accounts',
       icon: Icons.person_add,
-      iconColor: AppTheme.primaryBlue,
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppTheme.background,
+      iconColor: AppTheme.primaryOrange,
+      child: Material(
+        color: AppTheme.background,
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppTheme.borderLight),
+          side: const BorderSide(color: AppTheme.borderLight),
         ),
         child: Theme(
           data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
@@ -3763,7 +3765,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
                 icon: const Icon(Icons.check_circle_outline, size: 18),
                 label: const Text('Add Staff Record'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryBlue,
+                  backgroundColor: AppTheme.primaryOrange,
                   minimumSize: const Size.fromHeight(40),
                 ),
               ),
@@ -3843,7 +3845,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
       title: 'User Role Management',
       subtitle: 'Manage user roles and shop assignments',
       icon: Icons.people,
-      iconColor: AppTheme.primaryBlue,
+      iconColor: AppTheme.primaryOrange,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -3852,7 +3854,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
               const Icon(
                 Icons.people_outline,
                 size: 16,
-                color: AppTheme.primaryBlue,
+                color: AppTheme.primaryOrange,
               ),
               const SizedBox(width: 8),
               Text(
@@ -3866,7 +3868,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryBlue.withValues(alpha: 0.1),
+                  color: AppTheme.primaryOrange.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
@@ -3874,7 +3876,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
                   style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
-                    color: AppTheme.primaryBlue,
+                    color: AppTheme.primaryOrange,
                   ),
                 ),
               ),
@@ -3883,7 +3885,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
                 onPressed: _loadAllUsers,
                 icon: const Icon(
                   Icons.refresh,
-                  color: AppTheme.primaryBlue,
+                  color: AppTheme.primaryOrange,
                   size: 20,
                 ),
                 tooltip: 'Refresh',
@@ -3971,12 +3973,14 @@ class _DeveloperPanelState extends State<DeveloperPanel>
 
                     return Container(
                       margin: const EdgeInsets.only(bottom: 6),
-                      decoration: BoxDecoration(
+                      child: Material(
                         color: AppTheme.background,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: AppTheme.borderLight),
-                      ),
-                      child: Theme(
+                        clipBehavior: Clip.antiAlias,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          side: const BorderSide(color: AppTheme.borderLight),
+                        ),
+                        child: Theme(
                         data: Theme.of(
                           context,
                         ).copyWith(dividerColor: Colors.transparent),
@@ -4189,8 +4193,9 @@ class _DeveloperPanelState extends State<DeveloperPanel>
                           ],
                         ),
                       ),
-                    );
-                  },
+                    ),
+                  );
+                },
                 ),
               );
             },
@@ -4205,7 +4210,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
       case UserRole.developer:
         return AppTheme.error;
       case UserRole.owner:
-        return AppTheme.primaryBlue;
+        return AppTheme.primaryOrange;
       case UserRole.kitchen:
         return AppTheme.success;
       case UserRole.delivery:
@@ -4323,7 +4328,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
                     }
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryBlue,
+                    backgroundColor: AppTheme.primaryOrange,
                   ),
                   child: const Text('Save Permissions'),
                 ),
@@ -4958,7 +4963,7 @@ class _FullShopDashboardState extends State<_FullShopDashboard> {
                 title: 'Total Orders',
                 value: '$_totalOrders',
                 icon: Icons.shopping_basket_rounded,
-                color: AppTheme.primaryBlue,
+                color: AppTheme.primaryOrange,
               ),
             ),
             const SizedBox(width: 12),
@@ -5058,7 +5063,7 @@ class _FullShopDashboardState extends State<_FullShopDashboard> {
           barRods: [
             BarChartRodData(
               toY: rev,
-              color: AppTheme.primaryBlue,
+              color: AppTheme.primaryOrange,
               width: 16,
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(4),
@@ -5521,7 +5526,7 @@ class _FullShopDashboardState extends State<_FullShopDashboard> {
   Color _getStatusColor(String status) {
     switch (status) {
       case 'new':
-        return AppTheme.primaryBlue;
+        return AppTheme.primaryOrange;
       case 'preparing':
         return AppTheme.warning;
       case 'ready':
@@ -5622,7 +5627,7 @@ class _FilterBtn extends StatelessWidget {
           style: TextStyle(
             fontSize: 12,
             fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
-            color: isActive ? AppTheme.primaryBlue : AppTheme.textSecondary,
+            color: isActive ? AppTheme.primaryOrange : AppTheme.textSecondary,
           ),
         ),
       ),
@@ -5880,7 +5885,7 @@ class _SummaryTile extends StatelessWidget {
             Icon(
               icon,
               size: 24,
-              color: AppTheme.primaryBlue.withValues(alpha: 0.6),
+              color: AppTheme.primaryOrange.withValues(alpha: 0.6),
             ),
             const SizedBox(height: 12),
           ],
@@ -6055,7 +6060,7 @@ class _FilterChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected ? AppTheme.primaryBlue : AppTheme.background,
+          color: isSelected ? AppTheme.primaryOrange : AppTheme.background,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Text(
@@ -6205,7 +6210,7 @@ Color _getStatusColor(OrderStatus status) {
     case OrderStatus.newOrder:
       return AppTheme.warning;
     case OrderStatus.preparing:
-      return AppTheme.primaryBlue;
+      return AppTheme.primaryOrange;
     case OrderStatus.readyForPickup:
       return AppTheme.success;
     case OrderStatus.outForDelivery:
@@ -6241,7 +6246,7 @@ class _RoleBadge extends StatelessWidget {
         color = AppTheme.success;
         break;
       default:
-        color = AppTheme.primaryBlue;
+        color = AppTheme.primaryOrange;
     }
 
     return Container(

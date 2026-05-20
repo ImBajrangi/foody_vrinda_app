@@ -114,10 +114,10 @@ class _DeliveryDashboardViewState extends State<DeliveryDashboardView> {
           width: 56,
           height: 56,
           decoration: BoxDecoration(
-            color: AppTheme.primaryBlue.withValues(alpha: 0.1),
+            color: AppTheme.primaryOrange.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: AppTheme.primaryBlue.withValues(alpha: 0.2),
+              color: AppTheme.primaryOrange.withValues(alpha: 0.2),
               width: 2,
             ),
           ),
@@ -136,7 +136,7 @@ class _DeliveryDashboardViewState extends State<DeliveryDashboardView> {
                         style: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: AppTheme.primaryBlue,
+                          color: AppTheme.primaryOrange,
                         ),
                       ),
                     ),
@@ -147,7 +147,7 @@ class _DeliveryDashboardViewState extends State<DeliveryDashboardView> {
                       style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: AppTheme.primaryBlue,
+                        color: AppTheme.primaryOrange,
                       ),
                     ),
                   ),
@@ -184,8 +184,8 @@ class _DeliveryDashboardViewState extends State<DeliveryDashboardView> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AppTheme.primaryBlue,
-            AppTheme.primaryBlue.withValues(alpha: 0.8),
+            AppTheme.primaryOrange,
+            AppTheme.primaryOrange.withValues(alpha: 0.8),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -193,7 +193,7 @@ class _DeliveryDashboardViewState extends State<DeliveryDashboardView> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.primaryBlue.withValues(alpha: 0.3),
+            color: AppTheme.primaryOrange.withValues(alpha: 0.3),
             blurRadius: 12,
             offset: const Offset(0, 6),
           ),
@@ -298,8 +298,8 @@ class _DeliveryDashboardViewState extends State<DeliveryDashboardView> {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      AppTheme.primaryBlue,
-                      AppTheme.primaryBlue.withValues(alpha: 0.7),
+                      AppTheme.primaryOrange,
+                      AppTheme.primaryOrange.withValues(alpha: 0.7),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(12),
@@ -355,7 +355,7 @@ class _DeliveryDashboardViewState extends State<DeliveryDashboardView> {
                 child: _LocationButton(
                   icon: Icons.people,
                   label: 'Team',
-                  color: AppTheme.primaryBlue,
+                  color: AppTheme.primaryOrange,
                   onTap: () => _openTeamLocations(),
                 ),
               ),
@@ -492,8 +492,8 @@ class _DeliveryDashboardViewState extends State<DeliveryDashboardView> {
                                   AppTheme.success.withValues(alpha: 0.6),
                                 ]
                               : [
-                                  AppTheme.primaryBlue.withValues(alpha: 0.7),
-                                  AppTheme.primaryBlue.withValues(alpha: 0.3),
+                                  AppTheme.primaryOrange.withValues(alpha: 0.7),
+                                  AppTheme.primaryOrange.withValues(alpha: 0.3),
                                 ],
                         ),
                         borderRadius: BorderRadius.circular(8),
@@ -557,7 +557,7 @@ class _DeliveryDashboardViewState extends State<DeliveryDashboardView> {
                   icon: Icons.local_shipping,
                   label: 'Total Deliveries',
                   value: '${_stats?['totalDeliveries'] ?? 0}',
-                  color: AppTheme.primaryBlue,
+                  color: AppTheme.primaryOrange,
                 ),
               ),
               const SizedBox(width: 12),
@@ -820,10 +820,10 @@ class _DeliveryDashboardViewState extends State<DeliveryDashboardView> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? AppTheme.primaryBlue : AppTheme.background,
+          color: isSelected ? AppTheme.primaryOrange : AppTheme.background,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? AppTheme.primaryBlue : AppTheme.border,
+            color: isSelected ? AppTheme.primaryOrange : AppTheme.border,
           ),
         ),
         child: Text(
@@ -907,7 +907,7 @@ class _DeliveryDashboardViewState extends State<DeliveryDashboardView> {
               ),
               Icon(
                 Icons.account_balance_wallet,
-                color: AppTheme.primaryBlue.withValues(alpha: 0.5),
+                color: AppTheme.primaryOrange.withValues(alpha: 0.5),
               ),
             ],
           ),
@@ -945,7 +945,7 @@ class _DeliveryDashboardViewState extends State<DeliveryDashboardView> {
                         child: _CashSummaryCard(
                           label: 'Settled',
                           amount: settled,
-                          color: AppTheme.primaryBlue,
+                          color: AppTheme.primaryOrange,
                           icon: Icons.handshake_outlined,
                         ),
                       ),
@@ -1186,7 +1186,7 @@ class _RecentDeliveryTile extends StatelessWidget {
                     color:
                         (order.paymentMethod == PaymentMethod.cash
                                 ? AppTheme.warning
-                                : AppTheme.primaryBlue)
+                                : AppTheme.primaryOrange)
                             .withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(4),
                   ),
@@ -1199,7 +1199,7 @@ class _RecentDeliveryTile extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                       color: order.paymentMethod == PaymentMethod.cash
                           ? AppTheme.warning
-                          : AppTheme.primaryBlue,
+                          : AppTheme.primaryOrange,
                     ),
                   ),
                 ),
@@ -1430,12 +1430,12 @@ class _DeliveryMapViewState extends State<_DeliveryMapView> {
         height: 50,
         child: Container(
           decoration: BoxDecoration(
-            color: AppTheme.primaryBlue,
+            color: AppTheme.primaryOrange,
             shape: BoxShape.circle,
             border: Border.all(color: Colors.white, width: 2),
             boxShadow: [
               BoxShadow(
-                color: AppTheme.primaryBlue.withValues(alpha: 0.3),
+                color: AppTheme.primaryOrange.withValues(alpha: 0.3),
                 blurRadius: 8,
                 spreadRadius: 2,
               ),
@@ -1533,7 +1533,7 @@ class _DeliveryMapViewState extends State<_DeliveryMapView> {
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: AppTheme.primaryBlue.withValues(alpha: 0.1),
+                    color: AppTheme.primaryOrange.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Center(
@@ -1544,7 +1544,7 @@ class _DeliveryMapViewState extends State<_DeliveryMapView> {
                       style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: AppTheme.primaryBlue,
+                        color: AppTheme.primaryOrange,
                       ),
                     ),
                   ),

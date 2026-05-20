@@ -642,7 +642,7 @@ class _DeliveryOrderCard extends StatelessWidget {
             decoration: BoxDecoration(
               color: isReady
                   ? AppTheme.success.withValues(alpha: 0.1)
-                  : AppTheme.primaryBlue.withValues(alpha: 0.05),
+                  : AppTheme.primaryOrange.withValues(alpha: 0.05),
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(16),
               ),
@@ -769,7 +769,7 @@ class _DeliveryOrderCard extends StatelessWidget {
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: AppTheme.primaryBlue.withValues(alpha: 0.1),
+                        color: AppTheme.primaryOrange.withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
                       child: Center(
@@ -779,7 +779,7 @@ class _DeliveryOrderCard extends StatelessWidget {
                               : 'C',
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: AppTheme.primaryBlue,
+                            color: AppTheme.primaryOrange,
                           ),
                         ),
                       ),
@@ -902,7 +902,7 @@ class _DeliveryOrderCard extends StatelessWidget {
                         ),
                         icon: const Icon(
                           Icons.directions,
-                          color: AppTheme.primaryBlue,
+                          color: AppTheme.primaryOrange,
                         ),
                         tooltip: 'Get directions',
                       ),
@@ -981,7 +981,7 @@ class _DeliveryOrderCard extends StatelessWidget {
                       icon: const Icon(Icons.delivery_dining, size: 20),
                       label: const Text('Start Delivery'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primaryBlue,
+                        backgroundColor: AppTheme.primaryOrange,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
                     ),
@@ -1228,8 +1228,8 @@ class _DeliveryOrderCard extends StatelessWidget {
                     icon: const Icon(Icons.videocam, size: 20),
                     label: const Text('Video Call Shop for Assistance'),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: AppTheme.primaryBlue,
-                      side: const BorderSide(color: AppTheme.primaryBlue),
+                      foregroundColor: AppTheme.primaryOrange,
+                      side: const BorderSide(color: AppTheme.primaryOrange),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),

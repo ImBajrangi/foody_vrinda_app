@@ -202,10 +202,10 @@ class _KitchenViewState extends State<KitchenView> {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: AppTheme.primaryBlue.withOpacity(0.1),
+              color: AppTheme.primaryOrange.withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: AppTheme.primaryBlue.withOpacity(0.2),
+                color: AppTheme.primaryOrange.withOpacity(0.2),
                 width: 1.5,
               ),
             ),
@@ -225,7 +225,7 @@ class _KitchenViewState extends State<KitchenView> {
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: AppTheme.primaryBlue,
+                            color: AppTheme.primaryOrange,
                           ),
                         ),
                       ),
@@ -236,7 +236,7 @@ class _KitchenViewState extends State<KitchenView> {
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: AppTheme.primaryBlue,
+                          color: AppTheme.primaryOrange,
                         ),
                       ),
                     ),
@@ -654,7 +654,7 @@ class _KitchenOrderCard extends StatelessWidget {
             decoration: BoxDecoration(
               color: order.status == OrderStatus.newOrder
                   ? AppTheme.warning.withValues(alpha: 0.1)
-                  : AppTheme.primaryBlue.withValues(alpha: 0.05),
+                  : AppTheme.primaryOrange.withValues(alpha: 0.05),
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(16),
               ),
@@ -798,7 +798,7 @@ class _KitchenOrderCard extends StatelessWidget {
                           width: 28,
                           height: 28,
                           decoration: BoxDecoration(
-                            color: AppTheme.primaryBlue.withValues(alpha: 0.1),
+                            color: AppTheme.primaryOrange.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Center(
@@ -807,7 +807,7 @@ class _KitchenOrderCard extends StatelessWidget {
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 12,
-                                color: AppTheme.primaryBlue,
+                                color: AppTheme.primaryOrange,
                               ),
                             ),
                           ),
@@ -845,7 +845,7 @@ class _KitchenOrderCard extends StatelessWidget {
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 18,
-                        color: AppTheme.primaryBlue,
+                        color: AppTheme.primaryOrange,
                       ),
                     ),
                   ],

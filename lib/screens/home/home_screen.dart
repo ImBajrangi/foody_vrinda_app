@@ -83,10 +83,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final cartProvider = Provider.of<CartProvider>(context);
     FoodyTokens.of(context);
 
-    return FoodyUI.glassCard(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(16),
-      borderRadius: 18,
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
       child: Column(
         children: [
           Row(
@@ -99,19 +97,20 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     Text(
                       'Hello, ${userData?.displayName?.split(' ').first ?? 'Foodie'}! 👋',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w800,
                         letterSpacing: -0.5,
+                        fontSize: 18,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2),
                     const Text(
                       'What would you like to eat?',
                       style: TextStyle(
                         color: AppTheme.textSecondary,
-                        fontSize: 14,
+                        fontSize: 12,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -125,6 +124,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   // Cart badge (for customers)
                   if (_selectedViewIndex == 0 && cartProvider.isNotEmpty)
                     IconButton(
+                      visualDensity: VisualDensity.compact,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
                       onPressed: () {
                         Navigator.push(
                           context,
@@ -135,12 +137,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       },
                       icon: Stack(
                         children: [
-                          const Icon(Icons.shopping_bag_outlined),
+                          const Icon(Icons.shopping_bag_outlined, size: 22),
                           Positioned(
                             right: 0,
                             top: 0,
                             child: Container(
-                              padding: const EdgeInsets.all(4),
+                              padding: const EdgeInsets.all(3),
                               decoration: const BoxDecoration(
                                 color: AppTheme.error,
                                 shape: BoxShape.circle,
@@ -161,16 +163,22 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   // Order history icon
                   IconButton(
+                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    constraints: const BoxConstraints(),
                     onPressed: () {
                       setState(() {
                         _customerTabIndex = 2;
                       });
                     },
-                    icon: const Icon(Icons.receipt_long_outlined),
+                    icon: const Icon(Icons.receipt_long_outlined, size: 22),
                     tooltip: 'My Orders',
                   ),
 
                   IconButton(
+                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    constraints: const BoxConstraints(),
                     onPressed: () {
                       Navigator.push(
                         context,
@@ -180,7 +188,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       );
                     },
-                    icon: const Icon(Icons.notifications_outlined),
+                    icon: const Icon(Icons.notifications_outlined, size: 22),
                   ),
 
                   // Profile Avatar Only
@@ -191,18 +199,18 @@ class _HomeScreenState extends State<HomeScreen> {
                       });
                     },
                     child: Container(
-                      margin: const EdgeInsets.only(left: 8),
-                      padding: const EdgeInsets.all(2),
+                      margin: const EdgeInsets.only(left: 6),
+                      padding: const EdgeInsets.all(1.5),
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         border: Border.all(
                           color: AppTheme.primaryOrange.withValues(alpha: 0.2),
-                          width: 2,
+                          width: 1.5,
                         ),
                       ),
                       child: Container(
-                        width: 34,
-                        height: 34,
+                        width: 30,
+                        height: 30,
                         decoration: BoxDecoration(
                           color: AppTheme.primaryOrange.withValues(alpha: 0.1),
                           shape: BoxShape.circle,
@@ -228,7 +236,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
 
           // Modern Search Bar
-          const SizedBox(height: 18),
+          const SizedBox(height: 10),
           GestureDetector(
             onTap: () {
               setState(() {
@@ -236,15 +244,16 @@ class _HomeScreenState extends State<HomeScreen> {
               });
             },
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
-                color: AppTheme.background,
-                borderRadius: BorderRadius.circular(24),
+                color: AppTheme.cardBackground,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppTheme.borderLight, width: 1),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.03),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
+                    color: Colors.black.withValues(alpha: 0.02),
+                    blurRadius: 6,
+                    offset: const Offset(0, 3),
                   ),
                 ],
               ),
@@ -253,15 +262,15 @@ class _HomeScreenState extends State<HomeScreen> {
                   Icon(
                     Icons.search_rounded,
                     color: AppTheme.primaryOrange,
-                    size: 22,
+                    size: 20,
                   ),
-                  SizedBox(width: 14),
+                  SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       'Search delicious food, shops...',
                       style: TextStyle(
                         color: AppTheme.textTertiary,
-                        fontSize: 14,
+                        fontSize: 13,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -269,7 +278,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Icon(
                     Icons.tune_rounded,
                     color: AppTheme.textTertiary,
-                    size: 20,
+                    size: 18,
                   ),
                 ],
               ),

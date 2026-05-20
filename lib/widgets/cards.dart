@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../config/theme.dart';
 
@@ -489,6 +490,7 @@ class MenuItemCard extends StatelessWidget {
   final int quantity;
   final bool isVeg;
   final double? rating;
+  final String? description;
   final VoidCallback? onAdd;
   final VoidCallback? onIncrement;
   final VoidCallback? onDecrement;
@@ -502,6 +504,7 @@ class MenuItemCard extends StatelessWidget {
     this.quantity = 0,
     this.isVeg = true,
     this.rating,
+    this.description,
     this.onAdd,
     this.onIncrement,
     this.onDecrement,
@@ -509,305 +512,316 @@ class MenuItemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final discountPercent = (originalPrice != null && originalPrice! > price)
+        ? (((originalPrice! - price) / originalPrice!) * 100).round()
+        : 0;
+
     return Container(
+      margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
         color: AppTheme.cardBackground,
-        borderRadius: BorderRadius.circular(14),
-        border: (imageUrl == null || imageUrl!.isEmpty)
-            ? Border(
-                left: BorderSide(
-                  color: isVeg ? Colors.green.shade400 : Colors.red.shade400,
-                  width: 4,
-                ),
-              )
-            : null,
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 12,
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
             offset: const Offset(0, 3),
           ),
         ],
+        border: Border.all(
+          color: AppTheme.borderLight.withOpacity(0.5),
+          width: 1,
+        ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (imageUrl != null && imageUrl!.isNotEmpty)
-            Stack(
-              children: [
-                ClipRRect(
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(14),
-                  ),
-                  child: Hero(
-                    tag: 'menu-item-${imageUrl ?? name}',
-                    child: AspectRatio(
-                      aspectRatio: 4 / 3,
-                      child: CachedNetworkImage(
-                        imageUrl: imageUrl!,
-                        fit: BoxFit.cover,
-                        placeholder: (context, url) => Container(
-                          color: AppTheme.background,
-                          child: const Center(
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: AppTheme.primaryOrange,
-                            ),
-                          ),
-                        ),
-                        errorWidget: (context, url, error) =>
-                            _buildPlaceholder(),
-                      ),
-                    ),
-                  ),
-                ),
-                // Veg/Non-veg indicator overlay
-                Positioned(
-                  top: 8,
-                  left: 8,
-                  child: Container(
-                    padding: const EdgeInsets.all(1.5),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.95),
-                      borderRadius: BorderRadius.circular(2),
-                      border: Border.all(
-                        color: isVeg ? Colors.green : Colors.red,
-                        width: 1.2,
-                      ),
-                    ),
-                    child: Icon(
-                      Icons.circle,
-                      size: 7,
-                      color: isVeg ? Colors.green : Colors.red,
-                    ),
-                  ),
-                ),
-                // Rating badge overlay
-                if (rating != null && rating! > 0)
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: rating! >= 4.0
-                            ? Colors.green
-                            : AppTheme.primaryOrange,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Left side: details
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Veg/Non-veg tag & Rating
+                      Row(
                         children: [
-                          Text(
-                            rating!.toStringAsFixed(1),
-                            style: const TextStyle(
+                          Container(
+                            padding: const EdgeInsets.all(1.5),
+                            decoration: BoxDecoration(
                               color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
+                              borderRadius: BorderRadius.circular(3),
+                              border: Border.all(
+                                color: isVeg ? Colors.green.shade600 : Colors.red.shade600,
+                                width: 1.5,
+                              ),
+                            ),
+                            child: Icon(
+                              Icons.circle,
+                              size: 8,
+                              color: isVeg ? Colors.green.shade600 : Colors.red.shade600,
                             ),
                           ),
-                          const SizedBox(width: 2),
-                          const Icon(Icons.star, size: 8, color: Colors.white),
+                          if (rating != null && rating! > 0) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 1.5,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.amber.shade50.withOpacity(0.8),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.star_rounded,
+                                    size: 12,
+                                    color: Colors.amber.shade700,
+                                  ),
+                                  const SizedBox(width: 2),
+                                  Text(
+                                    rating!.toStringAsFixed(1),
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.amber.shade800,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ],
                       ),
-                    ),
-                  ),
-              ],
-            ),
-
-          // Content
-          Padding(
-            padding: const EdgeInsets.all(10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Show veg/non-veg inline when no image
-                if (imageUrl == null || imageUrl!.isEmpty) ...[
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(1.5),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(2),
-                          border: Border.all(
-                            color: isVeg ? Colors.green : Colors.red,
-                            width: 1.2,
-                          ),
+                      const SizedBox(height: 8),
+                      // Item Name
+                      Text(
+                        name,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.textPrimary,
+                          height: 1.2,
                         ),
-                        child: Icon(
-                          Icons.circle,
-                          size: 7,
-                          color: isVeg ? Colors.green : Colors.red,
-                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      if (rating != null && rating! > 0) ...[
-                        const SizedBox(width: 8),
-                        Icon(Icons.star, size: 12, color: rating! >= 4.0 ? Colors.green : AppTheme.primaryOrange),
-                        const SizedBox(width: 2),
-                        Text(
-                          rating!.toStringAsFixed(1),
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            color: rating! >= 4.0 ? Colors.green : AppTheme.primaryOrange,
+                      const SizedBox(height: 6),
+                      // Price and discount
+                      Row(
+                        children: [
+                          Text(
+                            '₹${price.toStringAsFixed(0)}',
+                            style: const TextStyle(
+                              color: AppTheme.primaryOrange,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 16,
+                            ),
                           ),
+                          if (originalPrice != null && originalPrice! > price) ...[
+                            const SizedBox(width: 6),
+                            Text(
+                              '₹${originalPrice!.toStringAsFixed(0)}',
+                              style: const TextStyle(
+                                color: AppTheme.textTertiary,
+                                fontSize: 13,
+                                decoration: TextDecoration.lineThrough,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 4,
+                                vertical: 1,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.green.shade50,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                '$discountPercent% OFF',
+                                style: TextStyle(
+                                  color: Colors.green.shade700,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      if (description != null && description!.isNotEmpty) ...[
+                        const SizedBox(height: 6),
+                        Text(
+                          description!,
+                          style: const TextStyle(
+                            color: AppTheme.textSecondary,
+                            fontSize: 11,
+                            height: 1.3,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ],
                   ),
-                  const SizedBox(height: 6),
-                ],
-                Text(
-                  name,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 14,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppTheme.primaryOrange.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        '₹${price.toStringAsFixed(0)}',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: AppTheme.primaryOrange,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 16,
+              ),
+              // Right side: Image with overlapping ADD button
+              Padding(
+                padding: const EdgeInsets.fromLTRB(0, 12, 12, 12),
+                child: SizedBox(
+                  width: 110,
+                  height: 115,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      // Image
+                      Positioned.fill(
+                        bottom: 12, // Leave space for overlapping button
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: (imageUrl != null && imageUrl!.isNotEmpty)
+                              ? Hero(
+                                  tag: 'menu-item-${imageUrl ?? name}',
+                                  child: CachedNetworkImage(
+                                    imageUrl: imageUrl!,
+                                    fit: BoxFit.cover,
+                                    placeholder: (context, url) => Container(
+                                      color: AppTheme.background,
+                                      child: const Center(
+                                        child: SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: AppTheme.primaryOrange,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    errorWidget: (context, url, error) =>
+                                        _buildPlaceholder(),
+                                  ),
+                                )
+                              : _buildPlaceholder(),
                         ),
                       ),
-                    ),
-                    if (originalPrice != null && originalPrice! > price) ...[
-                      const SizedBox(width: 8),
-                      Text(
-                        '₹${originalPrice!.toStringAsFixed(0)}',
-                        style: const TextStyle(
-                          color: AppTheme.textTertiary,
-                          fontSize: 13,
-                          decoration: TextDecoration.lineThrough,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-                const SizedBox(height: 10),
-
-                // Add/Quantity controls - Thick Swiggy style
-                SizedBox(
-                  height: 42,
-                  width: double.infinity,
-                  child: quantity == 0
-                      ? ElevatedButton(
-                          onPressed: onAdd,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.primaryOrange,
-                            foregroundColor: Colors.white,
-                            elevation: 4,
-                            shadowColor: AppTheme.primaryOrange.withOpacity(
-                              0.4,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            padding: EdgeInsets.zero,
-                          ),
-                          child: const Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.add_rounded,
-                                size: 20,
-                                fontWeight: FontWeight.w900,
-                              ),
-                              SizedBox(width: 4),
-                              Text(
-                                'ADD',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w900,
-                                  fontSize: 15,
-                                  letterSpacing: 0.8,
-                                ),
-                              ),
-                            ],
-                          ),
-                        )
-                      : Container(
+                      // Floating Add/Quantity button
+                      Positioned(
+                        bottom: 0,
+                        left: 10,
+                        right: 10,
+                        height: 34,
+                        child: Container(
                           decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
                             border: Border.all(
-                              color: AppTheme.primaryOrange,
-                              width: 2.0,
+                              color: AppTheme.primaryOrange.withOpacity(0.3),
+                              width: 1,
                             ),
-                            borderRadius: BorderRadius.circular(12),
-                            color: AppTheme.primaryOrange.withOpacity(0.08),
                             boxShadow: [
                               BoxShadow(
-                                color: AppTheme.primaryOrange.withOpacity(0.1),
-                                blurRadius: 8,
+                                color: Colors.black.withOpacity(0.08),
+                                blurRadius: 6,
                                 offset: const Offset(0, 2),
                               ),
                             ],
                           ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              IconButton(
-                                onPressed: onDecrement,
-                                icon: const Icon(
-                                  Icons.remove_rounded,
-                                  size: 22,
-                                  color: AppTheme.primaryOrange,
-                                  weight: 900,
+                          child: quantity == 0
+                              ? Material(
+                                  color: Colors.transparent,
+                                  child: InkWell(
+                                    onTap: () {
+                                      HapticFeedback.lightImpact();
+                                      onAdd?.call();
+                                    },
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: const Center(
+                                      child: Text(
+                                        'ADD',
+                                        style: TextStyle(
+                                          color: AppTheme.primaryOrange,
+                                          fontWeight: FontWeight.w800,
+                                          fontSize: 12,
+                                          letterSpacing: 0.5,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                )
+                              : Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      child: Material(
+                                        color: Colors.transparent,
+                                        child: InkWell(
+                                          onTap: () {
+                                            HapticFeedback.lightImpact();
+                                            onDecrement?.call();
+                                          },
+                                          borderRadius: const BorderRadius.horizontal(
+                                            left: Radius.circular(8),
+                                          ),
+                                          child: const Center(
+                                            child: Icon(
+                                              Icons.remove_rounded,
+                                              size: 16,
+                                              color: AppTheme.primaryOrange,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    Text(
+                                      quantity.toString(),
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w800,
+                                        fontSize: 13,
+                                        color: AppTheme.primaryOrange,
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: Material(
+                                        color: Colors.transparent,
+                                        child: InkWell(
+                                          onTap: () {
+                                            HapticFeedback.lightImpact();
+                                            onIncrement?.call();
+                                          },
+                                          borderRadius: const BorderRadius.horizontal(
+                                            right: Radius.circular(8),
+                                          ),
+                                          child: const Center(
+                                            child: Icon(
+                                              Icons.add_rounded,
+                                              size: 16,
+                                              color: AppTheme.primaryOrange,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                constraints: const BoxConstraints(
-                                  minWidth: 44,
-                                  minHeight: 42,
-                                ),
-                                padding: EdgeInsets.zero,
-                              ),
-                              Text(
-                                quantity.toString(),
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w900,
-                                  fontSize: 18,
-                                  color: AppTheme.primaryOrange,
-                                ),
-                              ),
-                              IconButton(
-                                onPressed: onIncrement,
-                                icon: const Icon(
-                                  Icons.add_rounded,
-                                  size: 22,
-                                  color: AppTheme.primaryOrange,
-                                  weight: 900,
-                                ),
-                                constraints: const BoxConstraints(
-                                  minWidth: 44,
-                                  minHeight: 42,
-                                ),
-                                padding: EdgeInsets.zero,
-                              ),
-                            ],
-                          ),
                         ),
+                      ),
+                    ],
+                  ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

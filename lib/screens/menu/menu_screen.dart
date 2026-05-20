@@ -172,13 +172,31 @@ class _MenuScreenState extends State<MenuScreen> {
                   expandedHeight: 250,
                   pinned: true,
                   backgroundColor: AppTheme.cardBackground,
+                  elevation: 0,
+                  scrolledUnderElevation: 0,
+                  title: AnimatedOpacity(
+                    duration: const Duration(milliseconds: 200),
+                    opacity: innerBoxIsScrolled ? 1.0 : 0.0,
+                    child: Text(
+                      widget.shop.name,
+                      style: const TextStyle(
+                        color: AppTheme.textPrimary,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 18,
+                      ),
+                    ),
+                  ),
+                  centerTitle: true,
                   leading: Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: IconButton(
                       onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Icons.arrow_back, color: Colors.white),
+                      icon: Icon(
+                        Icons.arrow_back,
+                        color: innerBoxIsScrolled ? AppTheme.textPrimary : Colors.white,
+                      ),
                       style: IconButton.styleFrom(
-                        backgroundColor: Colors.black26,
+                        backgroundColor: innerBoxIsScrolled ? Colors.transparent : Colors.black26,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -192,10 +210,10 @@ class _MenuScreenState extends State<MenuScreen> {
                         onPressed: () => setState(() => _showInfo = !_showInfo),
                         icon: Icon(
                           _showInfo ? Icons.grid_view : Icons.info_outline,
-                          color: Colors.white,
+                          color: innerBoxIsScrolled ? AppTheme.textPrimary : Colors.white,
                         ),
                         style: IconButton.styleFrom(
-                          backgroundColor: Colors.black26,
+                          backgroundColor: innerBoxIsScrolled ? Colors.transparent : Colors.black26,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -205,67 +223,7 @@ class _MenuScreenState extends State<MenuScreen> {
                   ],
                   bottom: _showInfo ? null : _buildCategoryTabBar(menuItems),
                   flexibleSpace: FlexibleSpaceBar(
-                    titlePadding: const EdgeInsets.only(left: 64, bottom: 16, right: 64),
-                    title: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          widget.shop.name,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            shadows: [
-                              Shadow(
-                                color: Colors.black54,
-                                blurRadius: 4,
-                                offset: Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 2),
-                        Row(
-                          children: [
-                            if (widget.shop.ratingCount > 0) ...[
-                              const Icon(Icons.star, color: Colors.amber, size: 10),
-                              const SizedBox(width: 2),
-                              Text(
-                                '${widget.shop.rating.toStringAsFixed(1)} (${widget.shop.ratingCount})',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 10,
-                                  shadows: [Shadow(color: Colors.black54, blurRadius: 4)],
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                            ],
-                            Container(
-                              width: 6,
-                              height: 6,
-                              decoration: BoxDecoration(
-                                color: widget.shop.isOpen ? AppTheme.success : AppTheme.error,
-                                shape: BoxShape.circle,
-                                border: Border.all(color: Colors.white, width: 1.0),
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              widget.shop.isOpen ? 'Open Now' : 'Closed',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
-                                color: widget.shop.isOpen ? AppTheme.success : AppTheme.error,
-                                shadows: const [Shadow(color: Colors.black54, blurRadius: 4)],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+                    collapseMode: CollapseMode.parallax,
                     background: Stack(
                       fit: StackFit.expand,
                       children: [
@@ -299,10 +257,77 @@ class _MenuScreenState extends State<MenuScreen> {
                                 Colors.black.withValues(alpha: 0.6),
                                 Colors.transparent,
                                 Colors.black.withValues(alpha: 0.6),
-                                Colors.black.withValues(alpha: 0.9),
+                                Colors.black.withValues(alpha: 0.95),
                               ],
                               stops: const [0.0, 0.4, 0.7, 1.0],
                             ),
+                          ),
+                        ),
+                        // Premium Expanded Details Column (Fades out automatically during scroll)
+                        Positioned(
+                          left: 16,
+                          right: 16,
+                          bottom: _showInfo ? 16 : 64,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                widget.shop.name,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w800,
+                                  shadows: [
+                                    Shadow(
+                                      color: Colors.black87,
+                                      blurRadius: 6,
+                                      offset: Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 6),
+                              Row(
+                                children: [
+                                  if (widget.shop.ratingCount > 0) ...[
+                                    const Icon(Icons.star_rounded, color: Colors.amber, size: 16),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      '${widget.shop.rating.toStringAsFixed(1)} (${widget.shop.ratingCount} ratings)',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        shadows: [Shadow(color: Colors.black87, blurRadius: 4)],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                  ],
+                                  Container(
+                                    width: 8,
+                                    height: 8,
+                                    decoration: BoxDecoration(
+                                      color: widget.shop.isOpen ? AppTheme.success : AppTheme.error,
+                                      shape: BoxShape.circle,
+                                      border: Border.all(color: Colors.white, width: 1.0),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    widget.shop.isOpen ? 'Open Now' : 'Closed',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                      color: widget.shop.isOpen ? AppTheme.success : AppTheme.error,
+                                      shadows: const [Shadow(color: Colors.black87, blurRadius: 4)],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
                         ),
                       ],
@@ -329,13 +354,14 @@ class _MenuScreenState extends State<MenuScreen> {
                             item.id,
                           );
 
-                          return MenuItemCard(
+                           return MenuItemCard(
                             name: item.name,
                             price: item.price,
                             originalPrice: item.originalPrice,
                             imageUrl: item.imageUrl,
                             isVeg: item.isVeg,
                             rating: item.rating,
+                            description: item.description,
                             quantity: quantity,
                             onAdd: () => cartProvider.addItem(item),
                             onIncrement: () => cartProvider.incrementItem(item.id),
