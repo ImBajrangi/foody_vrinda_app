@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../config/theme.dart';
 
 class AppCard extends StatelessWidget {
@@ -88,9 +89,13 @@ class ShopCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppTheme.cardBackground,
           borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isOpen ? AppTheme.primaryOrange.withValues(alpha: 0.15) : AppTheme.borderLight.withValues(alpha: 0.8),
+            width: 1.5,
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 16,
               offset: const Offset(0, 4),
             ),
@@ -462,7 +467,7 @@ class ShopCard extends StatelessWidget {
               Icons.store_outlined,
               size: 48,
               color: AppTheme.primaryOrange.withValues(alpha: 0.4),
-            ),
+            ).animate(onPlay: (controller) => controller.repeat(reverse: true)).scaleXY(begin: 0.95, end: 1.05, duration: 1500.ms, curve: Curves.easeInOut),
             const SizedBox(height: 12),
             Text(
               name
@@ -843,7 +848,7 @@ class MenuItemCard extends StatelessWidget {
           Icons.restaurant_menu_outlined,
           size: 40,
           color: AppTheme.warning.withValues(alpha: 0.4),
-        ),
+        ).animate(onPlay: (controller) => controller.repeat(reverse: true)).scaleXY(begin: 0.9, end: 1.1, duration: 1200.ms, curve: Curves.easeInOut),
       ),
     );
   }

@@ -242,135 +242,220 @@ class _DeliveryViewState extends State<DeliveryView> {
 
   Widget _buildHeader(UserModel? userData, bool isDeveloper) {
     return Container(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: Colors.black,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(Icons.delivery_dining, color: Colors.white),
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [AppTheme.deliveryColor, Color(0xFF34D399)],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.deliveryColor.withValues(alpha: 0.35),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
               children: [
-                Text(
-                  'Delivery',
-                  style: Theme.of(context).textTheme.headlineSmall,
+                // Delivery bike icon
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.delivery_dining,
+                    color: Colors.white,
+                    size: 22,
+                  ),
                 ),
-                StreamBuilder<List<ShopModel>>(
-                  stream: _shopsStream,
-                  builder: (context, snapshot) {
-                    final shops = snapshot.data ?? [];
-                    final shopName = isDeveloper && _selectedShopId == null
-                        ? 'Global Delivery Monitor (All Shops)'
-                        : (shops.any(
-                                (s) =>
-                                    s.id ==
-                                    (isDeveloper
-                                        ? _selectedShopId
-                                        : (userData?.shopId ?? widget.shopId)),
-                              )
-                              ? shops
-                                    .firstWhere(
+                const SizedBox(width: 12),
+                // Title & subtitle
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Delivery Panel',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      StreamBuilder<List<ShopModel>>(
+                        stream: _shopsStream,
+                        builder: (context, snapshot) {
+                          final shops = snapshot.data ?? [];
+                          final shopName = isDeveloper && _selectedShopId == null
+                              ? 'All Shops'
+                              : (shops.any(
                                       (s) =>
                                           s.id ==
                                           (isDeveloper
                                               ? _selectedShopId
-                                              : (userData?.shopId ??
-                                                    widget.shopId)),
+                                              : (userData?.shopId ?? widget.shopId)),
                                     )
-                                    .name
-                              : 'My Shop');
-                    return Text(
-                      'Orders for $shopName',
-                      style: const TextStyle(
-                        color: AppTheme.textSecondary,
-                        fontSize: 13,
+                                    ? shops
+                                          .firstWhere(
+                                            (s) =>
+                                                s.id ==
+                                                (isDeveloper
+                                                    ? _selectedShopId
+                                                    : (userData?.shopId ??
+                                                          widget.shopId)),
+                                          )
+                                          .name
+                                    : 'My Shop');
+                          return Text(
+                            isDeveloper && _selectedShopId == null
+                                ? 'Global Delivery Monitor'
+                                : 'Active orders for $shopName',
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.9),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          );
+                        },
                       ),
-                    );
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                
+                // Active deliveries badge or toggle status
+                Consumer<AuthProvider>(
+                  builder: (context, auth, _) {
+                    if (auth.userData?.role == UserRole.delivery) {
+                      return Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              _isOnline ? 'Online' : 'Offline',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 11,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            _isTogglingStatus
+                                ? const SizedBox(
+                                    width: 12,
+                                    height: 12,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 1.5,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : SizedBox(
+                                    width: 28,
+                                    height: 16,
+                                    child: FittedBox(
+                                      fit: BoxFit.fill,
+                                      child: Switch(
+                                        value: _isOnline,
+                                        onChanged: _toggleOnlineStatus,
+                                        activeColor: Colors.white,
+                                        activeTrackColor: Colors.white.withValues(alpha: 0.4),
+                                        inactiveThumbColor: Colors.grey.shade300,
+                                        inactiveTrackColor: Colors.white.withValues(alpha: 0.2),
+                                      ),
+                                    ),
+                                  ),
+                          ],
+                        ),
+                      );
+                    }
+                    return const SizedBox.shrink();
                   },
                 ),
               ],
             ),
-          ),
-          // Shop selector for developers
-          Consumer<AuthProvider>(
-            builder: (context, auth, _) {
-              if (auth.userData?.role == UserRole.developer) {
-                return StreamBuilder<List<ShopModel>>(
-                  stream: _shopsStream,
-                  builder: (context, snapshot) {
-                    final shops = snapshot.data ?? [];
-                    return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      decoration: BoxDecoration(
-                        color: AppTheme.background,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppTheme.border),
-                      ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: _selectedShopId,
-                          hint: const Text('Select Shop'),
-                          items: [
-                            const DropdownMenuItem(
-                              value: null,
-                              child: Text('All Shops'),
-                            ),
-                            ...shops.map(
-                              (s) => DropdownMenuItem(
-                                value: s.id,
-                                child: Text(s.name),
-                              ),
-                            ),
-                          ],
-                          onChanged: (val) {
-                            setState(() => _selectedShopId = val);
-                          },
-                        ),
-                      ),
-                    );
-                  },
-                );
-              }
-              // Availability toggle for delivery staff
-              if (auth.userData?.role == UserRole.delivery) {
-                return Row(
-                  children: [
-                    Text(
-                      _isOnline ? 'Online' : 'Offline',
-                      style: TextStyle(
-                        color: _isOnline
-                            ? AppTheme.success
-                            : AppTheme.textSecondary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    _isTogglingStatus
-                        ? const SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : Switch(
-                            value: _isOnline,
-                            onChanged: _toggleOnlineStatus,
-                            activeThumbColor: AppTheme.success,
+            
+            // Dropdown in separate row for developers
+            Consumer<AuthProvider>(
+              builder: (context, auth, _) {
+                if (auth.userData?.role == UserRole.developer) {
+                  return StreamBuilder<List<ShopModel>>(
+                    stream: _shopsStream,
+                    builder: (context, snapshot) {
+                      final shops = snapshot.data ?? [];
+                      return Container(
+                        margin: const EdgeInsets.only(top: 12),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.25),
+                            width: 1,
                           ),
-                  ],
-                );
-              }
-              return const SizedBox.shrink();
-            },
-          ),
-        ],
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: _selectedShopId,
+                            isExpanded: true,
+                            hint: const Text(
+                              'Select Shop to Monitor',
+                              style: TextStyle(color: Colors.white70, fontSize: 13),
+                            ),
+                            dropdownColor: Colors.white,
+                            iconEnabledColor: Colors.white,
+                            style: const TextStyle(color: AppTheme.textPrimary, fontSize: 13),
+                            selectedItemBuilder: (context) {
+                              return [
+                                const Text('Monitoring: All Shops', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13)),
+                                ...shops.map((s) => Text('Monitoring: ${s.name}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13))),
+                              ];
+                            },
+                            items: [
+                              const DropdownMenuItem(
+                                value: null,
+                                child: Text('All Shops (Global Monitor)'),
+                              ),
+                              ...shops.map(
+                                (s) => DropdownMenuItem(
+                                  value: s.id,
+                                  child: Text(s.name),
+                                ),
+                              ),
+                            ],
+                            onChanged: (val) {
+                              setState(() => _selectedShopId = val);
+                            },
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                }
+                return const SizedBox.shrink();
+              },
+            ),
+          ],
+        ),
       ),
     );
   }

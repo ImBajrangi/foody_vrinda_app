@@ -112,23 +112,75 @@ class _DashboardViewState extends State<DashboardView> {
   }
 
   Widget _buildHeader(String? shopId, bool isDeveloper) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          isDeveloper && shopId == null
-              ? 'Global Dashboard'
-              : 'Owner Dashboard',
-          style: Theme.of(context).textTheme.displaySmall,
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [AppTheme.ownerColor, Color(0xFF818CF8)],
         ),
-        const SizedBox(height: 4),
-        Text(
-          isDeveloper && shopId == null
-              ? 'Monitoring performance across all shops (Global View).'
-              : 'A high-level overview of your kitchen\'s performance.',
-          style: const TextStyle(color: AppTheme.textSecondary),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.ownerColor.withValues(alpha: 0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        child: Row(
+          children: [
+            // Analytics icon
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.bar_chart_rounded,
+                color: Colors.white,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 14),
+            // Title & subtitle
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isDeveloper && shopId == null
+                        ? 'Global Dashboard'
+                        : 'Owner Dashboard',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    isDeveloper && shopId == null
+                        ? 'Monitoring performance across all shops'
+                        : 'A high-level overview of your kitchen\'s performance',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.8),
+                      fontSize: 12,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 

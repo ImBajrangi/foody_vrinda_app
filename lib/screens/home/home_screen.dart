@@ -59,8 +59,8 @@ class _HomeScreenState extends State<HomeScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Header (Only show on customer Home tab or other role screens)
-            if (_selectedViewIndex != 0 || _customerTabIndex == 0)
+            // Header (Only show on customer Home tab)
+            if (_selectedViewIndex == 0 && _customerTabIndex == 0)
               _buildHeader(context, authProvider, userData),
 
             // View Switcher
@@ -104,7 +104,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                    ),
+                    ).animate().fadeIn(duration: 400.ms).shimmer(duration: 1500.ms, color: AppTheme.primaryOrange.withValues(alpha: 0.15)),
                     const SizedBox(height: 2),
                     const Text(
                       'What would you like to eat?',
@@ -283,7 +283,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
             ),
-          ),
+          ).animate().fadeIn(delay: 100.ms, duration: 400.ms).slideY(begin: 0.15, end: 0, curve: Curves.easeOutCubic),
         ],
       ),
     );
@@ -336,14 +336,14 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
+      margin: const EdgeInsets.only(left: 16, right: 16, top: 12, bottom: 8),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Container(
-          padding: const EdgeInsets.all(4),
+          padding: const EdgeInsets.all(3),
           decoration: BoxDecoration(
             color: const Color(0xFFF1F5F9),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(10),
           ),
           child: Row(
             children: List.generate(views.length, (index) {
@@ -360,28 +360,28 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
+                    horizontal: 12,
+                    vertical: 6,
                   ),
                   decoration: BoxDecoration(
                     color: isSelected ? color : Colors.transparent,
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(7),
                   ),
                   child: Row(
                     children: [
                       Icon(
                         view['icon'] as IconData,
-                        size: 16,
+                        size: 14,
                         color: isSelected
                             ? Colors.white
                             : AppTheme.textSecondary,
                       ),
-                      const SizedBox(width: 6),
+                      const SizedBox(width: 5),
                       Text(
                         view['name'] as String,
                         style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
+                          fontSize: 12,
+                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                           color: isSelected
                               ? Colors.white
                               : AppTheme.textSecondary,
@@ -541,7 +541,7 @@ class _HomeScreenState extends State<HomeScreen> {
         }
 
         return SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(vertical: 16),
+          padding: const EdgeInsets.symmetric(vertical: 8),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -552,12 +552,15 @@ class _HomeScreenState extends State<HomeScreen> {
                   "What's on your mind?",
                   style: Theme.of(
                     context,
-                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+                  ).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 16,
+                  ),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 10),
               SizedBox(
-                height: 100,
+                height: 90,
                 child: ListView(
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -591,16 +594,16 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               // Special Offers Bar
               Padding(
-                padding: const EdgeInsets.only(top: 8),
+                padding: const EdgeInsets.only(top: 4),
                 child: _buildSpecialOffersBar(shops),
               ),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
 
               // Trending Items Section
               _buildTrendingItemsSection(shops),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
 
               // Shops Section Header
               Padding(
@@ -609,8 +612,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     Text(
                       'Restaurants to explore 🍽️',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
+                        fontSize: 16,
                       ),
                     ),
                     const Spacer(),
@@ -618,49 +622,53 @@ class _HomeScreenState extends State<HomeScreen> {
                       '${shops.length} places',
                       style: TextStyle(
                         color: AppTheme.textSecondary,
-                        fontSize: 13,
+                        fontSize: 12,
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 4),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Text(
                   "Choose where you'd like to order from",
-                  style: TextStyle(color: AppTheme.textSecondary, fontSize: 14),
+                  style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 8),
 
               // Shops List
-              ...shops.map(
-                (shop) => Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  child: ShopCard(
-                    name: shop.name,
-                    address: shop.address,
-                    imageUrl: shop.imageUrl,
-                    isOpen: shop.isOpen,
-                    schedule: shop.schedule.displaySchedule,
-                    rating: shop.rating > 0 ? shop.rating : null,
-                    deliveryTime: shop.showWaitTime
-                        ? '${shop.estimatedWaitTime} min'
-                        : null,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => MenuScreen(shop: shop),
-                        ),
-                      );
-                    },
-                  ).animate().fade(duration: 350.ms).slideY(begin: 0.1, end: 0, duration: 350.ms, curve: Curves.easeOutCubic),
-                ),
+              ...shops.asMap().entries.map(
+                (entry) {
+                  final index = entry.key;
+                  final shop = entry.value;
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    child: ShopCard(
+                      name: shop.name,
+                      address: shop.address,
+                      imageUrl: shop.imageUrl,
+                      isOpen: shop.isOpen,
+                      schedule: shop.schedule.displaySchedule,
+                      rating: shop.rating > 0 ? shop.rating : null,
+                      deliveryTime: shop.showWaitTime
+                          ? '${shop.estimatedWaitTime} min'
+                          : null,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => MenuScreen(shop: shop),
+                          ),
+                        );
+                      },
+                    ).animate().fade(delay: (index * 80).ms, duration: 350.ms).slideY(begin: 0.1, end: 0, duration: 350.ms, curve: Curves.easeOutCubic),
+                  );
+                },
               ),
               const SizedBox(height: 16),
             ],
@@ -736,32 +744,32 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(6),
+                padding: const EdgeInsets.all(5),
                 decoration: BoxDecoration(
                   color: AppTheme.primaryOrange.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(6),
                 ),
                 child: const Icon(
                   Icons.auto_awesome,
-                  size: 16,
+                  size: 14,
                   color: AppTheme.primaryOrange,
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 6),
               Text(
                 'Exclusive Offers for You',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w800,
-                  fontSize: 17,
+                  fontSize: 15,
                   letterSpacing: -0.3,
                 ),
               ),
             ],
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
         SizedBox(
-          height: 110,
+          height: 95,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -815,36 +823,36 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(14),
+              padding: const EdgeInsets.all(10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
+                      horizontal: 7,
+                      vertical: 3,
                     ),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(6),
+                      borderRadius: BorderRadius.circular(5),
                     ),
                     child: Text(
                       shop.discountTag!,
                       style: TextStyle(
                         color: primaryColor,
                         fontWeight: FontWeight.bold,
-                        fontSize: 14,
+                        fontSize: 12,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 5),
                   Text(
                     shop.name,
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
-                      fontSize: 15,
+                      fontSize: 13,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -883,14 +891,14 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       },
       child: Container(
-        width: 80,
+        width: 72,
         margin: const EdgeInsets.symmetric(horizontal: 4),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 70,
-              height: 70,
+              width: 58,
+              height: 58,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
@@ -908,8 +916,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 boxShadow: [
                   BoxShadow(
                     color: AppTheme.primaryOrange.withValues(alpha: 0.12),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
                   ),
                 ],
               ),
@@ -917,20 +925,20 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: lottieAsset != null
                     ? LottieAssets.build(
                         lottieAsset,
-                        width: 44,
-                        height: 44,
+                        width: 36,
+                        height: 36,
                         fit: BoxFit.contain,
                         errorBuilder: (context, error, stackTrace) {
                           return Text(
                             emoji ?? '🍴',
-                            style: const TextStyle(fontSize: 32),
+                            style: const TextStyle(fontSize: 26),
                           );
                         },
                       )
-                    : Text(emoji ?? '🍴', style: const TextStyle(fontSize: 32)),
+                    : Text(emoji ?? '🍴', style: const TextStyle(fontSize: 26)),
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Text(
               label,
               style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
@@ -958,22 +966,22 @@ class _HomeScreenState extends State<HomeScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
             children: [
-              const Text('🔥', style: TextStyle(fontSize: 22)),
-              const SizedBox(width: 8),
+              const Text('🔥', style: TextStyle(fontSize: 18)),
+              const SizedBox(width: 6),
               Text(
                 'Trending dishes near you!',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w800,
-                  fontSize: 20,
-                  letterSpacing: -0.5,
+                  fontSize: 16,
+                  letterSpacing: -0.3,
                 ),
               ),
             ],
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
         SizedBox(
-          height: 240,
+          height: 210,
           child: StreamBuilder<List<MenuItemModel>>(
             stream: _trendingStream,
             builder: (context, menuSnapshot) {
@@ -1078,8 +1086,8 @@ class _HomeScreenState extends State<HomeScreen> {
             );
           },
           child: Container(
-            width: 155,
-            margin: const EdgeInsets.symmetric(horizontal: 6),
+            width: 145,
+            margin: const EdgeInsets.symmetric(horizontal: 5),
             decoration: BoxDecoration(
               color: AppTheme.cardBackground,
               borderRadius: BorderRadius.circular(16),

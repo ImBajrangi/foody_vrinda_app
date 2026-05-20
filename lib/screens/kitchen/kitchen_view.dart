@@ -192,165 +192,220 @@ class _KitchenViewState extends State<KitchenView> {
   }
 
   Widget _buildHeader(bool isDeveloper) {
-    final userData = Provider.of<AuthProvider>(context, listen: false).userData;
-
     return Container(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: AppTheme.primaryOrange.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: AppTheme.primaryOrange.withOpacity(0.2),
-                width: 1.5,
-              ),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child:
-                  userData?.photoURL != null && userData!.photoURL!.isNotEmpty
-                  ? CachedNetworkImage(
-                      imageUrl: userData.photoURL!,
-                      fit: BoxFit.cover,
-                      placeholder: (context, url) => const Center(
-                        child: CircularProgressIndicator(strokeWidth: 2),
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [AppTheme.kitchenColor, Color(0xFFFF8C42)],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.kitchenColor.withValues(alpha: 0.35),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                // Kitchen icon
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.restaurant_menu_rounded,
+                    color: Colors.white,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // Title & subtitle
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Kitchen Panel',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                          letterSpacing: 0.3,
+                        ),
                       ),
-                      errorWidget: (context, url, error) => Center(
-                        child: Text(
-                          userData.initials,
+                      const SizedBox(height: 2),
+                      StreamBuilder<List<ShopModel>>(
+                        stream: _shopsStream,
+                        builder: (context, snapshot) {
+                          final shops = snapshot.data ?? [];
+                          final shopName = _selectedShopId == null
+                              ? 'All Shops'
+                              : shops
+                                    .firstWhere(
+                                      (s) => s.id == _selectedShopId,
+                                      orElse: () =>
+                                          ShopModel(id: '', name: 'Unknown Shop'),
+                                    )
+                                    .name;
+                          return Text(
+                            isDeveloper && _selectedShopId == null
+                                ? 'Global Kitchen Monitor'
+                                : 'Live orders for $shopName',
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.9),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // Alarm badge if active
+                if (_isAlarmActive)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.ring_volume, color: AppTheme.error, size: 12),
+                        const SizedBox(width: 4),
+                        Text(
+                          '$_unacknowledgedCount NEW',
                           style: const TextStyle(
-                            fontSize: 18,
+                            color: AppTheme.error,
+                            fontSize: 10,
                             fontWeight: FontWeight.bold,
-                            color: AppTheme.primaryOrange,
                           ),
                         ),
-                      ),
-                    )
-                  : Center(
-                      child: Text(
-                        userData?.initials ?? 'K',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.primaryOrange,
-                        ),
-                      ),
+                      ],
                     ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Kitchen',
-                  style: Theme.of(context).textTheme.headlineSmall,
-                ),
-                StreamBuilder<List<ShopModel>>(
-                  stream: _shopsStream,
-                  builder: (context, snapshot) {
-                    final shops = snapshot.data ?? [];
-                    final shopName = _selectedShopId == null
-                        ? 'All Shops'
-                        : shops
-                              .firstWhere(
-                                (s) => s.id == _selectedShopId,
-                                orElse: () =>
-                                    ShopModel(id: '', name: 'Unknown Shop'),
-                              )
-                              .name;
-                    return Text(
-                      isDeveloper && _selectedShopId == null
-                          ? 'Global Kitchen Monitor (All Shops)'
-                          : 'Manage pending orders for $shopName',
-                      style: const TextStyle(
-                        color: AppTheme.textSecondary,
-                        fontSize: 13,
-                      ),
-                    );
-                  },
-                ),
+                  ),
               ],
             ),
-          ),
-          // Create order button (for owner/developer)
-          Consumer<AuthProvider>(
-            builder: (context, auth, _) {
-              final isDev = auth.userData?.role == UserRole.developer;
-              final isOwner = auth.userData?.role == UserRole.owner;
+            
+            // Dropdown/actions in separate row beneath titles for professional breathing room
+            Consumer<AuthProvider>(
+              builder: (context, auth, _) {
+                final isDev = auth.userData?.role == UserRole.developer;
+                final isOwner = auth.userData?.role == UserRole.owner;
 
-              if (isDev) {
-                return StreamBuilder<List<ShopModel>>(
-                  stream: _shopsStream,
-                  builder: (context, snapshot) {
-                    final shops = snapshot.data ?? [];
-                    return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      decoration: BoxDecoration(
-                        color: AppTheme.background,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppTheme.border),
-                      ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: _selectedShopId,
-                          hint: const Text('Select Shop'),
-                          items: [
-                            const DropdownMenuItem(
-                              value: null,
-                              child: Text('All Shops'),
-                            ),
-                            ...shops.map(
-                              (s) => DropdownMenuItem(
-                                value: s.id,
-                                child: Text(s.name),
-                              ),
-                            ),
-                          ],
-                          onChanged: (val) {
-                            setState(() => _selectedShopId = val);
-                          },
+                if (isDev) {
+                  return StreamBuilder<List<ShopModel>>(
+                    stream: _shopsStream,
+                    builder: (context, snapshot) {
+                      final shops = snapshot.data ?? [];
+                      return Container(
+                        margin: const EdgeInsets.only(top: 12),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.25),
+                            width: 1,
+                          ),
                         ),
-                      ),
-                    );
-                  },
-                );
-              }
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: _selectedShopId,
+                            isExpanded: true,
+                            hint: const Text(
+                              'Select Shop to Monitor',
+                              style: TextStyle(color: Colors.white70, fontSize: 13),
+                            ),
+                            dropdownColor: Colors.white,
+                            iconEnabledColor: Colors.white,
+                            style: const TextStyle(color: AppTheme.textPrimary, fontSize: 13),
+                            selectedItemBuilder: (context) {
+                              return [
+                                const Text('Monitoring: All Shops', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13)),
+                                ...shops.map((s) => Text('Monitoring: ${s.name}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13))),
+                              ];
+                            },
+                            items: [
+                              const DropdownMenuItem(
+                                value: null,
+                                child: Text('All Shops (Global Monitor)'),
+                              ),
+                              ...shops.map(
+                                (s) => DropdownMenuItem(
+                                  value: s.id,
+                                  child: Text(s.name),
+                                ),
+                              ),
+                            ],
+                            onChanged: (val) {
+                              setState(() => _selectedShopId = val);
+                            },
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                }
 
-              if (isOwner) {
-                return Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    ElevatedButton.icon(
-                      onPressed: () {
+                if (isOwner) {
+                  return Container(
+                    margin: const EdgeInsets.only(top: 12),
+                    child: GestureDetector(
+                      onTap: () {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text('Create order coming soon!'),
                           ),
                         );
                       },
-                      icon: const Icon(Icons.add, size: 18),
-                      label: const Text('New Order'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.success,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 10,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.add, size: 16, color: AppTheme.kitchenColor),
+                            SizedBox(width: 6),
+                            Text(
+                              'Create Manual Order',
+                              style: TextStyle(
+                                color: AppTheme.kitchenColor,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                  ],
-                );
-              }
-              return const SizedBox.shrink();
-            },
-          ),
-        ],
+                  );
+                }
+                return const SizedBox.shrink();
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
