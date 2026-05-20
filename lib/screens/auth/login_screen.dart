@@ -126,7 +126,7 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 8),
               Center(
                 child: Text(
-                  'Sign in to order delicious food',
+                  'Enter credentials to sign in or register instantly',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: AppTheme.textSecondary,
                     fontWeight: FontWeight.w500,
@@ -252,7 +252,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(height: 24),
 
                       AppButton(
-                        text: 'Login',
+                        text: 'Sign In / Register',
                         isFullWidth: true,
                         isLoading: authProvider.isLoading,
                         height: 52,

@@ -411,7 +411,7 @@ class _LocationPickerDialogState extends State<LocationPickerDialog> {
                 decoration: const BoxDecoration(shape: BoxShape.circle),
                 child: const Icon(
                   Icons.my_location_rounded,
-                  color: AppTheme.primaryBlue,
+                  color: AppTheme.primaryOrange,
                   size: 26,
                 ),
               ),

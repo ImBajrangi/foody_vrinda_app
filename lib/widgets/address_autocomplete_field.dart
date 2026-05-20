@@ -233,7 +233,7 @@ class _AddressAutocompleteFieldState extends State<AddressAutocompleteField> {
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: const BorderSide(
-                  color: AppTheme.primaryBlue,
+                  color: AppTheme.primaryOrange,
                   width: 2,
                 ),
               ),

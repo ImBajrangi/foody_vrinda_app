@@ -73,7 +73,7 @@ class AppInputField extends StatelessWidget {
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(
-                color: AppTheme.primaryBlue,
+                color: AppTheme.primaryOrange,
                 width: 2,
               ),
             ),
@@ -147,7 +147,7 @@ class AppDropdown<T> extends StatelessWidget {
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(
-                color: AppTheme.primaryBlue,
+                color: AppTheme.primaryOrange,
                 width: 2,
               ),
             ),

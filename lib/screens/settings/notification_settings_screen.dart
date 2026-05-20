@@ -164,12 +164,12 @@ class _NotificationSettingsScreenState
                         width: 48,
                         height: 48,
                         decoration: BoxDecoration(
-                          color: AppTheme.primaryBlue.withOpacity(0.1),
+                          color: AppTheme.primaryOrange.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Icon(
                           Icons.notifications_active,
-                          color: AppTheme.primaryBlue,
+                          color: AppTheme.primaryOrange,
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -225,58 +225,62 @@ class _NotificationSettingsScreenState
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: AppTheme.cardBackground,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isSelected
-              ? AppTheme.primaryBlue
-              : AppTheme.border.withOpacity(0.5),
+              ? AppTheme.primaryOrange
+              : AppTheme.border.withValues(alpha: 0.5),
           width: isSelected ? 2 : 1,
         ),
       ),
-      child: ListTile(
-        onTap: () => _saveSound(sound['file']!),
-        leading: Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: isDefault
-                ? AppTheme.textTertiary.withOpacity(0.1)
-                : AppTheme.primaryBlue.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(10),
+      child: Material(
+        color: AppTheme.cardBackground,
+        borderRadius: BorderRadius.circular(12),
+        clipBehavior: Clip.antiAlias,
+        child: ListTile(
+          onTap: () => _saveSound(sound['file']!),
+          leading: Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: isDefault
+                  ? AppTheme.textTertiary.withValues(alpha: 0.1)
+                  : AppTheme.primaryOrange.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              isDefault ? Icons.phone_android : Icons.music_note,
+              color: isDefault ? AppTheme.textTertiary : AppTheme.primaryOrange,
+              size: 20,
+            ),
           ),
-          child: Icon(
-            isDefault ? Icons.phone_android : Icons.music_note,
-            color: isDefault ? AppTheme.textTertiary : AppTheme.primaryBlue,
-            size: 20,
+          title: Text(
+            sound['name']!,
+            style: TextStyle(
+              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+              color: isSelected ? AppTheme.primaryOrange : null,
+            ),
           ),
-        ),
-        title: Text(
-          sound['name']!,
-          style: TextStyle(
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-            color: isSelected ? AppTheme.primaryBlue : null,
+          subtitle: isDefault
+              ? const Text(
+                  'Uses your device\'s default notification sound',
+                  style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                )
+              : null,
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (!isDefault)
+                IconButton(
+                  onPressed: () => _previewSound(sound['file']!),
+                  icon: const Icon(Icons.play_circle_outline, size: 24),
+                  color: AppTheme.primaryOrange,
+                  tooltip: 'Preview',
+                ),
+              if (isSelected)
+                const Icon(Icons.check_circle, color: AppTheme.primaryOrange),
+            ],
           ),
-        ),
-        subtitle: isDefault
-            ? const Text(
-                'Uses your device\'s default notification sound',
-                style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
-              )
-            : null,
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (!isDefault)
-              IconButton(
-                onPressed: () => _previewSound(sound['file']!),
-                icon: const Icon(Icons.play_circle_outline, size: 24),
-                color: AppTheme.primaryBlue,
-                tooltip: 'Preview',
-              ),
-            if (isSelected)
-              const Icon(Icons.check_circle, color: AppTheme.primaryBlue),
-          ],
         ),
       ),
     );

@@ -366,29 +366,33 @@ class _SearchScreenState extends State<SearchScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.border.withValues(alpha: 0.5)),
+      ),
+      child: Material(
         color: AppTheme.cardBackground,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.border.withOpacity(0.5)),
-      ),
-      child: ListTile(
-        onTap: () => _navigateToResult(shop),
-        leading: Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(
-            color: shop.shop?.isOpen == true ? Colors.green : Colors.grey,
-            shape: BoxShape.circle,
+        clipBehavior: Clip.antiAlias,
+        child: ListTile(
+          onTap: () => _navigateToResult(shop),
+          leading: Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              color: shop.shop?.isOpen == true ? Colors.green : Colors.grey,
+              shape: BoxShape.circle,
+            ),
           ),
+          title: Text(
+            shop.title,
+            style: const TextStyle(fontWeight: FontWeight.w500),
+          ),
+          subtitle: Text(
+            shop.subtitle ?? '',
+            style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+          ),
+          trailing: const Icon(Icons.chevron_right, color: AppTheme.textTertiary),
         ),
-        title: Text(
-          shop.title,
-          style: const TextStyle(fontWeight: FontWeight.w500),
-        ),
-        subtitle: Text(
-          shop.subtitle ?? '',
-          style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
-        ),
-        trailing: const Icon(Icons.chevron_right, color: AppTheme.textTertiary),
       ),
     );
   }
@@ -403,27 +407,31 @@ class _SearchScreenState extends State<SearchScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.border.withValues(alpha: 0.5)),
+      ),
+      child: Material(
         color: AppTheme.cardBackground,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.border.withOpacity(0.5)),
-      ),
-      child: ListTile(
-        onTap: onTap,
-        leading: Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.15),
-            borderRadius: BorderRadius.circular(10),
+        clipBehavior: Clip.antiAlias,
+        child: ListTile(
+          onTap: onTap,
+          leading: Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: color, size: 20),
           ),
-          child: Icon(icon, color: color, size: 20),
+          title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
+          subtitle: Text(
+            subtitle,
+            style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+          ),
+          trailing: const Icon(Icons.chevron_right, color: AppTheme.textTertiary),
         ),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
-        subtitle: Text(
-          subtitle,
-          style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
-        ),
-        trailing: const Icon(Icons.chevron_right, color: AppTheme.textTertiary),
       ),
     );
   }
@@ -495,57 +503,61 @@ class _SearchScreenState extends State<SearchScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: AppTheme.cardBackground,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
         ],
       ),
-      child: ListTile(
-        onTap: () => _navigateToResult(result),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-            width: 56,
-            height: 56,
-            color: AppTheme.background,
-            child: result.imageUrl != null && result.imageUrl!.isNotEmpty
-                ? CachedNetworkImage(
-                    imageUrl: result.imageUrl!,
-                    fit: BoxFit.cover,
-                    placeholder: (context, url) => const Center(
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                    errorWidget: (context, url, error) => Icon(
+      child: Material(
+        color: AppTheme.cardBackground,
+        borderRadius: BorderRadius.circular(16),
+        clipBehavior: Clip.antiAlias,
+        child: ListTile(
+          onTap: () => _navigateToResult(result),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          leading: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              width: 56,
+              height: 56,
+              color: AppTheme.background,
+              child: result.imageUrl != null && result.imageUrl!.isNotEmpty
+                  ? CachedNetworkImage(
+                      imageUrl: result.imageUrl!,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => const Center(
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                      errorWidget: (context, url, error) => Icon(
+                        result.type == 'shop' ? Icons.store : Icons.fastfood,
+                        color: AppTheme.textTertiary,
+                      ),
+                    )
+                  : Icon(
                       result.type == 'shop' ? Icons.store : Icons.fastfood,
                       color: AppTheme.textTertiary,
+                      size: 28,
                     ),
-                  )
-                : Icon(
-                    result.type == 'shop' ? Icons.store : Icons.fastfood,
-                    color: AppTheme.textTertiary,
-                    size: 28,
-                  ),
+            ),
           ),
+          title: Text(
+            result.title,
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+          subtitle: result.subtitle != null
+              ? Text(
+                  result.subtitle!,
+                  style: TextStyle(fontSize: 13, color: AppTheme.textSecondary),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                )
+              : null,
+          trailing: Icon(Icons.chevron_right, color: AppTheme.textTertiary),
         ),
-        title: Text(
-          result.title,
-          style: const TextStyle(fontWeight: FontWeight.w600),
-        ),
-        subtitle: result.subtitle != null
-            ? Text(
-                result.subtitle!,
-                style: TextStyle(fontSize: 13, color: AppTheme.textSecondary),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              )
-            : null,
-        trailing: Icon(Icons.chevron_right, color: AppTheme.textTertiary),
       ),
     );
   }

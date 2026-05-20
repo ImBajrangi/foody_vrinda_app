@@ -32,7 +32,7 @@ class TimePeriodSelector extends StatelessWidget {
                   LottieAssets.clock,
                   fit: BoxFit.contain,
                   errorBuilder: (context, error, stackTrace) =>
-                      const Icon(Icons.schedule, color: AppTheme.primaryBlue),
+                      const Icon(Icons.schedule, color: AppTheme.primaryOrange),
                 ),
               ),
               const SizedBox(width: 12),
@@ -330,7 +330,7 @@ class TimePeriodDisplay extends StatelessWidget {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
-            color: AppTheme.primaryBlue.withValues(alpha: 0.1),
+            color: AppTheme.primaryOrange.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Text(
@@ -338,7 +338,7 @@ class TimePeriodDisplay extends StatelessWidget {
             style: const TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w500,
-              color: AppTheme.primaryBlue,
+              color: AppTheme.primaryOrange,
             ),
           ),
         );

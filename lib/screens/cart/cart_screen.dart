@@ -168,14 +168,14 @@ class _CartScreenState extends State<CartScreen> {
                             width: 48,
                             height: 48,
                             decoration: BoxDecoration(
-                              color: AppTheme.primaryBlue.withValues(
+                              color: AppTheme.primaryOrange.withValues(
                                 alpha: 0.1,
                               ),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: const Icon(
                               Icons.store,
-                              color: AppTheme.primaryBlue,
+                              color: AppTheme.primaryOrange,
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -275,7 +275,7 @@ class _CartScreenState extends State<CartScreen> {
                                           minHeight: 32,
                                         ),
                                         padding: EdgeInsets.zero,
-                                        color: AppTheme.primaryBlue,
+                                        color: AppTheme.primaryOrange,
                                       ),
                                       SizedBox(
                                         width: 32,
@@ -296,7 +296,7 @@ class _CartScreenState extends State<CartScreen> {
                                           minHeight: 32,
                                         ),
                                         padding: EdgeInsets.zero,
-                                        color: AppTheme.primaryBlue,
+                                        color: AppTheme.primaryOrange,
                                       ),
                                     ],
                                   ),
@@ -564,7 +564,7 @@ class _CartScreenState extends State<CartScreen> {
                               icon: const Icon(Icons.map_outlined),
                               label: const Text('Pick on Map'),
                               style: TextButton.styleFrom(
-                                foregroundColor: AppTheme.primaryBlue,
+                                foregroundColor: AppTheme.primaryOrange,
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 16,
                                   vertical: 8,
@@ -817,7 +817,7 @@ class _CartScreenState extends State<CartScreen> {
                   children: [
                     const Icon(
                       Icons.receipt_long,
-                      color: AppTheme.primaryBlue,
+                      color: AppTheme.primaryOrange,
                       size: 24,
                     ),
                     const SizedBox(width: 10),
@@ -896,7 +896,7 @@ class _CartScreenState extends State<CartScreen> {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: AppTheme.primaryBlue.withValues(
+                              color: AppTheme.primaryOrange.withValues(
                                 alpha: 0.1,
                               ),
                               borderRadius: BorderRadius.circular(6),
@@ -905,7 +905,7 @@ class _CartScreenState extends State<CartScreen> {
                               '${item.quantity}x',
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
-                                color: AppTheme.primaryBlue,
+                                color: AppTheme.primaryOrange,
                                 fontSize: 12,
                               ),
                             ),
@@ -955,7 +955,7 @@ class _CartScreenState extends State<CartScreen> {
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 20,
-                        color: AppTheme.primaryBlue,
+                        color: AppTheme.primaryOrange,
                       ),
                     ),
                   ],
@@ -1459,7 +1459,7 @@ class _CartScreenState extends State<CartScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Row(
           children: [
-            Icon(Icons.phone_android, color: AppTheme.primaryBlue),
+            Icon(Icons.phone_android, color: AppTheme.primaryOrange),
             SizedBox(width: 8),
             Text('Use Mobile App'),
           ],
@@ -1471,7 +1471,7 @@ class _CartScreenState extends State<CartScreen> {
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryBlue,
+              backgroundColor: AppTheme.primaryOrange,
               foregroundColor: Colors.white,
             ),
             child: const Text('Got it'),
@@ -1489,7 +1489,7 @@ class _CartScreenState extends State<CartScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Row(
           children: [
-            Icon(Icons.lock_outline, color: AppTheme.primaryBlue),
+            Icon(Icons.lock_outline, color: AppTheme.primaryOrange),
             SizedBox(width: 8),
             Text('Login Required'),
           ],
@@ -1511,7 +1511,7 @@ class _CartScreenState extends State<CartScreen> {
               );
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryBlue,
+              backgroundColor: AppTheme.primaryOrange,
               foregroundColor: Colors.white,
             ),
             child: const Text('Sign In'),

@@ -376,10 +376,10 @@ class ShopCard extends StatelessWidget {
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: AppTheme.primaryBlue.withOpacity(0.08),
+                        color: AppTheme.primaryOrange.withOpacity(0.08),
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
-                          color: AppTheme.primaryBlue.withOpacity(0.2),
+                          color: AppTheme.primaryOrange.withOpacity(0.2),
                         ),
                       ),
                       child: Row(
@@ -387,7 +387,7 @@ class ShopCard extends StatelessWidget {
                           Icon(
                             Icons.local_offer_rounded,
                             size: 16,
-                            color: AppTheme.primaryBlue,
+                            color: AppTheme.primaryOrange,
                           ),
                           const SizedBox(width: 6),
                           Expanded(
@@ -396,7 +396,7 @@ class ShopCard extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
-                                color: AppTheme.primaryBlue,
+                                color: AppTheme.primaryOrange,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -448,8 +448,8 @@ class ShopCard extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            AppTheme.primaryBlue.withValues(alpha: 0.2),
-            AppTheme.primaryBlue.withValues(alpha: 0.05),
+            AppTheme.primaryOrange.withValues(alpha: 0.2),
+            AppTheme.primaryOrange.withValues(alpha: 0.05),
           ],
         ),
       ),
@@ -460,7 +460,7 @@ class ShopCard extends StatelessWidget {
             Icon(
               Icons.store_outlined,
               size: 48,
-              color: AppTheme.primaryBlue.withValues(alpha: 0.4),
+              color: AppTheme.primaryOrange.withValues(alpha: 0.4),
             ),
             const SizedBox(height: 12),
             Text(
@@ -471,7 +471,7 @@ class ShopCard extends StatelessWidget {
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 2,
-                color: AppTheme.primaryBlue.withValues(alpha: 0.3),
+                color: AppTheme.primaryOrange.withValues(alpha: 0.3),
               ),
             ),
           ],

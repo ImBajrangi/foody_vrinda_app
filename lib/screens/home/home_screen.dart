@@ -340,7 +340,7 @@ class _HomeScreenState extends State<HomeScreen> {
             children: List.generate(views.length, (index) {
               final view = views[index];
               final isSelected = _selectedViewIndex == index;
-              final color = view['color'] as Color? ?? AppTheme.primaryBlue;
+              final color = view['color'] as Color? ?? AppTheme.primaryOrange;
 
               return GestureDetector(
                 onTap: () {
@@ -898,7 +898,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: AppTheme.primaryBlue.withValues(alpha: 0.12),
+                    color: AppTheme.primaryOrange.withValues(alpha: 0.12),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -1341,10 +1341,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 width: 120,
                 height: 120,
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryBlue.withValues(alpha: 0.1),
+                  color: AppTheme.primaryOrange.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: AppTheme.primaryBlue.withValues(alpha: 0.2),
+                    color: AppTheme.primaryOrange.withValues(alpha: 0.2),
                     width: 4,
                   ),
                   boxShadow: [
@@ -1392,7 +1392,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   vertical: 4,
                 ),
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryBlue.withValues(alpha: 0.1),
+                  color: AppTheme.primaryOrange.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -1400,40 +1400,43 @@ class _HomeScreenState extends State<HomeScreen> {
                   style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: AppTheme.primaryBlue,
+                    color: AppTheme.primaryOrange,
                   ),
                 ),
               ),
               const SizedBox(height: 24),
 
               // My Orders Tile
-              ListTile(
-                leading: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primaryBlue.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(
-                    Icons.receipt_long,
-                    color: AppTheme.primaryBlue,
-                  ),
-                ),
-                title: const Text(
-                  'My Orders',
-                  style: TextStyle(fontWeight: FontWeight.w600),
-                ),
-                subtitle: const Text('Track your active and past orders'),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () {
-                  Navigator.pop(context); // Close sheet
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const OrderHistoryScreen(),
+              Material(
+                color: Colors.transparent,
+                child: ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryOrange.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                  );
-                },
+                    child: const Icon(
+                      Icons.receipt_long,
+                      color: AppTheme.primaryOrange,
+                    ),
+                  ),
+                  title: const Text(
+                    'My Orders',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  subtitle: const Text('Track your active and past orders'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () {
+                    Navigator.pop(context); // Close sheet
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const OrderHistoryScreen(),
+                      ),
+                    );
+                  },
+                ),
               ),
               const SizedBox(height: 16),
 
@@ -1496,7 +1499,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     );
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryBlue,
+                    backgroundColor: AppTheme.primaryOrange,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
                   child: const Text('Sign In'),
@@ -1525,7 +1528,7 @@ class _HomeScreenState extends State<HomeScreen> {
         style: const TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w800,
-          color: AppTheme.primaryBlue,
+          color: AppTheme.primaryOrange,
         ),
       ),
     );
@@ -1817,26 +1820,29 @@ class _HomeScreenState extends State<HomeScreen> {
     required String subtitle,
     required VoidCallback onTap,
   }) {
-    return ListTile(
-      onTap: onTap,
-      leading: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: AppTheme.primaryOrange.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(8),
+    return Material(
+      color: Colors.transparent,
+      child: ListTile(
+        onTap: onTap,
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: AppTheme.primaryOrange.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: AppTheme.primaryOrange, size: 20),
         ),
-        child: Icon(icon, color: AppTheme.primaryOrange, size: 20),
+        title: Text(
+          title,
+          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+        ),
+        subtitle: Text(
+          subtitle,
+          style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+        ),
+        trailing: const Icon(Icons.chevron_right, size: 20, color: AppTheme.textTertiary),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       ),
-      title: Text(
-        title,
-        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
-      ),
-      subtitle: Text(
-        subtitle,
-        style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
-      ),
-      trailing: const Icon(Icons.chevron_right, size: 20, color: AppTheme.textTertiary),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
     );
   }
 }

@@ -226,12 +226,12 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                               Container(
                                 padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
-                                  color: AppTheme.primaryBlue.withValues(
+                                  color: AppTheme.primaryOrange.withValues(
                                     alpha: 0.05,
                                   ),
                                   borderRadius: BorderRadius.circular(16),
                                   border: Border.all(
-                                    color: AppTheme.primaryBlue.withValues(
+                                    color: AppTheme.primaryOrange.withValues(
                                       alpha: 0.1,
                                     ),
                                   ),
@@ -244,7 +244,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                                           width: 40,
                                           height: 40,
                                           decoration: BoxDecoration(
-                                            color: AppTheme.primaryBlue,
+                                            color: AppTheme.primaryOrange,
                                             borderRadius: BorderRadius.circular(
                                               10,
                                             ),
@@ -287,7 +287,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                                           label: const Text('Call'),
                                           style: ElevatedButton.styleFrom(
                                             backgroundColor:
-                                                AppTheme.primaryBlue,
+                                                AppTheme.primaryOrange,
                                             foregroundColor: Colors.white,
                                             padding: const EdgeInsets.symmetric(
                                               horizontal: 16,
@@ -321,9 +321,9 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                                           ),
                                           style: OutlinedButton.styleFrom(
                                             foregroundColor:
-                                                AppTheme.primaryBlue,
+                                                AppTheme.primaryOrange,
                                             side: const BorderSide(
-                                              color: AppTheme.primaryBlue,
+                                              color: AppTheme.primaryOrange,
                                             ),
                                             padding: const EdgeInsets.symmetric(
                                               vertical: 10,
@@ -360,7 +360,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                                 : Icons.account_balance_wallet_outlined,
                             color: order.paymentMethod == PaymentMethod.cash
                                 ? AppTheme.warning
-                                : AppTheme.primaryBlue,
+                                : AppTheme.primaryOrange,
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -518,7 +518,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                                     '${item.quantity}x',
                                     style: const TextStyle(
                                       fontWeight: FontWeight.bold,
-                                      color: AppTheme.primaryBlue,
+                                      color: AppTheme.primaryOrange,
                                     ),
                                   ),
                                   const SizedBox(width: 12),
@@ -674,7 +674,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                 Icon(
                   Icons.location_on_outlined,
                   size: 20,
-                  color: AppTheme.primaryBlue,
+                  color: AppTheme.primaryOrange,
                 ),
                 SizedBox(width: 8),
                 Text(

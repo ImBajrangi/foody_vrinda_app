@@ -33,7 +33,7 @@ class AppButton extends StatelessWidget {
       child: ElevatedButton(
         onPressed: isLoading ? null : onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: backgroundColor ?? AppTheme.primaryBlue,
+          backgroundColor: backgroundColor ?? AppTheme.primaryOrange,
           foregroundColor: textColor ?? Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
@@ -184,7 +184,7 @@ class StatusButton extends StatelessWidget {
       case 'completed':
         return AppTheme.textSecondary;
       default:
-        return AppTheme.primaryBlue;
+        return AppTheme.primaryOrange;
     }
   }
 

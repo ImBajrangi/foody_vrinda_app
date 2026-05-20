@@ -51,7 +51,7 @@ class _AnimatedLoaderState extends State<AnimatedLoader> {
                 padding: const EdgeInsets.all(32),
                 child: const CircularProgressIndicator(
                   strokeWidth: 3,
-                  color: AppTheme.primaryBlue,
+                  color: AppTheme.primaryOrange,
                 ),
               ),
             ),
@@ -159,7 +159,7 @@ class EmptyState extends StatelessWidget {
               ElevatedButton(
                 onPressed: onAction,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryBlue,
+                  backgroundColor: AppTheme.primaryOrange,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 32,
                     vertical: 14,
@@ -272,7 +272,7 @@ class OrderStatusAnimation extends StatelessWidget {
       errorBuilder: (context, error, stackTrace) => Icon(
         Icons.local_shipping,
         size: size * 0.6,
-        color: AppTheme.primaryBlue,
+        color: AppTheme.primaryOrange,
       ),
     );
   }
@@ -354,7 +354,7 @@ class _AnimatedIconButtonState extends State<AnimatedIconButton>
         scale: _scaleAnimation,
         child: Icon(
           widget.icon,
-          color: widget.color ?? AppTheme.primaryBlue,
+          color: widget.color ?? AppTheme.primaryOrange,
           size: widget.size,
         ),
       ),
@@ -414,7 +414,7 @@ class _BouncyAddButtonState extends State<BouncyAddButton>
         style: ElevatedButton.styleFrom(
           backgroundColor: widget.isAdded
               ? AppTheme.success
-              : AppTheme.primaryBlue,
+              : AppTheme.primaryOrange,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),

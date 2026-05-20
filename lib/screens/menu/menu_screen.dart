@@ -29,6 +29,7 @@ class _MenuScreenState extends State<MenuScreen> {
   final ReviewService _reviewService = ReviewService();
   late Stream<List<MenuItemModel>> _menuStream;
   bool _showInfo = false;
+  String _selectedCategory = 'All';
 
   @override
   void initState() {
@@ -43,326 +44,402 @@ class _MenuScreenState extends State<MenuScreen> {
     });
   }
 
+  PreferredSizeWidget _buildCategoryTabBar(List<MenuItemModel> items) {
+    final categories = [
+      'All',
+      ...items
+          .map((e) => e.category ?? 'General')
+          .toSet()
+          .where((c) => c.isNotEmpty)
+    ];
+
+    return PreferredSize(
+      preferredSize: const Size.fromHeight(60),
+      child: Container(
+        height: 60,
+        width: double.infinity,
+        decoration: const BoxDecoration(
+          color: AppTheme.cardBackground,
+          border: Border(
+            bottom: BorderSide(color: AppTheme.border, width: 1),
+          ),
+        ),
+        child: ListView.builder(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          itemCount: categories.length,
+          itemBuilder: (context, index) {
+            final category = categories[index];
+            final isSelected = _selectedCategory == category;
+            return Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: InkWell(
+                onTap: () {
+                  setState(() {
+                    _selectedCategory = category;
+                  });
+                },
+                borderRadius: BorderRadius.circular(20),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: isSelected ? AppTheme.primaryOrange : AppTheme.background,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isSelected ? AppTheme.primaryOrange : AppTheme.border,
+                      width: 1,
+                    ),
+                    boxShadow: isSelected
+                        ? [
+                            BoxShadow(
+                              color: AppTheme.primaryOrange.withValues(alpha: 0.2),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            )
+                          ]
+                        : null,
+                  ),
+                  child: Center(
+                    child: Text(
+                      category,
+                      style: TextStyle(
+                        color: isSelected ? Colors.white : AppTheme.textSecondary,
+                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final cartProvider = Provider.of<CartProvider>(context);
 
     return Scaffold(
       backgroundColor: AppTheme.background,
-      body: NestedScrollView(
-        headerSliverBuilder: (context, innerBoxIsScrolled) {
-          return [
-            SliverAppBar(
-              expandedHeight: 250,
-              pinned: true,
-              backgroundColor: AppTheme.cardBackground,
-              leading: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: IconButton(
-                  onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.arrow_back, color: Colors.white),
-                  style: IconButton.styleFrom(
-                    backgroundColor: Colors.black26,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+      body: StreamBuilder<List<MenuItemModel>>(
+        stream: _menuStream,
+        builder: (context, snapshot) {
+          final menuItems = snapshot.data ?? _shopService.getCachedMenuItems(widget.shop.id);
+
+          if (menuItems.isEmpty && snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+              child: AnimatedLoader(
+                message: 'Reading menu...',
+              ),
+            );
+          }
+
+          if (snapshot.hasError && menuItems.isEmpty) {
+            return Center(
+              child: Text('Error: ${snapshot.error}'),
+            );
+          }
+
+          if (menuItems.isEmpty) {
+            return const EmptyState(
+              title: 'Menu is Empty',
+              subtitle: 'This shop hasn\'t added any items yet.',
+              animationType: 'data',
+            );
+          }
+
+          // Proactively cache menu item images
+          final menuImages = menuItems
+              .map((i) => i.imageUrl)
+              .where((url) => url != null && url.isNotEmpty)
+              .cast<String>()
+              .toList();
+          if (menuImages.isNotEmpty) {
+            ResourceCacheService().cacheImages(menuImages);
+          }
+
+          final filteredItems = _selectedCategory == 'All'
+              ? menuItems
+              : menuItems.where((item) => (item.category ?? 'General') == _selectedCategory).toList();
+
+          return NestedScrollView(
+            headerSliverBuilder: (context, innerBoxIsScrolled) {
+              return [
+                SliverAppBar(
+                  expandedHeight: 250,
+                  pinned: true,
+                  backgroundColor: AppTheme.cardBackground,
+                  leading: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.arrow_back, color: Colors.white),
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.black26,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
+                  actions: [
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: IconButton(
+                        onPressed: () => setState(() => _showInfo = !_showInfo),
+                        icon: Icon(
+                          _showInfo ? Icons.grid_view : Icons.info_outline,
+                          color: Colors.white,
+                        ),
+                        style: IconButton.styleFrom(
+                          backgroundColor: Colors.black26,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                  bottom: _showInfo ? null : _buildCategoryTabBar(menuItems),
+                  flexibleSpace: FlexibleSpaceBar(
+                    titlePadding: const EdgeInsets.only(left: 64, bottom: 16, right: 64),
+                    title: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          widget.shop.name,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            shadows: [
+                              Shadow(
+                                color: Colors.black54,
+                                blurRadius: 4,
+                                offset: Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        Row(
+                          children: [
+                            if (widget.shop.ratingCount > 0) ...[
+                              const Icon(Icons.star, color: Colors.amber, size: 10),
+                              const SizedBox(width: 2),
+                              Text(
+                                '${widget.shop.rating.toStringAsFixed(1)} (${widget.shop.ratingCount})',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  shadows: [Shadow(color: Colors.black54, blurRadius: 4)],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                            ],
+                            Container(
+                              width: 6,
+                              height: 6,
+                              decoration: BoxDecoration(
+                                color: widget.shop.isOpen ? AppTheme.success : AppTheme.error,
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white, width: 1.0),
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              widget.shop.isOpen ? 'Open Now' : 'Closed',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: widget.shop.isOpen ? AppTheme.success : AppTheme.error,
+                                shadows: const [Shadow(color: Colors.black54, blurRadius: 4)],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    background: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        Hero(
+                          tag: 'shop-${widget.shop.imageUrl ?? widget.shop.name}',
+                          child: widget.shop.imageUrl != null && widget.shop.imageUrl!.isNotEmpty
+                              ? CachedNetworkImage(
+                                  imageUrl: widget.shop.imageUrl!,
+                                  fit: BoxFit.cover,
+                                  placeholder: (context, url) => const Center(
+                                    child: CircularProgressIndicator(),
+                                  ),
+                                  errorWidget: (context, url, error) => const Icon(
+                                    Icons.store,
+                                    size: 80,
+                                    color: AppTheme.textTertiary,
+                                  ),
+                                )
+                              : const Icon(
+                                  Icons.store,
+                                  size: 80,
+                                  color: AppTheme.textTertiary,
+                                ),
+                        ),
+                        Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Colors.black.withValues(alpha: 0.6),
+                                Colors.transparent,
+                                Colors.black.withValues(alpha: 0.6),
+                                Colors.black.withValues(alpha: 0.9),
+                              ],
+                              stops: const [0.0, 0.4, 0.7, 1.0],
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-              ),
-              actions: [
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: IconButton(
-                    onPressed: () => setState(() => _showInfo = !_showInfo),
-                    icon: Icon(
-                      _showInfo ? Icons.grid_view : Icons.info_outline,
-                      color: Colors.white,
+              ];
+            },
+            body: Stack(
+              children: [
+                _showInfo
+                    ? _buildInfoPanel()
+                    : ListView.builder(
+                        padding: EdgeInsets.fromLTRB(
+                          16,
+                          16,
+                          16,
+                          cartProvider.isNotEmpty ? 100 : 16,
+                        ),
+                        itemCount: filteredItems.length,
+                        itemBuilder: (context, index) {
+                          final item = filteredItems[index];
+                          final quantity = cartProvider.getItemQuantity(
+                            item.id,
+                          );
+
+                          return MenuItemCard(
+                            name: item.name,
+                            price: item.price,
+                            originalPrice: item.originalPrice,
+                            imageUrl: item.imageUrl,
+                            isVeg: item.isVeg,
+                            rating: item.rating,
+                            quantity: quantity,
+                            onAdd: () => cartProvider.addItem(item),
+                            onIncrement: () => cartProvider.incrementItem(item.id),
+                            onDecrement: () => cartProvider.decrementItem(item.id),
+                          ).animate()
+                           .fade(duration: 250.ms)
+                           .slideX(begin: 0.1, end: 0, duration: 250.ms, curve: Curves.easeOutBack);
+                        },
+                      ),
+
+                // Animated Cart Summary
+                AnimatedPositioned(
+                  duration: const Duration(milliseconds: 400),
+                  curve: Curves.fastOutSlowIn,
+                  bottom: cartProvider.isNotEmpty ? 0 : -120,
+                  left: 0,
+                  right: 0,
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppTheme.cardBackground,
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(24),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.15),
+                          blurRadius: 15,
+                          offset: const Offset(0, -5),
+                        ),
+                      ],
                     ),
-                    style: IconButton.styleFrom(
-                      backgroundColor: Colors.black26,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                    child: SafeArea(
+                      top: false,
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  '${cartProvider.totalItems} item${cartProvider.totalItems > 1 ? 's' : ''}',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: AppTheme.textSecondary,
+                                  ),
+                                ),
+                                Text(
+                                  cartProvider.formattedTotal,
+                                  style: const TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppTheme.primaryOrange,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          ElevatedButton(
+                            onPressed: widget.shop.isOpen
+                                ? () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            CartScreen(shop: widget.shop),
+                                      ),
+                                    );
+                                  }
+                                : null,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.primaryOrange,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 32,
+                                vertical: 14,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.shopping_bag, size: 20),
+                                const SizedBox(width: 8),
+                                Text(
+                                  widget.shop.isOpen
+                                      ? 'View Cart'
+                                      : 'Shop Closed',
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
                 ),
               ],
-              flexibleSpace: FlexibleSpaceBar(
-                titlePadding: const EdgeInsets.only(left: 64, bottom: 16, right: 64),
-                title: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      widget.shop.name,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        shadows: [
-                          Shadow(
-                            color: Colors.black54,
-                            blurRadius: 4,
-                            offset: Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 2),
-                    Row(
-                      children: [
-                        if (widget.shop.ratingCount > 0) ...[
-                          const Icon(Icons.star, color: Colors.amber, size: 10),
-                          const SizedBox(width: 2),
-                          Text(
-                            '${widget.shop.rating.toStringAsFixed(1)} (${widget.shop.ratingCount})',
-                            style: const TextStyle(
-                              color: Colors.white, 
-                              fontSize: 10,
-                              shadows: [Shadow(color: Colors.black54, blurRadius: 4)],
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                        ],
-                        Container(
-                          width: 6,
-                          height: 6,
-                          decoration: BoxDecoration(
-                            color: widget.shop.isOpen ? AppTheme.success : AppTheme.error,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 1.0),
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          widget.shop.isOpen ? 'Open Now' : 'Closed',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                            color: widget.shop.isOpen ? AppTheme.success : AppTheme.error,
-                            shadows: const [Shadow(color: Colors.black54, blurRadius: 4)],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                background: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    Hero(
-                      tag: 'shop-${widget.shop.imageUrl ?? widget.shop.name}',
-                      child: widget.shop.imageUrl != null && widget.shop.imageUrl!.isNotEmpty
-                          ? CachedNetworkImage(
-                              imageUrl: widget.shop.imageUrl!,
-                              fit: BoxFit.cover,
-                              placeholder: (context, url) => const Center(
-                                child: CircularProgressIndicator(),
-                              ),
-                              errorWidget: (context, url, error) => const Icon(
-                                Icons.store,
-                                size: 80,
-                                color: AppTheme.textTertiary,
-                              ),
-                            )
-                          : const Icon(
-                              Icons.store,
-                              size: 80,
-                              color: AppTheme.textTertiary,
-                            ),
-                    ),
-                    Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.black.withValues(alpha: 0.4),
-                            Colors.transparent,
-                            Colors.black.withValues(alpha: 0.5),
-                            Colors.black.withValues(alpha: 0.8),
-                          ],
-                          stops: const [0.0, 0.4, 0.7, 1.0],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
             ),
-          ];
+          );
         },
-        body: Stack(
-          children: [
-            _showInfo
-                ? _buildInfoPanel()
-                : StreamBuilder<List<MenuItemModel>>(
-                    stream: _menuStream,
-                          builder: (context, snapshot) {
-                            final menuItems = snapshot.data ?? _shopService.getCachedMenuItems(widget.shop.id);
-
-                            if (menuItems.isEmpty && snapshot.connectionState == ConnectionState.waiting) {
-                              return const Center(
-                                child: AnimatedLoader(
-                                  message: 'Reading menu...',
-                                ),
-                              );
-                            }
-
-                            if (snapshot.hasError && menuItems.isEmpty) {
-                              return Center(
-                                child: Text('Error: ${snapshot.error}'),
-                              );
-                            }
-
-                            if (menuItems.isEmpty) {
-                              return const EmptyState(
-                                title: 'Menu is Empty',
-                                subtitle:
-                                    'This shop hasn\'t added any items yet.',
-                                animationType: 'data',
-                              );
-                            }
-
-                            // Proactively cache menu item images
-                            final menuImages = menuItems
-                                .map((i) => i.imageUrl)
-                                .where((url) => url != null && url.isNotEmpty)
-                                .cast<String>()
-                                .toList();
-                            if (menuImages.isNotEmpty) {
-                              ResourceCacheService().cacheImages(menuImages);
-                            }
-
-                            return ListView.builder(
-                              padding: EdgeInsets.fromLTRB(
-                                16,
-                                16,
-                                16,
-                                cartProvider.isNotEmpty ? 100 : 16,
-                              ),
-                              itemCount: menuItems.length,
-                              itemBuilder: (context, index) {
-                                final item = menuItems[index];
-                                final quantity = cartProvider.getItemQuantity(
-                                  item.id,
-                                );
-
-                                return MenuItemCard(
-                                  name: item.name,
-                                  price: item.price,
-                                  originalPrice: item.originalPrice,
-                                  imageUrl: item.imageUrl,
-                                  isVeg: item.isVeg,
-                                  rating: item.rating,
-                                  quantity: quantity,
-                                  onAdd: () => cartProvider.addItem(item),
-                                  onIncrement: () =>
-                                      cartProvider.incrementItem(item.id),
-                                  onDecrement: () =>
-                                      cartProvider.decrementItem(item.id),
-                                ).animate()
-                                 .fade(duration: 250.ms)
-                                 .slideX(begin: 0.1, end: 0, duration: 250.ms, curve: Curves.easeOutBack);
-                              },
-                            );
-                          },
-                        ),
-
-                  // Animated Cart Summary
-                  AnimatedPositioned(
-                    duration: const Duration(milliseconds: 400),
-                    curve: Curves.fastOutSlowIn,
-                    bottom: cartProvider.isNotEmpty ? 0 : -120,
-                    left: 0,
-                    right: 0,
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: AppTheme.cardBackground,
-                        borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(24),
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.15),
-                            blurRadius: 15,
-                            offset: const Offset(0, -5),
-                          ),
-                        ],
-                      ),
-                      child: SafeArea(
-                        top: false,
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    '${cartProvider.totalItems} item${cartProvider.totalItems > 1 ? 's' : ''}',
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      color: AppTheme.textSecondary,
-                                    ),
-                                  ),
-                                  Text(
-                                    cartProvider.formattedTotal,
-                                    style: const TextStyle(
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.bold,
-                                      color: AppTheme.primaryBlue,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            ElevatedButton(
-                              onPressed: widget.shop.isOpen
-                                  ? () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) =>
-                                              CartScreen(shop: widget.shop),
-                                        ),
-                                      );
-                                    }
-                                  : null,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppTheme.primaryBlue,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 32,
-                                  vertical: 14,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(14),
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.shopping_bag, size: 20),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    widget.shop.isOpen
-                                        ? 'View Cart'
-                                        : 'Shop Closed',
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+      ),
     );
   }
 
@@ -377,10 +454,10 @@ class _MenuScreenState extends State<MenuScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppTheme.primaryBlue.withOpacity(0.1),
+                color: AppTheme.primaryOrange.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: AppTheme.primaryBlue.withOpacity(0.3),
+                  color: AppTheme.primaryOrange.withValues(alpha: 0.3),
                 ),
               ),
               child: StreamBuilder<int>(
@@ -392,7 +469,7 @@ class _MenuScreenState extends State<MenuScreen> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: AppTheme.primaryBlue,
+                          color: AppTheme.primaryOrange,
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Icon(
@@ -429,7 +506,7 @@ class _MenuScreenState extends State<MenuScreen> {
                         style: TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
-                          color: AppTheme.primaryBlue,
+                          color: AppTheme.primaryOrange,
                         ),
                       ),
                     ],
@@ -616,7 +693,7 @@ class _MenuScreenState extends State<MenuScreen> {
             children: [
               CircleAvatar(
                 radius: 18,
-                backgroundColor: AppTheme.primaryBlue.withOpacity(0.1),
+                backgroundColor: AppTheme.primaryOrange.withValues(alpha: 0.1),
                 backgroundImage: review.userPhotoUrl != null
                     ? NetworkImage(review.userPhotoUrl!)
                     : null,
@@ -626,7 +703,7 @@ class _MenuScreenState extends State<MenuScreen> {
                             ? review.userName[0].toUpperCase()
                             : 'A',
                         style: const TextStyle(
-                          color: AppTheme.primaryBlue,
+                          color: AppTheme.primaryOrange,
                           fontWeight: FontWeight.w600,
                         ),
                       )

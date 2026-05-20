@@ -47,7 +47,7 @@ class OrderStatusTag extends StatelessWidget {
       case OrderStatus.newOrder:
         return AppTheme.warning;
       case OrderStatus.preparing:
-        return AppTheme.primaryBlue;
+        return AppTheme.primaryOrange;
       case OrderStatus.readyForPickup:
         return AppTheme.success;
       case OrderStatus.outForDelivery:
@@ -237,7 +237,7 @@ class OrderSummaryCard extends StatelessWidget {
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 18,
-                        color: AppTheme.primaryBlue,
+                        color: AppTheme.primaryOrange,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -280,7 +280,7 @@ class OrderItemsList extends StatelessWidget {
                     width: 32,
                     height: 32,
                     decoration: BoxDecoration(
-                      color: AppTheme.primaryBlue.withValues(alpha: 0.1),
+                      color: AppTheme.primaryOrange.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Center(
@@ -289,7 +289,7 @@ class OrderItemsList extends StatelessWidget {
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 12,
-                          color: AppTheme.primaryBlue,
+                          color: AppTheme.primaryOrange,
                         ),
                       ),
                     ),
