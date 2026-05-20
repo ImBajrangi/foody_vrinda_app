@@ -14,8 +14,6 @@ class AuthService {
     clientId: kIsWeb
         ? '166281611781-vh09rl3hjcb0872gulpd2oi6ut9nh16n.apps.googleusercontent.com'
         : null,
-    serverClientId:
-        '166281611781-vh09rl3hjcb0872gulpd2oi6ut9nh16n.apps.googleusercontent.com',
     scopes: ['email', 'https://www.googleapis.com/auth/userinfo.profile'],
   );
 

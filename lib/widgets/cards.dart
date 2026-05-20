@@ -513,6 +513,14 @@ class MenuItemCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppTheme.cardBackground,
         borderRadius: BorderRadius.circular(14),
+        border: (imageUrl == null || imageUrl!.isEmpty)
+            ? Border(
+                left: BorderSide(
+                  color: isVeg ? Colors.green.shade400 : Colors.red.shade400,
+                  width: 4,
+                ),
+              )
+            : null,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.06),
@@ -524,92 +532,91 @@ class MenuItemCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Stack(
-            children: [
-              ClipRRect(
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(14),
-                ),
-                child: Hero(
-                  tag: 'menu-item-${imageUrl ?? name}',
-                  child: AspectRatio(
-                    aspectRatio: 4 / 3,
-                    child: imageUrl?.isNotEmpty == true
-                        ? CachedNetworkImage(
-                            imageUrl: imageUrl!,
-                            fit: BoxFit.cover,
-                            placeholder: (context, url) => Container(
-                              color: AppTheme.background,
-                              child: const Center(
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: AppTheme.primaryOrange,
-                                ),
-                              ),
+          if (imageUrl != null && imageUrl!.isNotEmpty)
+            Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(14),
+                  ),
+                  child: Hero(
+                    tag: 'menu-item-${imageUrl ?? name}',
+                    child: AspectRatio(
+                      aspectRatio: 4 / 3,
+                      child: CachedNetworkImage(
+                        imageUrl: imageUrl!,
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) => Container(
+                          color: AppTheme.background,
+                          child: const Center(
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppTheme.primaryOrange,
                             ),
-                            errorWidget: (context, url, error) =>
-                                _buildPlaceholder(),
-                          )
-                        : _buildPlaceholder(),
-                  ),
-                ),
-              ),
-              // Veg/Non-veg indicator overlay
-              Positioned(
-                top: 8,
-                left: 8,
-                child: Container(
-                  padding: const EdgeInsets.all(1.5),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.95),
-                    borderRadius: BorderRadius.circular(2),
-                    border: Border.all(
-                      color: isVeg ? Colors.green : Colors.red,
-                      width: 1.2,
-                    ),
-                  ),
-                  child: Icon(
-                    Icons.circle,
-                    size: 7,
-                    color: isVeg ? Colors.green : Colors.red,
-                  ),
-                ),
-              ),
-              // Rating badge overlay
-              if (rating != null && rating! > 0)
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: rating! >= 4.0
-                          ? Colors.green
-                          : AppTheme.primaryOrange,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          rating!.toStringAsFixed(1),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                        const SizedBox(width: 2),
-                        const Icon(Icons.star, size: 8, color: Colors.white),
-                      ],
+                        errorWidget: (context, url, error) =>
+                            _buildPlaceholder(),
+                      ),
                     ),
                   ),
                 ),
-            ],
-          ),
+                // Veg/Non-veg indicator overlay
+                Positioned(
+                  top: 8,
+                  left: 8,
+                  child: Container(
+                    padding: const EdgeInsets.all(1.5),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.95),
+                      borderRadius: BorderRadius.circular(2),
+                      border: Border.all(
+                        color: isVeg ? Colors.green : Colors.red,
+                        width: 1.2,
+                      ),
+                    ),
+                    child: Icon(
+                      Icons.circle,
+                      size: 7,
+                      color: isVeg ? Colors.green : Colors.red,
+                    ),
+                  ),
+                ),
+                // Rating badge overlay
+                if (rating != null && rating! > 0)
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: rating! >= 4.0
+                            ? Colors.green
+                            : AppTheme.primaryOrange,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            rating!.toStringAsFixed(1),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(width: 2),
+                          const Icon(Icons.star, size: 8, color: Colors.white),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
+            ),
 
           // Content
           Padding(
@@ -618,6 +625,42 @@ class MenuItemCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
+                // Show veg/non-veg inline when no image
+                if (imageUrl == null || imageUrl!.isEmpty) ...[
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(1.5),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(2),
+                          border: Border.all(
+                            color: isVeg ? Colors.green : Colors.red,
+                            width: 1.2,
+                          ),
+                        ),
+                        child: Icon(
+                          Icons.circle,
+                          size: 7,
+                          color: isVeg ? Colors.green : Colors.red,
+                        ),
+                      ),
+                      if (rating != null && rating! > 0) ...[
+                        const SizedBox(width: 8),
+                        Icon(Icons.star, size: 12, color: rating! >= 4.0 ? Colors.green : AppTheme.primaryOrange),
+                        const SizedBox(width: 2),
+                        Text(
+                          rating!.toStringAsFixed(1),
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: rating! >= 4.0 ? Colors.green : AppTheme.primaryOrange,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                ],
                 Text(
                   name,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(

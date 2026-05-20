@@ -13,9 +13,13 @@ import 'package:lottie/lottie.dart';
 import 'config/lottie_assets.dart';
 import 'services/notification_service.dart';
 import 'services/hit_soochi_service.dart';
+import 'services/foody_cache_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Foody Cache Service
+  await FoodyCacheService().init();
 
   // Initialize Firebase with platform-specific options
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
@@ -141,139 +145,93 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF1a1a2e), Color(0xFF16213e), Color(0xFF0f3460)],
-          ),
-        ),
-        child: SafeArea(
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Spacer(flex: 2),
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Spacer(flex: 3),
 
-                // Animated Logo
-                ScaleTransition(
-                  scale: _bounceAnimation,
-                  child: FadeTransition(
-                    opacity: _fadeAnimation,
-                    child: Container(
-                      width: 140,
-                      height: 140,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(32),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppTheme.primaryBlue.withValues(alpha: 0.4),
-                            blurRadius: 40,
-                            spreadRadius: 8,
-                          ),
-                        ],
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(32),
-                        child: CachedNetworkImage(
-                          imageUrl:
-                              'https://imbajrangi.github.io/Company/Vrindopnishad%20Web/class/logo/foodyVrinda-logo.png',
-                          fit: BoxFit.contain,
-                          placeholder: (context, url) => const Center(
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: AppTheme.primaryBlue,
-                            ),
-                          ),
-                          errorWidget: (context, url, error) => const Icon(
-                            Icons.restaurant,
-                            color: AppTheme.primaryBlue,
-                            size: 70,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 40),
-
-                // App name with slide animation
-                SlideTransition(
-                  position: _slideAnimation,
-                  child: FadeTransition(
-                    opacity: _fadeAnimation,
-                    child: Column(
-                      children: [
-                        const Text(
-                          'Foody Vrinda',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 36,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 2,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: const Text(
-                            '🍕 Delicious food, delivered fast 🚀',
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
+              // Animated Logo
+              ScaleTransition(
+                scale: _bounceAnimation,
+                child: FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: Container(
+                    width: 160,
+                    height: 160,
+                    decoration: BoxDecoration(
+                      color: Colors.black, // Matches logo background
+                      borderRadius: BorderRadius.circular(36),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppTheme.primaryOrange.withValues(alpha: 0.2),
+                          blurRadius: 30,
+                          spreadRadius: 5,
+                          offset: const Offset(0, 10),
                         ),
                       ],
                     ),
-                  ),
-                ),
-
-                const Spacer(flex: 2),
-
-                // Loading animation
-                FadeTransition(
-                  opacity: _fadeAnimation,
-                  child: Column(
-                    children: [
-                      // Premium Lottie Splash Loader
-                      Lottie.network(
-                        LottieAssets.foodSplash,
-                        width: 200,
-                        height: 200,
-                        fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) =>
-                            const CircularProgressIndicator(
-                              color: Colors.white,
-                            ),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Cooking up the best experience...',
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.8),
-                          fontSize: 14,
-                          fontStyle: FontStyle.italic,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(36),
+                      child: CachedNetworkImage(
+                        imageUrl:
+                            'https://imbajrangi.github.io/Company/Vrindopnishad%20Web/class/logo/foodyVrinda-logo.png',
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) => const Center(
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppTheme.primaryOrange,
+                          ),
+                        ),
+                        errorWidget: (context, url, error) => const Icon(
+                          Icons.restaurant,
+                          color: Colors.white,
+                          size: 70,
                         ),
                       ),
-                    ],
+                    ),
                   ),
                 ),
+              ),
 
-                const SizedBox(height: 48),
-              ],
-            ),
+              const SizedBox(height: 32),
+
+              // Minimalist App Name
+              SlideTransition(
+                position: _slideAnimation,
+                child: FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: const Text(
+                    'Foody Vrinda',
+                    style: TextStyle(
+                      color: AppTheme.primaryBlack,
+                      fontSize: 32,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                ),
+              ),
+
+              const Spacer(flex: 2),
+
+              // Elegant Loading Indicator
+              FadeTransition(
+                opacity: _fadeAnimation,
+                child: const SizedBox(
+                  width: 32,
+                  height: 32,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 3,
+                    color: AppTheme.primaryOrange,
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 48),
+            ],
           ),
         ),
       ),

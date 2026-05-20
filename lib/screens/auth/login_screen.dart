@@ -41,21 +41,6 @@ class _LoginScreenState extends State<LoginScreen> {
       _passwordController.text,
     );
 
-    // Smart Dev Login: If master dev login fails because account doesn't exist, auto-create it.
-    if (!success &&
-        (authProvider.lastErrorCode == 'user-not-found' ||
-            authProvider.lastErrorCode == 'invalid-credential') &&
-        _emailController.text.trim() == AppConfig.developerEmail &&
-        _passwordController.text == AppConfig.developerPassword) {
-      print(
-        'LoginScreen: Developer account not found. Auto-creating master dev...',
-      );
-      success = await authProvider.signUpWithEmail(
-        _emailController.text.trim(),
-        _passwordController.text,
-      );
-    }
-
     if (success && mounted) {
       if (Navigator.canPop(context)) {
         Navigator.pop(context);
@@ -88,62 +73,69 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
 
-              const SizedBox(height: 32),
+              const SizedBox(height: 24),
 
-              // Welcoming Lottie Animation
+              // Welcoming Branded Logo
               Center(
-                child: Lottie.network(
-                  LottieAssets.welcome,
-                  height: 180,
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      color: Colors.black,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(20),
-                      child: CachedNetworkImage(
-                        imageUrl:
-                            'https://imbajrangi.github.io/Company/Vrindopnishad%20Web/class/logo/foodyVrinda-logo.png',
-                        fit: BoxFit.contain,
-                        placeholder: (context, url) => const Center(
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                        errorWidget: (context, url, error) => const Icon(
-                          Icons.restaurant,
-                          color: Colors.white,
-                          size: 40,
-                        ),
+                child: Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    color: Colors.black,
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppTheme.primaryOrange.withValues(alpha: 0.25),
+                        blurRadius: 20,
+                        spreadRadius: 2,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(24),
+                    child: CachedNetworkImage(
+                      imageUrl:
+                          'https://imbajrangi.github.io/Company/Vrindopnishad%20Web/class/logo/foodyVrinda-logo.png',
+                      fit: BoxFit.contain,
+                      placeholder: (context, url) => const Center(
+                        child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryOrange),
+                      ),
+                      errorWidget: (context, url, error) => const Icon(
+                        Icons.restaurant_menu,
+                        color: Colors.white,
+                        size: 40,
                       ),
                     ),
                   ),
                 ),
               ),
 
-              const SizedBox(height: 32),
+              const SizedBox(height: 28),
 
               // Title
               Center(
                 child: Text(
-                  'Login',
-                  style: Theme.of(context).textTheme.displaySmall,
+                  'Welcome back 🍕',
+                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.5,
+                  ),
                 ),
               ),
               const SizedBox(height: 8),
               Center(
                 child: Text(
-                  'Sign in to your account',
+                  'Sign in to order delicious food',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: AppTheme.textSecondary,
+                    fontWeight: FontWeight.w500,
                   ),
                   textAlign: TextAlign.center,
                 ),
               ),
 
-              const SizedBox(height: 32),
+              const SizedBox(height: 28),
 
               // Form
               Container(
@@ -151,6 +143,19 @@ class _LoginScreenState extends State<LoginScreen> {
                 decoration: BoxDecoration(
                   color: AppTheme.cardBackground,
                   borderRadius: BorderRadius.circular(24),
+                  border: Border(
+                    left: BorderSide(
+                      color: AppTheme.primaryOrange.withValues(alpha: 0.8),
+                      width: 4,
+                    ),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 16,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
                 child: Form(
                   key: _formKey,

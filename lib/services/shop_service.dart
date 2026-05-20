@@ -1,8 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/shop_model.dart';
 import '../models/menu_item_model.dart';
+import 'foody_cache_service.dart';
 
-/// ShopService with singleton pattern and in-memory caching
+/// ShopService with singleton pattern and in-memory/persistent caching
 class ShopService {
   // Singleton pattern
   static final ShopService _instance = ShopService._internal();
@@ -31,12 +32,32 @@ class ShopService {
 
       // Update cache
       _cachedShops = shops;
+      
+      // Update persistent local cache
+      FoodyCacheService().cacheShops(shops);
+      
       return shops;
     });
   }
 
   /// Get cached shops synchronously (for instant access)
-  List<ShopModel> getCachedShops() => _cachedShops ?? [];
+  List<ShopModel> getCachedShops() {
+    if (_cachedShops != null && _cachedShops!.isNotEmpty) {
+      return _cachedShops!;
+    }
+    
+    // Load from local persistent cache
+    final localShops = FoodyCacheService().getCachedShops();
+    if (localShops != null && localShops.isNotEmpty) {
+      _cachedShops = localShops;
+      for (final shop in localShops) {
+        _shopCache[shop.id] = shop;
+      }
+      return localShops;
+    }
+    
+    return [];
+  }
 
   /// Get single shop - uses cache first, then Firestore
   Future<ShopModel?> getShop(String shopId) async {
@@ -134,15 +155,31 @@ class ShopService {
             }
           }).toList();
 
-          // Cache menu items
+          // Cache menu items in-memory
           _menuCache[shopId] = items;
+          
+          // Cache menu items in persistent local storage
+          FoodyCacheService().cacheMenuItems(shopId, items);
+          
           return items;
         });
   }
 
   /// Get cached menu items synchronously
-  List<MenuItemModel> getCachedMenuItems(String shopId) =>
-      _menuCache[shopId] ?? [];
+  List<MenuItemModel> getCachedMenuItems(String shopId) {
+    if (_menuCache.containsKey(shopId) && _menuCache[shopId]!.isNotEmpty) {
+      return _menuCache[shopId]!;
+    }
+
+    // Load from local persistent cache
+    final localItems = FoodyCacheService().getCachedMenuItems(shopId);
+    if (localItems != null && localItems.isNotEmpty) {
+      _menuCache[shopId] = localItems;
+      return localItems;
+    }
+
+    return [];
+  }
 
   Stream<List<MenuItemModel>> getAllMenuItems() {
     return _firestore.collection('menus').snapshots().map((snapshot) {

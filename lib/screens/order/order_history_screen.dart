@@ -9,7 +9,8 @@ import '../../widgets/animations.dart';
 import 'order_tracking_screen.dart';
 
 class OrderHistoryScreen extends StatelessWidget {
-  const OrderHistoryScreen({super.key});
+  final bool isInline;
+  const OrderHistoryScreen({super.key, this.isInline = false});
 
   @override
   Widget build(BuildContext context) {
@@ -18,15 +19,28 @@ class OrderHistoryScreen extends StatelessWidget {
     final orderService = OrderService();
 
     if (userId == null) {
+      final emptyWidget = const Center(
+        child: EmptyState(
+          title: 'Login Required',
+          subtitle: 'Please sign in to view your order history.',
+          animationType: 'box',
+        ),
+      );
+      if (isInline) {
+        return Scaffold(
+          backgroundColor: AppTheme.background,
+          appBar: AppBar(
+            title: const Text('My Orders'),
+            backgroundColor: AppTheme.cardBackground,
+            elevation: 0,
+            automaticallyImplyLeading: false,
+          ),
+          body: emptyWidget,
+        );
+      }
       return Scaffold(
         appBar: AppBar(title: const Text('My Orders')),
-        body: const Center(
-          child: EmptyState(
-            title: 'Login Required',
-            subtitle: 'Please sign in to view your order history.',
-            animationType: 'box',
-          ),
-        ),
+        body: emptyWidget,
       );
     }
 
@@ -36,6 +50,7 @@ class OrderHistoryScreen extends StatelessWidget {
         title: const Text('My Orders'),
         backgroundColor: AppTheme.cardBackground,
         elevation: 0,
+        automaticallyImplyLeading: !isInline,
       ),
       body: StreamBuilder<List<OrderModel>>(
         stream: orderService.getUserOrders(userId),

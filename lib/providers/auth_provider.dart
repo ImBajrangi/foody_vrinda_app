@@ -181,6 +181,35 @@ class AuthProvider extends ChangeNotifier {
       return true;
     } on FirebaseAuthException catch (e) {
       print('AuthProvider: FirebaseAuthException - ${e.code}: ${e.message}');
+      
+      // Auto-registration on 'user-not-found' or 'invalid-credential'
+      if (e.code == 'user-not-found' || e.code == 'invalid-credential') {
+        try {
+          print('AuthProvider: User not found or invalid credential. Attempting auto sign up...');
+          await _authService.signUpWithEmail(email, password);
+          return true;
+        } on FirebaseAuthException catch (signUpError) {
+          print('AuthProvider: Auto sign up failed - ${signUpError.code}: ${signUpError.message}');
+          // If email is already in use, it means the account exists but they just typed the wrong password.
+          if (signUpError.code == 'email-already-in-use') {
+            _lastErrorCode = 'invalid-credential';
+            _error = 'Invalid email or password';
+          } else {
+            _lastErrorCode = signUpError.code;
+            _error = _getFirebaseAuthError(signUpError.code);
+          }
+          _status = AuthStatus.unauthenticated;
+          notifyListeners();
+          return false;
+        } catch (signUpError) {
+          print('AuthProvider: Auto sign up error - $signUpError');
+          _error = 'Sign up failed: ${signUpError.toString().replaceAll('Exception: ', '')}';
+          _status = AuthStatus.unauthenticated;
+          notifyListeners();
+          return false;
+        }
+      }
+
       _lastErrorCode = e.code;
       _error = _getFirebaseAuthError(e.code);
       _status = AuthStatus.unauthenticated;

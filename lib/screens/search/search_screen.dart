@@ -8,7 +8,8 @@ import '../../config/lottie_assets.dart';
 import '../../widgets/animations.dart';
 
 class SearchScreen extends StatefulWidget {
-  const SearchScreen({super.key});
+  final bool isInline;
+  const SearchScreen({super.key, this.isInline = false});
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -26,10 +27,12 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   void initState() {
     super.initState();
-    // Auto-focus the search field
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _focusNode.requestFocus();
-    });
+    // Auto-focus the search field if not inline
+    if (!widget.isInline) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _focusNode.requestFocus();
+      });
+    }
   }
 
   @override
@@ -88,6 +91,47 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final searchInput = TextField(
+      controller: _searchController,
+      focusNode: _focusNode,
+      onChanged: _onSearchChanged,
+      decoration: InputDecoration(
+        hintText: 'Search shops, items, cuisines...',
+        hintStyle: const TextStyle(color: AppTheme.textTertiary, fontSize: 16),
+        border: InputBorder.none,
+        suffixIcon: _searchController.text.isNotEmpty
+            ? IconButton(
+                icon: const Icon(Icons.clear, size: 20),
+                onPressed: () {
+                  _searchController.clear();
+                  _performSearch('');
+                },
+              )
+            : null,
+      ),
+      style: const TextStyle(fontSize: 16),
+    );
+
+    if (widget.isInline) {
+      return Scaffold(
+        backgroundColor: AppTheme.background,
+        appBar: AppBar(
+          backgroundColor: AppTheme.cardBackground,
+          elevation: 0,
+          title: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              color: AppTheme.background,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: searchInput,
+          ),
+          automaticallyImplyLeading: false,
+        ),
+        body: _buildBody(),
+      );
+    }
+
     return Scaffold(
       backgroundColor: AppTheme.background,
       appBar: AppBar(
@@ -97,26 +141,7 @@ class _SearchScreenState extends State<SearchScreen> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
-        title: TextField(
-          controller: _searchController,
-          focusNode: _focusNode,
-          onChanged: _onSearchChanged,
-          decoration: InputDecoration(
-            hintText: 'Search shops, items, cuisines...',
-            hintStyle: TextStyle(color: AppTheme.textTertiary, fontSize: 16),
-            border: InputBorder.none,
-            suffixIcon: _searchController.text.isNotEmpty
-                ? IconButton(
-                    icon: const Icon(Icons.clear, size: 20),
-                    onPressed: () {
-                      _searchController.clear();
-                      _performSearch('');
-                    },
-                  )
-                : null,
-          ),
-          style: const TextStyle(fontSize: 16),
-        ),
+        title: searchInput,
       ),
       body: _buildBody(),
     );

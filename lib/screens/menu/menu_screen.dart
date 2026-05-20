@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../config/theme.dart';
+import '../../config/design_system.dart';
 import '../../widgets/animations.dart';
 import '../../models/shop_model.dart';
 import '../../models/menu_item_model.dart';
@@ -47,146 +49,29 @@ class _MenuScreenState extends State<MenuScreen> {
 
     return Scaffold(
       backgroundColor: AppTheme.background,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Shop Banner
-            Stack(
-              children: [
-                Hero(
-                  tag: 'shop-${widget.shop.imageUrl ?? widget.shop.name}',
-                  child: Container(
-                    height: 200,
-                    width: double.infinity,
-                    decoration: BoxDecoration(color: AppTheme.cardBackground),
-                    child:
-                        widget.shop.imageUrl != null &&
-                            widget.shop.imageUrl!.isNotEmpty
-                        ? CachedNetworkImage(
-                            imageUrl: widget.shop.imageUrl!,
-                            fit: BoxFit.cover,
-                            placeholder: (context, url) => const Center(
-                              child: CircularProgressIndicator(),
-                            ),
-                            errorWidget: (context, url, error) => const Icon(
-                              Icons.store,
-                              size: 80,
-                              color: AppTheme.textTertiary,
-                            ),
-                          )
-                        : const Icon(
-                            Icons.store,
-                            size: 80,
-                            color: AppTheme.textTertiary,
-                          ),
-                  ),
-                ),
-                // Gradient Overlay for text legibility if needed
-                Container(
-                  height: 200,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.black.withValues(alpha: 0.4),
-                        Colors.transparent,
-                        Colors.black.withValues(alpha: 0.6),
-                      ],
+      body: NestedScrollView(
+        headerSliverBuilder: (context, innerBoxIsScrolled) {
+          return [
+            SliverAppBar(
+              expandedHeight: 250,
+              pinned: true,
+              backgroundColor: AppTheme.cardBackground,
+              leading: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  style: IconButton.styleFrom(
+                    backgroundColor: Colors.black26,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
                   ),
                 ),
-                // Back Button on top of banner
-                Positioned(
-                  top: 16,
-                  left: 16,
-                  child: IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.arrow_back, color: Colors.white),
-                    style: IconButton.styleFrom(
-                      backgroundColor: Colors.black26,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                ),
-                // Shop Name and Status on Banner
-                Positioned(
-                  bottom: 20,
-                  left: 20,
-                  right: 20,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.shop.name,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          // Rating Stars
-                          if (widget.shop.ratingCount > 0) ...[
-                            Row(
-                              children: List.generate(5, (i) {
-                                return Icon(
-                                  i < widget.shop.rating.round()
-                                      ? Icons.star
-                                      : Icons.star_border,
-                                  color: Colors.amber,
-                                  size: 16,
-                                );
-                              }),
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              '${widget.shop.rating.toStringAsFixed(1)} (${widget.shop.ratingCount})',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                          ],
-                          Container(
-                            width: 10,
-                            height: 10,
-                            decoration: BoxDecoration(
-                              color: widget.shop.isOpen
-                                  ? AppTheme.success
-                                  : AppTheme.error,
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: Colors.white,
-                                width: 1.5,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            widget.shop.isOpen ? 'Open Now' : 'Closed',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: widget.shop.isOpen
-                                  ? AppTheme.success
-                                  : AppTheme.error,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                // Info toggle button
-                Positioned(
-                  top: 16,
-                  right: 16,
+              ),
+              actions: [
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
                   child: IconButton(
                     onPressed: () => setState(() => _showInfo = !_showInfo),
                     icon: Icon(
@@ -202,19 +87,123 @@ class _MenuScreenState extends State<MenuScreen> {
                   ),
                 ),
               ],
+              flexibleSpace: FlexibleSpaceBar(
+                titlePadding: const EdgeInsets.only(left: 64, bottom: 16, right: 64),
+                title: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      widget.shop.name,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        shadows: [
+                          Shadow(
+                            color: Colors.black54,
+                            blurRadius: 4,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Row(
+                      children: [
+                        if (widget.shop.ratingCount > 0) ...[
+                          const Icon(Icons.star, color: Colors.amber, size: 10),
+                          const SizedBox(width: 2),
+                          Text(
+                            '${widget.shop.rating.toStringAsFixed(1)} (${widget.shop.ratingCount})',
+                            style: const TextStyle(
+                              color: Colors.white, 
+                              fontSize: 10,
+                              shadows: [Shadow(color: Colors.black54, blurRadius: 4)],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                        ],
+                        Container(
+                          width: 6,
+                          height: 6,
+                          decoration: BoxDecoration(
+                            color: widget.shop.isOpen ? AppTheme.success : AppTheme.error,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 1.0),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          widget.shop.isOpen ? 'Open Now' : 'Closed',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: widget.shop.isOpen ? AppTheme.success : AppTheme.error,
+                            shadows: const [Shadow(color: Colors.black54, blurRadius: 4)],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                background: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Hero(
+                      tag: 'shop-${widget.shop.imageUrl ?? widget.shop.name}',
+                      child: widget.shop.imageUrl != null && widget.shop.imageUrl!.isNotEmpty
+                          ? CachedNetworkImage(
+                              imageUrl: widget.shop.imageUrl!,
+                              fit: BoxFit.cover,
+                              placeholder: (context, url) => const Center(
+                                child: CircularProgressIndicator(),
+                              ),
+                              errorWidget: (context, url, error) => const Icon(
+                                Icons.store,
+                                size: 80,
+                                color: AppTheme.textTertiary,
+                              ),
+                            )
+                          : const Icon(
+                              Icons.store,
+                              size: 80,
+                              color: AppTheme.textTertiary,
+                            ),
+                    ),
+                    Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.black.withValues(alpha: 0.4),
+                            Colors.transparent,
+                            Colors.black.withValues(alpha: 0.5),
+                            Colors.black.withValues(alpha: 0.8),
+                          ],
+                          stops: const [0.0, 0.4, 0.7, 1.0],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-
-            // Menu content + Cart Summary overlay OR Info Panel
-            Expanded(
-              child: Stack(
-                children: [
-                  _showInfo
-                      ? _buildInfoPanel()
-                      : StreamBuilder<List<MenuItemModel>>(
-                          stream: _menuStream,
+          ];
+        },
+        body: Stack(
+          children: [
+            _showInfo
+                ? _buildInfoPanel()
+                : StreamBuilder<List<MenuItemModel>>(
+                    stream: _menuStream,
                           builder: (context, snapshot) {
-                            if (snapshot.connectionState ==
-                                ConnectionState.waiting) {
+                            final menuItems = snapshot.data ?? _shopService.getCachedMenuItems(widget.shop.id);
+
+                            if (menuItems.isEmpty && snapshot.connectionState == ConnectionState.waiting) {
                               return const Center(
                                 child: AnimatedLoader(
                                   message: 'Reading menu...',
@@ -222,13 +211,11 @@ class _MenuScreenState extends State<MenuScreen> {
                               );
                             }
 
-                            if (snapshot.hasError) {
+                            if (snapshot.hasError && menuItems.isEmpty) {
                               return Center(
                                 child: Text('Error: ${snapshot.error}'),
                               );
                             }
-
-                            final menuItems = snapshot.data ?? [];
 
                             if (menuItems.isEmpty) {
                               return const EmptyState(
@@ -249,20 +236,13 @@ class _MenuScreenState extends State<MenuScreen> {
                               ResourceCacheService().cacheImages(menuImages);
                             }
 
-                            return GridView.builder(
+                            return ListView.builder(
                               padding: EdgeInsets.fromLTRB(
                                 16,
                                 16,
                                 16,
                                 cartProvider.isNotEmpty ? 100 : 16,
                               ),
-                              gridDelegate:
-                                  const SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: 2,
-                                    mainAxisSpacing: 16,
-                                    crossAxisSpacing: 16,
-                                    childAspectRatio: 0.65,
-                                  ),
                               itemCount: menuItems.length,
                               itemBuilder: (context, index) {
                                 final item = menuItems[index];
@@ -283,7 +263,9 @@ class _MenuScreenState extends State<MenuScreen> {
                                       cartProvider.incrementItem(item.id),
                                   onDecrement: () =>
                                       cartProvider.decrementItem(item.id),
-                                );
+                                ).animate()
+                                 .fade(duration: 250.ms)
+                                 .slideX(begin: 0.1, end: 0, duration: 250.ms, curve: Curves.easeOutBack);
                               },
                             );
                           },
@@ -381,9 +363,6 @@ class _MenuScreenState extends State<MenuScreen> {
                 ],
               ),
             ),
-          ],
-        ),
-      ),
     );
   }
 

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../config/theme.dart';
+import '../../config/design_system.dart';
 import 'package:lottie/lottie.dart';
 import '../../config/lottie_assets.dart';
 import '../../providers/auth_provider.dart';
@@ -21,8 +23,8 @@ import '../delivery/delivery_dashboard_view.dart';
 import '../dashboard/dashboard_view.dart';
 import '../developer/developer_panel.dart';
 import '../search/search_screen.dart';
-import '../settings/notification_settings_screen.dart';
 import '../order/order_history_screen.dart';
+import '../settings/notification_settings_screen.dart';
 import '../../widgets/animations.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -35,6 +37,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final ShopService _shopService = ShopService();
   int _selectedViewIndex = 0;
+  int _customerTabIndex = 0;
   late Stream<List<ShopModel>> _shopsStream;
   late Stream<List<MenuItemModel>> _trendingStream;
 
@@ -56,8 +59,9 @@ class _HomeScreenState extends State<HomeScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Header
-            _buildHeader(context, authProvider, userData),
+            // Header (Only show on customer Home tab or other role screens)
+            if (_selectedViewIndex != 0 || _customerTabIndex == 0)
+              _buildHeader(context, authProvider, userData),
 
             // View Switcher
             if (role != UserRole.customer) _buildViewSwitcher(userData, role),
@@ -67,6 +71,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
+      bottomNavigationBar: _selectedViewIndex == 0 ? _buildCustomerBottomNavBar() : null,
     );
   }
 
@@ -76,60 +81,41 @@ class _HomeScreenState extends State<HomeScreen> {
     UserModel? userData,
   ) {
     final cartProvider = Provider.of<CartProvider>(context);
+    FoodyTokens.of(context);
 
-    return Container(
+    return FoodyUI.glassCard(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.cardBackground,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      borderRadius: 18,
       child: Column(
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Logo
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: Colors.black,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.1),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
+              // Greeting
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Hello, ${userData?.displayName?.split(' ').first ?? 'Foodie'}! 👋',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.5,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ],
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: CachedNetworkImage(
-                    imageUrl:
-                        'https://imbajrangi.github.io/Company/Vrindopnishad%20Web/class/logo/foodyVrinda-logo.png',
-                    fit: BoxFit.contain,
-                    placeholder: (context, url) => const Center(
-                      child: SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'What would you like to eat?',
+                      style: TextStyle(
+                        color: AppTheme.textSecondary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
-                    errorWidget: (context, url, error) => const Icon(
-                      Icons.restaurant,
-                      color: Colors.white,
-                      size: 24,
-                    ),
-                  ),
+                  ],
                 ),
               ),
 
@@ -176,12 +162,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   // Order history icon
                   IconButton(
                     onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const OrderHistoryScreen(),
-                        ),
-                      );
+                      setState(() {
+                        _customerTabIndex = 2;
+                      });
                     },
                     icon: const Icon(Icons.receipt_long_outlined),
                     tooltip: 'My Orders',
@@ -202,14 +185,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   // Profile Avatar Only
                   GestureDetector(
-                    onTap: () => _showProfileModal(context, authProvider),
+                    onTap: () {
+                      setState(() {
+                        _customerTabIndex = 3;
+                      });
+                    },
                     child: Container(
                       margin: const EdgeInsets.only(left: 8),
                       padding: const EdgeInsets.all(2),
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: AppTheme.primaryBlue.withValues(alpha: 0.2),
+                          color: AppTheme.primaryOrange.withValues(alpha: 0.2),
                           width: 2,
                         ),
                       ),
@@ -217,7 +204,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         width: 34,
                         height: 34,
                         decoration: BoxDecoration(
-                          color: AppTheme.primaryBlue.withValues(alpha: 0.1),
+                          color: AppTheme.primaryOrange.withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
                         child: ClipOval(
@@ -244,10 +231,9 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: 18),
           GestureDetector(
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const SearchScreen()),
-              );
+              setState(() {
+                _customerTabIndex = 1;
+              });
             },
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
@@ -445,16 +431,33 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildCustomerView() {
+    switch (_customerTabIndex) {
+      case 0:
+        return _buildCustomerHomeTab();
+      case 1:
+        return const SearchScreen(isInline: true);
+      case 2:
+        return const OrderHistoryScreen(isInline: true);
+      case 3:
+        return _buildProfileTab();
+      default:
+        return _buildCustomerHomeTab();
+    }
+  }
+
+  Widget _buildCustomerHomeTab() {
     return StreamBuilder<List<ShopModel>>(
       stream: _shopsStream,
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
+        final shops = snapshot.data ?? _shopService.getCachedShops();
+
+        if (shops.isEmpty && snapshot.connectionState == ConnectionState.waiting) {
           return const Center(
             child: AnimatedLoader(message: 'Loading shops...'),
           );
         }
 
-        if (snapshot.hasError) {
+        if (snapshot.hasError && shops.isEmpty) {
           return Center(
             child: Padding(
               padding: const EdgeInsets.all(32),
@@ -488,8 +491,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           );
         }
-
-        final shops = snapshot.data ?? [];
 
         if (shops.isEmpty) {
           return Center(
@@ -649,7 +650,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       );
                     },
-                  ),
+                  ).animate().fade(duration: 350.ms).slideY(begin: 0.1, end: 0, duration: 350.ms, curve: Curves.easeOutCubic),
                 ),
               ),
               const SizedBox(height: 16),
@@ -882,13 +883,24 @@ class _HomeScreenState extends State<HomeScreen> {
               width: 70,
               height: 70,
               decoration: BoxDecoration(
-                color: Colors.white,
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.white,
+                    const Color(0xFFF1F5F9),
+                  ],
+                ),
                 shape: BoxShape.circle,
+                border: Border.all(
+                  color: Colors.white,
+                  width: 2,
+                ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.06),
-                    blurRadius: 8,
-                    offset: const Offset(0, 3),
+                    color: AppTheme.primaryBlue.withValues(alpha: 0.12),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
@@ -1521,7 +1533,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildLottieProfile() {
     return Container(
-      color: AppTheme.primaryBlue.withValues(alpha: 0.1),
+      color: AppTheme.primaryOrange.withValues(alpha: 0.1),
       child: Center(
         child: Lottie.network(
           LottieAssets.profile,
@@ -1537,11 +1549,294 @@ class _HomeScreenState extends State<HomeScreen> {
             style: const TextStyle(
               fontSize: 32,
               fontWeight: FontWeight.bold,
-              color: AppTheme.primaryBlue,
+              color: AppTheme.primaryOrange,
             ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildCustomerBottomNavBar() {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.cardBackground,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 16,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          child: BottomNavigationBar(
+            currentIndex: _customerTabIndex,
+            onTap: (index) {
+              setState(() {
+                _customerTabIndex = index;
+              });
+            },
+            elevation: 0,
+            backgroundColor: Colors.transparent,
+            type: BottomNavigationBarType.fixed,
+            selectedItemColor: AppTheme.primaryOrange,
+            unselectedItemColor: AppTheme.textSecondary,
+            items: const [
+              BottomNavigationBarItem(
+                icon: Icon(Icons.home_outlined),
+                activeIcon: Icon(Icons.home_rounded),
+                label: 'Home',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.search_outlined),
+                activeIcon: Icon(Icons.search_rounded),
+                label: 'Search',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.receipt_long_outlined),
+                activeIcon: Icon(Icons.receipt_long_rounded),
+                label: 'Orders',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.person_outline_rounded),
+                activeIcon: Icon(Icons.person_rounded),
+                label: 'Profile',
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProfileTab() {
+    final authProvider = Provider.of<AuthProvider>(context);
+    final userData = authProvider.userData;
+
+    return Scaffold(
+      backgroundColor: AppTheme.background,
+      appBar: AppBar(
+        title: const Text('My Profile'),
+        backgroundColor: AppTheme.cardBackground,
+        elevation: 0,
+        automaticallyImplyLeading: false,
+      ),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              // User Card
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: AppTheme.cardBackground,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.03),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    // Avatar
+                    Container(
+                      width: 90,
+                      height: 90,
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryOrange.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: AppTheme.primaryOrange.withOpacity(0.2),
+                          width: 3,
+                        ),
+                      ),
+                      child: ClipOval(
+                        child: userData?.photoURL != null && userData!.photoURL!.isNotEmpty
+                            ? CachedNetworkImage(
+                                imageUrl: userData.photoURL!,
+                                fit: BoxFit.cover,
+                                placeholder: (context, url) => const Center(
+                                  child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryOrange),
+                                ),
+                                errorWidget: (context, url, error) => _buildLottieProfile(),
+                              )
+                            : _buildLottieProfile(),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      userData?.displayName ?? userData?.email.split('@').first ?? 'Guest User',
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      userData?.email ?? 'Sign in to sync your data',
+                      style: const TextStyle(
+                        color: AppTheme.textSecondary,
+                        fontSize: 14,
+                      ),
+                    ),
+                    if (userData != null) ...[
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryOrange.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          userData.role.value.toUpperCase(),
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: AppTheme.primaryOrange,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Actions Card
+              Container(
+                decoration: BoxDecoration(
+                  color: AppTheme.cardBackground,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.03),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    if (userData != null) ...[
+                      _buildProfileTile(
+                        icon: Icons.receipt_long_rounded,
+                        title: 'My Orders',
+                        subtitle: 'Check history and tracking status',
+                        onTap: () {
+                          setState(() {
+                            _customerTabIndex = 2; // Jump to Orders tab
+                          });
+                        },
+                      ),
+                      const Divider(height: 1, indent: 56),
+                    ],
+                    _buildProfileTile(
+                      icon: Icons.notifications_none_rounded,
+                      title: 'Notification Settings',
+                      subtitle: 'Manage alerts and messages',
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const NotificationSettingsScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    const Divider(height: 1, indent: 56),
+                    _buildProfileTile(
+                      icon: Icons.help_outline_rounded,
+                      title: 'Help & Support',
+                      subtitle: 'Get help or report issues',
+                      onTap: () {
+                        // Show help dialog or screen
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // Action button (Sign Out / Sign In)
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () async {
+                    if (userData != null) {
+                      await authProvider.signOut();
+                      setState(() {
+                        _selectedViewIndex = 0;
+                        _customerTabIndex = 0;
+                      });
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Signed out successfully'),
+                            backgroundColor: AppTheme.success,
+                          ),
+                        );
+                      }
+                    } else {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const LoginScreen()),
+                      );
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: userData != null ? AppTheme.error : AppTheme.primaryOrange,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  child: Text(userData != null ? 'Sign Out' : 'Sign In'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProfileTile({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return ListTile(
+      onTap: onTap,
+      leading: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: AppTheme.primaryOrange.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(icon, color: AppTheme.primaryOrange, size: 20),
+      ),
+      title: Text(
+        title,
+        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+      ),
+      trailing: const Icon(Icons.chevron_right, size: 20, color: AppTheme.textTertiary),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
     );
   }
 }
