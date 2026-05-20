@@ -371,7 +371,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: [
                       Icon(
                         view['icon'] as IconData,
-                        size: 14,
+                        size: 16,
                         color: isSelected
                             ? Colors.white
                             : AppTheme.textSecondary,
@@ -380,8 +380,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       Text(
                         view['name'] as String,
                         style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                          fontSize: 14,
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
                           color: isSelected
                               ? Colors.white
                               : AppTheme.textSecondary,

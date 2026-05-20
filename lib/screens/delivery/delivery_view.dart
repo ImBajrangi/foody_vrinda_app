@@ -290,11 +290,11 @@ class _DeliveryViewState extends State<DeliveryView> {
                         style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
-                          fontSize: 18,
+                          fontSize: 20,
                           letterSpacing: 0.3,
                         ),
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 4),
                       StreamBuilder<List<ShopModel>>(
                         stream: _shopsStream,
                         builder: (context, snapshot) {
@@ -325,7 +325,7 @@ class _DeliveryViewState extends State<DeliveryView> {
                                 : 'Active orders for $shopName',
                             style: TextStyle(
                               color: Colors.white.withValues(alpha: 0.9),
-                              fontSize: 12,
+                              fontSize: 14,
                               fontWeight: FontWeight.w500,
                             ),
                             maxLines: 1,
@@ -356,7 +356,7 @@ class _DeliveryViewState extends State<DeliveryView> {
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
-                                fontSize: 11,
+                                fontSize: 13,
                               ),
                             ),
                             const SizedBox(width: 4),
@@ -404,10 +404,10 @@ class _DeliveryViewState extends State<DeliveryView> {
                       final shops = snapshot.data ?? [];
                       return Container(
                         margin: const EdgeInsets.only(top: 12),
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(12),
                           border: Border.all(
                             color: Colors.white.withValues(alpha: 0.25),
                             width: 1,
@@ -419,26 +419,40 @@ class _DeliveryViewState extends State<DeliveryView> {
                             isExpanded: true,
                             hint: const Text(
                               'Select Shop to Monitor',
-                              style: TextStyle(color: Colors.white70, fontSize: 13),
+                              style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w500),
                             ),
                             dropdownColor: Colors.white,
                             iconEnabledColor: Colors.white,
-                            style: const TextStyle(color: AppTheme.textPrimary, fontSize: 13),
+                            style: const TextStyle(color: AppTheme.textPrimary, fontSize: 15),
                             selectedItemBuilder: (context) {
                               return [
-                                const Text('Monitoring: All Shops', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13)),
-                                ...shops.map((s) => Text('Monitoring: ${s.name}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13))),
+                                const Text('Monitoring: All Shops', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+                                ...shops.map((s) => Text('Monitoring: ${s.name}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15))),
                               ];
                             },
                             items: [
                               const DropdownMenuItem(
                                 value: null,
-                                child: Text('All Shops (Global Monitor)'),
+                                child: Text(
+                                  'All Shops (Global Monitor)',
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w500,
+                                    color: AppTheme.textPrimary,
+                                  ),
+                                ),
                               ),
                               ...shops.map(
                                 (s) => DropdownMenuItem(
                                   value: s.id,
-                                  child: Text(s.name),
+                                  child: Text(
+                                    s.name,
+                                    style: const TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w500,
+                                      color: AppTheme.textPrimary,
+                                    ),
+                                  ),
                                 ),
                               ),
                             ],
