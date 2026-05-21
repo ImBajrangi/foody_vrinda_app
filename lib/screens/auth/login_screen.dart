@@ -9,6 +9,7 @@ import '../../widgets/inputs.dart';
 import '../../config/app_config.dart';
 import 'package:lottie/lottie.dart';
 import '../../config/lottie_assets.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -71,7 +72,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-              ),
+              ).animate().fadeIn(duration: 300.ms).slideX(begin: -0.2, end: 0, curve: Curves.easeOutQuad),
 
               const SizedBox(height: 24),
 
@@ -109,31 +110,36 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                 ),
-              ),
+              ).animate().fadeIn(duration: 400.ms, delay: 100.ms).scale(begin: const Offset(0.8, 0.8), end: const Offset(1, 1), curve: Curves.easeOutBack),
 
               const SizedBox(height: 28),
 
-              // Title
-              Center(
-                child: Text(
-                  'Welcome back 🍕',
-                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.5,
+              // Title & Subtitle block
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Center(
+                    child: Text(
+                      'Welcome back 🍕',
+                      style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
                   ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Center(
-                child: Text(
-                  'Enter credentials to sign in or register instantly',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppTheme.textSecondary,
-                    fontWeight: FontWeight.w500,
+                  const SizedBox(height: 8),
+                  Center(
+                    child: Text(
+                      'Enter credentials to sign in or register instantly',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppTheme.textSecondary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
                   ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
+                ],
+              ).animate().fadeIn(duration: 400.ms, delay: 200.ms).slideY(begin: 0.2, end: 0, curve: Curves.easeOutQuad),
 
               const SizedBox(height: 28),
 
@@ -261,57 +267,61 @@ class _LoginScreenState extends State<LoginScreen> {
                     ],
                   ),
                 ),
-              ),
+              ).animate().fadeIn(duration: 500.ms, delay: 300.ms).slideY(begin: 0.1, end: 0, curve: Curves.easeOutQuad),
 
               const SizedBox(height: 24),
 
-              // Divider
-              Row(
+              // Divider, Google Sign In, & Guest Button Column
+              Column(
                 children: [
-                  Expanded(child: Divider(color: AppTheme.border)),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Text(
-                      'OR',
-                      style: TextStyle(
-                        color: AppTheme.textSecondary,
-                        fontSize: 12,
+                  Row(
+                    children: [
+                      Expanded(child: Divider(color: AppTheme.border)),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Text(
+                          'OR',
+                          style: TextStyle(
+                            color: AppTheme.textSecondary,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                      Expanded(child: Divider(color: AppTheme.border)),
+                    ],
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Google Sign In Button
+                  _GoogleSignInButton(
+                    onPressed: authProvider.isLoading
+                        ? null
+                        : () async {
+                            final success = await authProvider.signInWithGoogle();
+                            if (success && mounted) {
+                              if (Navigator.canPop(context)) {
+                                Navigator.pop(context);
+                              }
+                            }
+                          },
+                    isLoading: authProvider.isLoading,
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Guest option
+                  Center(
+                    child: TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text(
+                        'Continue as Guest',
+                        style: TextStyle(color: AppTheme.textSecondary),
                       ),
                     ),
                   ),
-                  Expanded(child: Divider(color: AppTheme.border)),
                 ],
-              ),
-
-              const SizedBox(height: 24),
-
-              // Google Sign In Button
-              _GoogleSignInButton(
-                onPressed: authProvider.isLoading
-                    ? null
-                    : () async {
-                        final success = await authProvider.signInWithGoogle();
-                        if (success && mounted) {
-                          if (Navigator.canPop(context)) {
-                            Navigator.pop(context);
-                          }
-                        }
-                      },
-                isLoading: authProvider.isLoading,
-              ),
-
-              const SizedBox(height: 16),
-
-              // Guest option
-              Center(
-                child: TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text(
-                    'Continue as Guest',
-                    style: TextStyle(color: AppTheme.textSecondary),
-                  ),
-                ),
-              ),
+              ).animate().fadeIn(duration: 500.ms, delay: 450.ms).slideY(begin: 0.15, end: 0, curve: Curves.easeOutQuad),
             ],
           ),
         ),

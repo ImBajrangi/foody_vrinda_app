@@ -140,7 +140,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                                                   style: TextStyle(
                                                     color: AppTheme.error,
                                                     fontWeight: FontWeight.bold,
-                                                    fontSize: 10,
+                                                    fontSize: 13,
                                                   ),
                                                 ),
                                                 Text(
@@ -589,7 +589,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
           const SizedBox(height: 12),
           Text(
             label,
-            style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary),
+            style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary),
           ),
           const SizedBox(height: 4),
           Text(

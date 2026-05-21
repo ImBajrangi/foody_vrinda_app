@@ -859,7 +859,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
       ),
       subtitle: Text(
         'By ${tx.userName} • ${DateFormat('MMM dd, HH:mm').format(tx.timestamp)}',
-        style: const TextStyle(fontSize: 11),
+        style: const TextStyle(fontSize: 13),
       ),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
@@ -873,7 +873,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
             child: Text(
               '#${tx.orderId.length > 4 ? tx.orderId.substring(tx.orderId.length - 4) : tx.orderId}',
               style: const TextStyle(
-                fontSize: 9,
+                fontSize: 12,
                 color: AppTheme.textSecondary,
               ),
             ),
@@ -1172,7 +1172,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
                 children: [
                   Text(
                     label,
-                    style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                   ),
                   Text(
                     value == null ? 'None selected' : selectedShop.name,
@@ -2496,7 +2496,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
               children: [
                 Text(
                   label,
-                  style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                 ),
                 Text(
                   time?.format(context) ?? '--:--',
@@ -3695,7 +3695,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
             ),
             subtitle: const Text(
               'Kitchen, Delivery, Owner',
-              style: TextStyle(fontSize: 11),
+              style: TextStyle(fontSize: 13),
             ),
             children: [
               TextField(
@@ -3773,7 +3773,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
               Text(
                 'Staff must sign up with the same email to link their account.',
                 style: TextStyle(
-                  fontSize: 10,
+                  fontSize: 12,
                   color: Colors.grey.shade600,
                   fontStyle: FontStyle.italic,
                 ),

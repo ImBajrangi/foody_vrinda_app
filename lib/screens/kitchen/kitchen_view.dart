@@ -765,7 +765,7 @@ class _KitchenOrderCard extends StatelessWidget {
                             child: const Text(
                               'TEST',
                               style: TextStyle(
-                                fontSize: 9,
+                                fontSize: 12,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -778,7 +778,7 @@ class _KitchenOrderCard extends StatelessWidget {
                       order.timeAgo,
                       style: const TextStyle(
                         color: AppTheme.textSecondary,
-                        fontSize: 11,
+                        fontSize: 13,
                       ),
                     ),
                   ],
@@ -840,7 +840,7 @@ class _KitchenOrderCard extends StatelessWidget {
                       Text(
                         order.importance,
                         style: TextStyle(
-                          fontSize: 11,
+                          fontSize: 13,
                           fontWeight: FontWeight.bold,
                           color: order.importanceColor,
                         ),

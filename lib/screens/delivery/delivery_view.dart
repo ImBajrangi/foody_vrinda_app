@@ -792,7 +792,7 @@ class _DeliveryOrderCard extends StatelessWidget {
                                 Text(
                                   'Large',
                                   style: TextStyle(
-                                    fontSize: 9,
+                                    fontSize: 12,
                                     fontWeight: FontWeight.bold,
                                     color: AppTheme.warning,
                                   ),
@@ -808,7 +808,7 @@ class _DeliveryOrderCard extends StatelessWidget {
                       order.timeAgo,
                       style: const TextStyle(
                         color: AppTheme.textSecondary,
-                        fontSize: 11,
+                        fontSize: 13,
                       ),
                     ),
                   ],
@@ -841,7 +841,7 @@ class _DeliveryOrderCard extends StatelessWidget {
                             Text(
                               'CASH',
                               style: TextStyle(
-                                fontSize: 10,
+                                fontSize: 12,
                                 fontWeight: FontWeight.bold,
                                 color: AppTheme.warning,
                               ),
@@ -957,7 +957,7 @@ class _DeliveryOrderCard extends StatelessWidget {
                         Text(
                           'Call attempts: ${order.contactAttempts.length} (Last: ${DateFormat('hh:mm a').format(order.contactAttempts.last)})',
                           style: TextStyle(
-                            fontSize: 11,
+                            fontSize: 13,
                             color: order.contactAttempts.length >= 3
                                 ? AppTheme.error
                                 : AppTheme.textSecondary,
