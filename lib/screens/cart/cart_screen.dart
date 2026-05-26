@@ -18,6 +18,7 @@ import '../../widgets/location_picker_dialog.dart';
 import 'package:latlong2/latlong.dart' as ll2;
 import '../order/order_tracking_screen.dart';
 import '../auth/login_screen.dart';
+import '../../config/telegram_page_route.dart';
 import '../../models/order_model.dart';
 
 class CartScreen extends StatefulWidget {
@@ -137,6 +138,9 @@ class _CartScreenState extends State<CartScreen> {
     }
     if (authProvider.isAuthenticated && _phoneController.text.isEmpty) {
       _phoneController.text = authProvider.userData?.phoneNumber ?? '';
+    }
+    if (authProvider.isAuthenticated && _addressController.text.isEmpty) {
+      _addressController.text = authProvider.userData?.deliveryAddress ?? '';
     }
 
     return Scaffold(
@@ -1395,14 +1399,25 @@ class _CartScreenState extends State<CartScreen> {
 
       debugPrint('CartScreen: Order created successfully - $orderId');
 
-      // Update user's phone number in Firestore if not already set
-      if (authProvider.isAuthenticated &&
-          (authProvider.userData?.phoneNumber == null ||
-              authProvider.userData!.phoneNumber!.isEmpty)) {
-        FirebaseFirestore.instance
-            .collection('users')
-            .doc(authProvider.user!.uid)
-            .update({'phoneNumber': _pendingCustomerPhone});
+      // Sync profile details back to Firestore if they were modified/filled during checkout
+      if (authProvider.isAuthenticated) {
+        final currentName = authProvider.userData?.displayName ?? '';
+        final currentPhone = authProvider.userData?.phoneNumber ?? '';
+        final currentAddress = authProvider.userData?.deliveryAddress ?? '';
+        
+        if (_pendingCustomerName != currentName ||
+            _pendingCustomerPhone != currentPhone ||
+            _pendingDeliveryAddress != currentAddress) {
+          try {
+            await authProvider.updateProfile(
+              displayName: _pendingCustomerName!,
+              phoneNumber: _pendingCustomerPhone!,
+              deliveryAddress: _pendingDeliveryAddress!,
+            );
+          } catch (e) {
+            debugPrint('CartScreen: Failed to sync profile changes - $e');
+          }
+        }
       }
 
       cartProvider.clear();
@@ -1428,8 +1443,8 @@ class _CartScreenState extends State<CartScreen> {
 
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(
-            builder: (context) => OrderTrackingScreen(orderId: orderId),
+          TelegramPageRoute(
+            child: OrderTrackingScreen(orderId: orderId),
           ),
         );
       }
@@ -1507,7 +1522,7 @@ class _CartScreenState extends State<CartScreen> {
               Navigator.pop(ctx);
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const LoginScreen()),
+                TelegramPageRoute(child: const LoginScreen()),
               );
             },
             style: ElevatedButton.styleFrom(

@@ -243,11 +243,15 @@ class AuthService {
   Future<void> updateUserProfile({
     required String uid,
     String? displayName,
+    String? phoneNumber,
+    String? deliveryAddress,
     String? photoURL,
   }) async {
     final updates = <String, dynamic>{};
 
     if (displayName != null) updates['displayName'] = displayName;
+    if (phoneNumber != null) updates['phoneNumber'] = phoneNumber;
+    if (deliveryAddress != null) updates['deliveryAddress'] = deliveryAddress;
     if (photoURL != null) updates['photoURL'] = photoURL;
 
     if (updates.isNotEmpty) {

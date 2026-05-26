@@ -40,6 +40,7 @@ class UserModel {
   final String? displayName;
   final String? photoURL;
   final String? phoneNumber; // Contact phone number
+  final String? deliveryAddress; // User delivery address
   final UserRole role;
   final String? shopId;
   final List<String>? shopIds; // For delivery staff multi-shop support
@@ -54,6 +55,7 @@ class UserModel {
     this.displayName,
     this.photoURL,
     this.phoneNumber,
+    this.deliveryAddress,
     this.role = UserRole.customer,
     this.shopId,
     this.shopIds,
@@ -75,6 +77,7 @@ class UserModel {
       displayName: data['displayName'],
       photoURL: data['photoURL'],
       phoneNumber: data['phoneNumber'],
+      deliveryAddress: data['deliveryAddress'],
       role: UserRoleExtension.fromString(data['role']),
       shopId: data['shopId'],
       shopIds: data['shopIds'] != null
@@ -99,6 +102,7 @@ class UserModel {
       'displayName': displayName,
       'photoURL': photoURL,
       'phoneNumber': phoneNumber,
+      'deliveryAddress': deliveryAddress,
       'role': role.value,
       'shopId': shopId,
       'shopIds': shopIds,
@@ -119,6 +123,7 @@ class UserModel {
       'displayName': displayName,
       'photoURL': photoURL,
       'phoneNumber': phoneNumber,
+      'deliveryAddress': deliveryAddress,
       'role': role.value,
       'shopId': shopId,
       'shopIds': shopIds,
@@ -137,6 +142,7 @@ class UserModel {
       displayName: json['displayName'],
       photoURL: json['photoURL'],
       phoneNumber: json['phoneNumber'],
+      deliveryAddress: json['deliveryAddress'],
       role: UserRoleExtension.fromString(json['role']),
       shopId: json['shopId'],
       shopIds: json['shopIds'] != null
@@ -161,6 +167,7 @@ class UserModel {
     String? displayName,
     String? photoURL,
     String? phoneNumber,
+    String? deliveryAddress,
     UserRole? role,
     String? shopId,
     List<String>? shopIds,
@@ -175,6 +182,7 @@ class UserModel {
       displayName: displayName ?? this.displayName,
       photoURL: photoURL ?? this.photoURL,
       phoneNumber: phoneNumber ?? this.phoneNumber,
+      deliveryAddress: deliveryAddress ?? this.deliveryAddress,
       role: role ?? this.role,
       shopId: shopId ?? this.shopId,
       shopIds: shopIds ?? this.shopIds,

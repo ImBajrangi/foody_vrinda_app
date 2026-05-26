@@ -23,7 +23,6 @@ class ResourceCacheService {
       LottieAssets.foodLoading,
       LottieAssets.success,
       LottieAssets.error,
-      'https://imbajrangi.github.io/Company/Vrindopnishad%20Web/class/logo/foodyVrinda-logo.png',
     ];
 
     List<String> roleSpecificAssets = [];

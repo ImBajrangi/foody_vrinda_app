@@ -95,14 +95,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(24),
-                    child: CachedNetworkImage(
-                      imageUrl:
-                          'https://imbajrangi.github.io/Company/Vrindopnishad%20Web/class/logo/foodyVrinda-logo.png',
+                    child: Image.asset(
+                      'assets/images/logo.png',
                       fit: BoxFit.contain,
-                      placeholder: (context, url) =>       Center(
-                        child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryOrange),
-                      ),
-                      errorWidget: (context, url, error) => const Icon(
+                      errorBuilder: (context, error, stackTrace) => const Icon(
                         Icons.restaurant_menu,
                         color: Colors.white,
                         size: 40,

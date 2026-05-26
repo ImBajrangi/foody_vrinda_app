@@ -301,6 +301,39 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> updateProfile({
+    required String displayName,
+    required String phoneNumber,
+    required String deliveryAddress,
+  }) async {
+    if (_userData == null) return;
+    try {
+      _status = AuthStatus.loading;
+      notifyListeners();
+
+      await _authService.updateUserProfile(
+        uid: _userData!.uid,
+        displayName: displayName,
+        phoneNumber: phoneNumber,
+        deliveryAddress: deliveryAddress,
+      );
+
+      _userData = _userData!.copyWith(
+        displayName: displayName,
+        phoneNumber: phoneNumber,
+        deliveryAddress: deliveryAddress,
+      );
+
+      await _saveUserDataToCache(_userData!);
+      _status = AuthStatus.authenticated;
+      notifyListeners();
+    } catch (e) {
+      _status = AuthStatus.authenticated;
+      _error = 'Failed to update profile: $e';
+      notifyListeners();
+    }
+  }
+
   void clearError() {
     _error = null;
     _lastErrorCode = null;

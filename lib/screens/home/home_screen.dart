@@ -18,6 +18,8 @@ import '../../widgets/cards.dart';
 import '../menu/menu_screen.dart';
 import '../cart/cart_screen.dart';
 import '../auth/login_screen.dart';
+import '../../config/telegram_page_route.dart';
+import '../../widgets/address_autocomplete_field.dart';
 import '../kitchen/kitchen_view.dart';
 import '../delivery/delivery_view.dart';
 import '../delivery/delivery_dashboard_view.dart';
@@ -41,6 +43,29 @@ class _HomeScreenState extends State<HomeScreen> {
   int _customerTabIndex = 0;
   late Stream<List<ShopModel>> _shopsStream;
   late Stream<List<MenuItemModel>> _trendingStream;
+
+  final TextEditingController _profileNameController = TextEditingController();
+  final TextEditingController _profilePhoneController = TextEditingController();
+  final TextEditingController _profileAddressController = TextEditingController();
+  bool _profileControllersInitialized = false;
+
+  void _initProfileControllers(UserModel? userData) {
+    if (_profileControllersInitialized) return;
+    if (userData != null) {
+      _profileNameController.text = userData.displayName ?? '';
+      _profilePhoneController.text = userData.phoneNumber ?? '';
+      _profileAddressController.text = userData.deliveryAddress ?? '';
+      _profileControllersInitialized = true;
+    }
+  }
+
+  @override
+  void dispose() {
+    _profileNameController.dispose();
+    _profilePhoneController.dispose();
+    _profileAddressController.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -157,8 +182,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       onPressed: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(
-                            builder: (context) => const CartScreen(),
+                          TelegramPageRoute(
+                            child: const CartScreen(),
                           ),
                         );
                       },
@@ -209,9 +234,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              const NotificationSettingsScreen(),
+                        TelegramPageRoute(
+                          child: const NotificationSettingsScreen(),
                         ),
                       );
                     },
@@ -833,8 +857,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(
-                            builder: (context) => MenuScreen(shop: shop),
+                          TelegramPageRoute(
+                            child: MenuScreen(shop: shop),
                           ),
                         );
                       },
@@ -965,7 +989,7 @@ class _HomeScreenState extends State<HomeScreen> {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => MenuScreen(shop: shop)),
+          TelegramPageRoute(child: MenuScreen(shop: shop)),
         );
       },
       child: Container(
@@ -1059,7 +1083,7 @@ class _HomeScreenState extends State<HomeScreen> {
         // Navigate to search with category filter
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const SearchScreen()),
+          TelegramPageRoute(child: const SearchScreen()),
         );
       },
       child: Container(
@@ -1270,7 +1294,7 @@ class _HomeScreenState extends State<HomeScreen> {
           onTap: () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => MenuScreen(shop: shop)),
+              TelegramPageRoute(child: MenuScreen(shop: shop)),
             );
           },
           child: Container(
@@ -1636,8 +1660,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     Navigator.pop(context); // Close sheet
                     Navigator.push(
                       context,
-                      MaterialPageRoute(
-                        builder: (context) => const OrderHistoryScreen(),
+                      TelegramPageRoute(
+                        child: const OrderHistoryScreen(),
                       ),
                     );
                   },
@@ -1698,8 +1722,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     Navigator.pop(context);
                     Navigator.push(
                       context,
-                      MaterialPageRoute(
-                        builder: (context) => const LoginScreen(),
+                      TelegramPageRoute(
+                        child: const LoginScreen(),
                       ),
                     );
                   },
@@ -1929,6 +1953,9 @@ class _HomeScreenState extends State<HomeScreen> {
     final userData = authProvider.userData;
     final prefsProvider = Provider.of<UserPreferencesProvider>(context);
 
+    // Initialize profile text controllers
+    _initProfileControllers(userData);
+
     return Scaffold(
       backgroundColor: AppTheme.background,
       appBar: AppBar(
@@ -2006,7 +2033,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                         decoration: BoxDecoration(
-                          color: AppTheme.primaryOrange.withOpacity(0.15),
+                          color: AppTheme.primaryOrange.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
@@ -2015,6 +2042,34 @@ class _HomeScreenState extends State<HomeScreen> {
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
                             color: AppTheme.primaryOrange,
+                          ),
+                        ),
+                      ),
+                    ] else ...[
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              TelegramPageRoute(child: const LoginScreen()),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.primaryOrange,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text(
+                            'Sign In / Register',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ),
@@ -2059,8 +2114,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(
-                            builder: (context) => const NotificationSettingsScreen(),
+                          TelegramPageRoute(
+                            child: const NotificationSettingsScreen(),
                           ),
                         );
                       },
@@ -2077,6 +2132,136 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
               ),
+              if (userData != null) ...[
+                const SizedBox(height: 20),
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: AppTheme.cardBackground,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.03),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: AppTheme.primaryOrange.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Icon(Icons.delivery_dining, color: AppTheme.primaryOrange, size: 20),
+                          ),
+                          const SizedBox(width: 12),
+                          const Text(
+                            'Delivery & Contact Info',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      Text(
+                        'FULL NAME',
+                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.textSecondary, letterSpacing: 1.0),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: _profileNameController,
+                        decoration: const InputDecoration(
+                          hintText: 'Enter your name',
+                          prefixIcon: Icon(Icons.person_outline, size: 18),
+                          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      Text(
+                        'PHONE NUMBER',
+                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.textSecondary, letterSpacing: 1.0),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: _profilePhoneController,
+                        keyboardType: TextInputType.phone,
+                        decoration: const InputDecoration(
+                          hintText: 'Enter your phone number',
+                          prefixIcon: Icon(Icons.phone_outlined, size: 18),
+                          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      Text(
+                        'DELIVERY ADDRESS',
+                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.textSecondary, letterSpacing: 1.0),
+                      ),
+                      const SizedBox(height: 8),
+                      AddressAutocompleteField(
+                        controller: _profileAddressController,
+                        labelText: 'Address',
+                        hintText: 'Search or enter address...',
+                        onAddressSelected: (address, location) {
+                          _profileAddressController.text = address;
+                        },
+                      ),
+                      const SizedBox(height: 24),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            final name = _profileNameController.text.trim();
+                            final phone = _profilePhoneController.text.trim();
+                            final address = _profileAddressController.text.trim();
+                            
+                            if (name.isEmpty || phone.isEmpty || address.isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Please fill all profile fields'),
+                                  backgroundColor: AppTheme.warning,
+                                ),
+                              );
+                              return;
+                            }
+                            
+                            await authProvider.updateProfile(
+                              displayName: name,
+                              phoneNumber: phone,
+                              deliveryAddress: address,
+                            );
+                            
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Profile updated successfully'),
+                                  backgroundColor: AppTheme.success,
+                                ),
+                              );
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.primaryOrange,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: const Text(
+                            'Save Profile Details',
+                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               const SizedBox(height: 20),
 
               // Personalization Card
@@ -2174,14 +2359,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
-
-              // Action button (Sign Out / Sign In)
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () async {
-                    if (userData != null) {
+              if (userData != null) ...[
+                const SizedBox(height: 24),
+                // Action button (Sign Out)
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () async {
                       await authProvider.signOut();
                       setState(() {
                         _selectedViewIndex = 0;
@@ -2195,24 +2379,19 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         );
                       }
-                    } else {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const LoginScreen()),
-                      );
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: userData != null ? AppTheme.error : AppTheme.primaryOrange,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.error,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
                     ),
+                    child: const Text('Sign Out'),
                   ),
-                  child: Text(userData != null ? 'Sign Out' : 'Sign In'),
                 ),
-              ),
+              ],
             ],
           ),
         ),

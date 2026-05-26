@@ -14,6 +14,7 @@ import '../../providers/auth_provider.dart';
 import '../../services/order_service.dart';
 import '../../widgets/animations.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import '../../config/telegram_page_route.dart';
 
 /// Dashboard view for delivery staff showing performance metrics
 class DeliveryDashboardView extends StatefulWidget {
@@ -381,7 +382,7 @@ class _DeliveryDashboardViewState extends State<DeliveryDashboardView> {
     // Show all pending order destinations
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const _DeliveryMapView()),
+      TelegramPageRoute(child: const _DeliveryMapView()),
     );
   }
 

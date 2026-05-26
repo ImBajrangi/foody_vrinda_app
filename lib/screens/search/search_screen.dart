@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../config/theme.dart';
 import '../../services/search_service.dart';
 import '../menu/menu_screen.dart';
+import '../../config/telegram_page_route.dart';
 import '../../config/lottie_assets.dart';
 import '../../widgets/animations.dart';
 
@@ -75,7 +76,7 @@ class _SearchScreenState extends State<SearchScreen> {
     if (result.type == 'shop' && result.shop != null) {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => MenuScreen(shop: result.shop!)),
+        TelegramPageRoute(child: MenuScreen(shop: result.shop!)),
       );
     } else if (result.type == 'menuItem' && result.shopId != null) {
       // First fetch the shop, then navigate
@@ -83,7 +84,7 @@ class _SearchScreenState extends State<SearchScreen> {
       if (shop != null && mounted) {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => MenuScreen(shop: shop)),
+          TelegramPageRoute(child: MenuScreen(shop: shop)),
         );
       }
     }

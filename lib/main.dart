@@ -181,17 +181,10 @@ class _SplashScreenState extends State<SplashScreen>
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(36),
-                      child: CachedNetworkImage(
-                        imageUrl:
-                            'https://imbajrangi.github.io/Company/Vrindopnishad%20Web/class/logo/foodyVrinda-logo.png',
+                      child: Image.asset(
+                        'assets/images/logo.png',
                         fit: BoxFit.cover,
-                        placeholder: (context, url) =>       Center(
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: AppTheme.primaryOrange,
-                          ),
-                        ),
-                        errorWidget: (context, url, error) => const Icon(
+                        errorBuilder: (context, error, stackTrace) => const Icon(
                           Icons.restaurant,
                           color: Colors.white,
                           size: 70,

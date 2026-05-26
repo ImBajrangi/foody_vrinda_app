@@ -15,6 +15,7 @@ import '../../providers/cart_provider.dart';
 import '../../providers/user_preferences_provider.dart';
 import '../../widgets/cards.dart';
 import '../cart/cart_screen.dart';
+import '../../config/telegram_page_route.dart';
 
 class MenuScreen extends StatefulWidget {
   final ShopModel shop;
@@ -444,9 +445,8 @@ class _MenuScreenState extends State<MenuScreen> {
                                 ? () {
                                     Navigator.push(
                                       context,
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            CartScreen(shop: widget.shop),
+                                      TelegramPageRoute(
+                                        child: CartScreen(shop: widget.shop),
                                       ),
                                     );
                                   }

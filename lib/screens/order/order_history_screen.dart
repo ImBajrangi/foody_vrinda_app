@@ -6,6 +6,7 @@ import '../../providers/auth_provider.dart';
 import '../../services/order_service.dart';
 import '../../widgets/order_widgets.dart';
 import '../../widgets/animations.dart';
+import '../../config/telegram_page_route.dart';
 import 'order_tracking_screen.dart';
 
 class OrderHistoryScreen extends StatelessWidget {
@@ -90,9 +91,8 @@ class OrderHistoryScreen extends StatelessWidget {
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            OrderTrackingScreen(orderId: order.id),
+                      TelegramPageRoute(
+                        child: OrderTrackingScreen(orderId: order.id),
                       ),
                     );
                   },
