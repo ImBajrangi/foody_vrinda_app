@@ -37,7 +37,7 @@ class AppInputField extends StatelessWidget {
         if (label != null) ...[
           Text(
             label!,
-            style: const TextStyle(
+            style:       TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w500,
               color: AppTheme.textPrimary,
@@ -64,15 +64,15 @@ class AppInputField extends StatelessWidget {
             fillColor: enabled ? AppTheme.inputBackground : AppTheme.background,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppTheme.border),
+              borderSide:       BorderSide(color: AppTheme.border),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppTheme.border),
+              borderSide:       BorderSide(color: AppTheme.border),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
+              borderSide:       BorderSide(
                 color: AppTheme.primaryOrange,
                 width: 2,
               ),
@@ -120,7 +120,7 @@ class AppDropdown<T> extends StatelessWidget {
         if (label != null) ...[
           Text(
             label!,
-            style: const TextStyle(
+            style:       TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w500,
               color: AppTheme.textPrimary,
@@ -138,15 +138,15 @@ class AppDropdown<T> extends StatelessWidget {
             fillColor: AppTheme.inputBackground,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppTheme.border),
+              borderSide:       BorderSide(color: AppTheme.border),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppTheme.border),
+              borderSide:       BorderSide(color: AppTheme.border),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
+              borderSide:       BorderSide(
                 color: AppTheme.primaryOrange,
                 width: 2,
               ),

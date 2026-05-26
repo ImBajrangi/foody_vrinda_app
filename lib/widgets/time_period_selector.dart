@@ -32,11 +32,11 @@ class TimePeriodSelector extends StatelessWidget {
                   LottieAssets.clock,
                   fit: BoxFit.contain,
                   errorBuilder: (context, error, stackTrace) =>
-                      const Icon(Icons.schedule, color: AppTheme.primaryOrange),
+                      Icon(Icons.schedule, color: AppTheme.primaryOrange),
                 ),
               ),
               const SizedBox(width: 12),
-              const Expanded(
+                    Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -313,7 +313,7 @@ class TimePeriodDisplay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (timePeriods.isEmpty) {
-      return const Text(
+      return       Text(
         'Always Open',
         style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
       );
@@ -335,7 +335,7 @@ class TimePeriodDisplay extends StatelessWidget {
           ),
           child: Text(
             '${period.emoji} ${period.displayName}',
-            style: const TextStyle(
+            style:       TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w500,
               color: AppTheme.primaryOrange,

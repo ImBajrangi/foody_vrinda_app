@@ -219,7 +219,7 @@ class OrderSummaryCard extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         order.itemsSummary,
-                        style: const TextStyle(
+                        style:       TextStyle(
                           color: AppTheme.textSecondary,
                           fontSize: 13,
                         ),
@@ -234,7 +234,7 @@ class OrderSummaryCard extends StatelessWidget {
                   children: [
                     Text(
                       order.formattedTotal,
-                      style: const TextStyle(
+                      style:       TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 18,
                         color: AppTheme.primaryOrange,
@@ -243,7 +243,7 @@ class OrderSummaryCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       order.timeAgo,
-                      style: const TextStyle(
+                      style:       TextStyle(
                         color: AppTheme.textSecondary,
                         fontSize: 12,
                       ),
@@ -286,7 +286,7 @@ class OrderItemsList extends StatelessWidget {
                     child: Center(
                       child: Text(
                         '${item.quantity}x',
-                        style: const TextStyle(
+                        style:       TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 12,
                           color: AppTheme.primaryOrange,

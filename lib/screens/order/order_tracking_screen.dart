@@ -179,7 +179,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                                                 : (isReturned
                                                       ? 'Returned at ${order.returnedAt != null ? DateFormat('hh:mm a').format(order.returnedAt!) : 'N/A'}'
                                                       : 'Estimated Arrival: ${_calculateETA(order, shop)}'),
-                                            style: const TextStyle(
+                                            style:       TextStyle(
                                               color: AppTheme.textSecondary,
                                               fontSize: 14,
                                             ),
@@ -204,7 +204,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                                   Text(
                                     order.statusDetails,
                                     textAlign: TextAlign.center,
-                                    style: const TextStyle(
+                                    style:       TextStyle(
                                       color: AppTheme.textSecondary,
                                       fontSize: 15,
                                       height: 1.4,
@@ -267,7 +267,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                                                   fontWeight: FontWeight.bold,
                                                 ),
                                               ),
-                                              const Text(
+                                                    Text(
                                                 'Need help with your order?',
                                                 style: TextStyle(
                                                   fontSize: 12,
@@ -322,7 +322,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                                           style: OutlinedButton.styleFrom(
                                             foregroundColor:
                                                 AppTheme.primaryOrange,
-                                            side: const BorderSide(
+                                            side:       BorderSide(
                                               color: AppTheme.primaryOrange,
                                             ),
                                             padding: const EdgeInsets.symmetric(
@@ -516,7 +516,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                                 children: [
                                   Text(
                                     '${item.quantity}x',
-                                    style: const TextStyle(
+                                    style:       TextStyle(
                                       fontWeight: FontWeight.bold,
                                       color: AppTheme.primaryOrange,
                                     ),
@@ -589,7 +589,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
           const SizedBox(height: 12),
           Text(
             label,
-            style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary),
+            style:       TextStyle(fontSize: 13, color: AppTheme.textSecondary),
           ),
           const SizedBox(height: 4),
           Text(
@@ -667,7 +667,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Padding(
+                Padding(
             padding: EdgeInsets.all(16),
             child: Row(
               children: [

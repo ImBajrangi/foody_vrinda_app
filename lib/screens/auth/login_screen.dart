@@ -99,7 +99,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       imageUrl:
                           'https://imbajrangi.github.io/Company/Vrindopnishad%20Web/class/logo/foodyVrinda-logo.png',
                       fit: BoxFit.contain,
-                      placeholder: (context, url) => const Center(
+                      placeholder: (context, url) =>       Center(
                         child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryOrange),
                       ),
                       errorWidget: (context, url, error) => const Icon(
@@ -314,7 +314,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   Center(
                     child: TextButton(
                       onPressed: () => Navigator.pop(context),
-                      child: const Text(
+                      child:       Text(
                         'Continue as Guest',
                         style: TextStyle(color: AppTheme.textSecondary),
                       ),
@@ -386,7 +386,7 @@ class _GoogleSignInButton extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  const Text(
+                        Text(
                     'Continue with Google',
                     style: TextStyle(
                       fontSize: 16,

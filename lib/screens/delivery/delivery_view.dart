@@ -203,7 +203,7 @@ class _DeliveryViewState extends State<DeliveryView> {
         if (_isAlarmActive) _buildAlarmBanner(),
         Expanded(
           child: shopId == null
-              ? const Center(
+              ?       Center(
                   child: Padding(
                     padding: EdgeInsets.all(24),
                     child: Text(
@@ -423,7 +423,7 @@ class _DeliveryViewState extends State<DeliveryView> {
                             ),
                             dropdownColor: Colors.white,
                             iconEnabledColor: Colors.white,
-                            style: const TextStyle(color: AppTheme.textPrimary, fontSize: 15),
+                            style:       TextStyle(color: AppTheme.textPrimary, fontSize: 15),
                             selectedItemBuilder: (context) {
                               return [
                                 const Text('Monitoring: All Shops', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
@@ -431,7 +431,7 @@ class _DeliveryViewState extends State<DeliveryView> {
                               ];
                             },
                             items: [
-                              const DropdownMenuItem(
+                                    DropdownMenuItem(
                                 value: null,
                                 child: Text(
                                   'All Shops (Global Monitor)',
@@ -447,7 +447,7 @@ class _DeliveryViewState extends State<DeliveryView> {
                                   value: s.id,
                                   child: Text(
                                     s.name,
-                                    style: const TextStyle(
+                                    style:       TextStyle(
                                       fontSize: 15,
                                       fontWeight: FontWeight.w500,
                                       color: AppTheme.textPrimary,
@@ -806,7 +806,7 @@ class _DeliveryOrderCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       order.timeAgo,
-                      style: const TextStyle(
+                      style:       TextStyle(
                         color: AppTheme.textSecondary,
                         fontSize: 13,
                       ),
@@ -876,7 +876,7 @@ class _DeliveryOrderCard extends StatelessWidget {
                           order.customerName.isNotEmpty
                               ? order.customerName[0].toUpperCase()
                               : 'C',
-                          style: const TextStyle(
+                          style:       TextStyle(
                             fontWeight: FontWeight.bold,
                             color: AppTheme.primaryOrange,
                           ),
@@ -894,7 +894,7 @@ class _DeliveryOrderCard extends StatelessWidget {
                           ),
                           Text(
                             order.customerPhone,
-                            style: const TextStyle(
+                            style:       TextStyle(
                               color: AppTheme.textSecondary,
                               fontSize: 13,
                             ),
@@ -999,7 +999,7 @@ class _DeliveryOrderCard extends StatelessWidget {
                           lat: order.customerLatitude,
                           lng: order.customerLongitude,
                         ),
-                        icon: const Icon(
+                        icon:       Icon(
                           Icons.directions,
                           color: AppTheme.primaryOrange,
                         ),
@@ -1031,7 +1031,7 @@ class _DeliveryOrderCard extends StatelessWidget {
                       const SizedBox(height: 8),
                       Text(
                         order.itemsSummary,
-                        style: const TextStyle(
+                        style:       TextStyle(
                           color: AppTheme.textSecondary,
                           fontSize: 13,
                         ),
@@ -1067,7 +1067,7 @@ class _DeliveryOrderCard extends StatelessWidget {
           // Actions
           Container(
             padding: const EdgeInsets.all(16),
-            decoration: const BoxDecoration(
+            decoration:       BoxDecoration(
               border: Border(top: BorderSide(color: AppTheme.border)),
             ),
             child: Row(
@@ -1217,7 +1217,7 @@ class _DeliveryOrderCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
+                  Text(
               'Confirm that you have received the exact amount.',
               style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
             ),
@@ -1328,7 +1328,7 @@ class _DeliveryOrderCard extends StatelessWidget {
                     label: const Text('Video Call Shop for Assistance'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppTheme.primaryOrange,
-                      side: const BorderSide(color: AppTheme.primaryOrange),
+                      side: BorderSide(color: AppTheme.primaryOrange),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),

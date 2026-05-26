@@ -125,7 +125,7 @@ class _KitchenViewState extends State<KitchenView> {
         // Orders list
         Expanded(
           child: activeShopId == null
-              ? const Center(
+              ?       Center(
                   child: Padding(
                     padding: EdgeInsets.all(24),
                     child: Text(
@@ -336,7 +336,7 @@ class _KitchenViewState extends State<KitchenView> {
                             ),
                             dropdownColor: Colors.white,
                             iconEnabledColor: Colors.white,
-                            style: const TextStyle(color: AppTheme.textPrimary, fontSize: 15),
+                            style:       TextStyle(color: AppTheme.textPrimary, fontSize: 15),
                             selectedItemBuilder: (context) {
                               return [
                                 const Text('Monitoring: All Shops', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
@@ -344,7 +344,7 @@ class _KitchenViewState extends State<KitchenView> {
                               ];
                             },
                             items: [
-                              const DropdownMenuItem(
+                                    DropdownMenuItem(
                                 value: null,
                                 child: Text(
                                   'All Shops (Global Monitor)',
@@ -360,7 +360,7 @@ class _KitchenViewState extends State<KitchenView> {
                                   value: s.id,
                                   child: Text(
                                     s.name,
-                                    style: const TextStyle(
+                                    style:       TextStyle(
                                       fontSize: 15,
                                       fontWeight: FontWeight.w500,
                                       color: AppTheme.textPrimary,
@@ -776,7 +776,7 @@ class _KitchenOrderCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       order.timeAgo,
-                      style: const TextStyle(
+                      style:       TextStyle(
                         color: AppTheme.textSecondary,
                         fontSize: 13,
                       ),
@@ -800,7 +800,7 @@ class _KitchenOrderCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    const Icon(
+                          Icon(
                       Icons.access_time,
                       size: 14,
                       color: AppTheme.textSecondary,
@@ -808,7 +808,7 @@ class _KitchenOrderCard extends StatelessWidget {
                     const SizedBox(width: 6),
                     Text(
                       'Arrival: ${order.arrivalTime}',
-                      style: const TextStyle(
+                      style:       TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
                         color: AppTheme.textSecondary,
@@ -873,7 +873,7 @@ class _KitchenOrderCard extends StatelessWidget {
                           child: Center(
                             child: Text(
                               '${item.quantity}x',
-                              style: const TextStyle(
+                              style:       TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 12,
                                 color: AppTheme.primaryOrange,
@@ -901,7 +901,7 @@ class _KitchenOrderCard extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
+                          Text(
                       'Importance Basis (Total)',
                       style: TextStyle(
                         fontSize: 12,
@@ -911,7 +911,7 @@ class _KitchenOrderCard extends StatelessWidget {
                     ),
                     Text(
                       order.formattedTotal,
-                      style: const TextStyle(
+                      style:       TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 18,
                         color: AppTheme.primaryOrange,
@@ -926,7 +926,7 @@ class _KitchenOrderCard extends StatelessWidget {
           // Actions
           Container(
             padding: const EdgeInsets.all(16),
-            decoration: const BoxDecoration(
+            decoration:       BoxDecoration(
               border: Border(top: BorderSide(color: AppTheme.border)),
             ),
             child: Row(

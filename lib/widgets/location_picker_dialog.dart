@@ -239,7 +239,7 @@ class _LocationPickerDialogState extends State<LocationPickerDialog> {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
+              gradient:       LinearGradient(
                 colors: [AppTheme.primaryOrange, Color(0xFFFF8C00)],
               ),
               borderRadius: BorderRadius.circular(12),
@@ -251,7 +251,7 @@ class _LocationPickerDialogState extends State<LocationPickerDialog> {
             ),
           ),
           const SizedBox(width: 14),
-          const Expanded(
+                Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -271,7 +271,7 @@ class _LocationPickerDialogState extends State<LocationPickerDialog> {
             ),
           ),
           IconButton(
-            icon: const Icon(
+            icon:       Icon(
               Icons.close_rounded,
               color: AppTheme.textSecondary,
             ),
@@ -294,7 +294,7 @@ class _LocationPickerDialogState extends State<LocationPickerDialog> {
               color: AppTheme.primaryOrange.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: const Center(
+            child:       Center(
               child: SizedBox(
                 width: 32,
                 height: 32,
@@ -306,7 +306,7 @@ class _LocationPickerDialogState extends State<LocationPickerDialog> {
             ),
           ),
           const SizedBox(height: 16),
-          const Text(
+                Text(
             'Getting your location...',
             style: TextStyle(
               color: AppTheme.textSecondary,
@@ -338,7 +338,7 @@ class _LocationPickerDialogState extends State<LocationPickerDialog> {
             width: 54,
             height: 54,
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
+              gradient:       LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [AppTheme.primaryOrange, Color(0xFFFF8C00)],
@@ -409,7 +409,7 @@ class _LocationPickerDialogState extends State<LocationPickerDialog> {
                 width: 56,
                 height: 56,
                 decoration: const BoxDecoration(shape: BoxShape.circle),
-                child: const Icon(
+                child:       Icon(
                   Icons.my_location_rounded,
                   color: AppTheme.primaryOrange,
                   size: 26,
@@ -450,7 +450,7 @@ class _LocationPickerDialogState extends State<LocationPickerDialog> {
                   color: AppTheme.primaryOrange.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(
+                child:       Icon(
                   Icons.pin_drop_rounded,
                   color: AppTheme.primaryOrange,
                   size: 20,
@@ -461,7 +461,7 @@ class _LocationPickerDialogState extends State<LocationPickerDialog> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                          Text(
                       'Selected Location',
                       style: TextStyle(
                         fontSize: 11,
@@ -519,7 +519,7 @@ class _LocationPickerDialogState extends State<LocationPickerDialog> {
                   ),
                   side: BorderSide(color: AppTheme.border),
                 ),
-                child: const Text(
+                child:       Text(
                   'Cancel',
                   style: TextStyle(
                     fontWeight: FontWeight.w600,

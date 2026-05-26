@@ -167,13 +167,13 @@ class _NotificationSettingsScreenState
                           color: AppTheme.primaryOrange.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Icon(
+                        child:       Icon(
                           Icons.notifications_active,
                           color: AppTheme.primaryOrange,
                         ),
                       ),
                       const SizedBox(width: 16),
-                      const Expanded(
+                            Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -201,7 +201,7 @@ class _NotificationSettingsScreenState
                 const SizedBox(height: 24),
 
                 // Sound Selection
-                const Text(
+                      Text(
                   'SELECT SOUND',
                   style: TextStyle(
                     fontSize: 12,
@@ -262,7 +262,7 @@ class _NotificationSettingsScreenState
             ),
           ),
           subtitle: isDefault
-              ? const Text(
+              ?       Text(
                   'Uses your device\'s default notification sound',
                   style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
                 )
@@ -278,7 +278,7 @@ class _NotificationSettingsScreenState
                   tooltip: 'Preview',
                 ),
               if (isSelected)
-                const Icon(Icons.check_circle, color: AppTheme.primaryOrange),
+                Icon(Icons.check_circle, color: AppTheme.primaryOrange),
             ],
           ),
         ),

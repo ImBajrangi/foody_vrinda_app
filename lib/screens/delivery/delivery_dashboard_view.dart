@@ -133,7 +133,7 @@ class _DeliveryDashboardViewState extends State<DeliveryDashboardView> {
                     errorWidget: (context, url, error) => Center(
                       child: Text(
                         userData.initials,
-                        style: const TextStyle(
+                        style:       TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
                           color: AppTheme.primaryOrange,
@@ -144,7 +144,7 @@ class _DeliveryDashboardViewState extends State<DeliveryDashboardView> {
                 : Center(
                     child: Text(
                       userData?.initials ?? 'D',
-                      style: const TextStyle(
+                      style:       TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                         color: AppTheme.primaryOrange,
@@ -166,7 +166,7 @@ class _DeliveryDashboardViewState extends State<DeliveryDashboardView> {
               ),
               Text(
                 'Welcome, ${userData?.displayName ?? 'Delivery Partner'}!',
-                style: const TextStyle(
+                style:       TextStyle(
                   color: AppTheme.textSecondary,
                   fontSize: 14,
                 ),
@@ -307,7 +307,7 @@ class _DeliveryDashboardViewState extends State<DeliveryDashboardView> {
                 child: const Icon(Icons.map, color: Colors.white, size: 24),
               ),
               const SizedBox(width: 12),
-              const Expanded(
+                    Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -628,7 +628,7 @@ class _DeliveryDashboardViewState extends State<DeliveryDashboardView> {
               if (todayOrders.isEmpty) {
                 return Container(
                   padding: const EdgeInsets.all(24),
-                  child: const Center(
+                  child:       Center(
                     child: Column(
                       children: [
                         Icon(
@@ -679,7 +679,7 @@ class _DeliveryDashboardViewState extends State<DeliveryDashboardView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+                Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
@@ -719,7 +719,7 @@ class _DeliveryDashboardViewState extends State<DeliveryDashboardView> {
                   child: Center(
                     child: Column(
                       children: [
-                        const Icon(
+                              Icon(
                           Icons.inbox_outlined,
                           size: 48,
                           color: AppTheme.textTertiary,
@@ -727,7 +727,7 @@ class _DeliveryDashboardViewState extends State<DeliveryDashboardView> {
                         const SizedBox(height: 12),
                         Text(
                           'No deliveries for ${_getFilterLabel()}',
-                          style: const TextStyle(color: AppTheme.textSecondary),
+                          style:       TextStyle(color: AppTheme.textSecondary),
                         ),
                       ],
                     ),
@@ -758,7 +758,7 @@ class _DeliveryDashboardViewState extends State<DeliveryDashboardView> {
                                 color: AppTheme.success,
                               ),
                             ),
-                            const Text(
+                                  Text(
                               'Deliveries',
                               style: TextStyle(
                                 fontSize: 12,
@@ -778,7 +778,7 @@ class _DeliveryDashboardViewState extends State<DeliveryDashboardView> {
                                 color: AppTheme.warning,
                               ),
                             ),
-                            const Text(
+                                  Text(
                               'Cash to Hand',
                               style: TextStyle(
                                 fontSize: 12,
@@ -798,7 +798,7 @@ class _DeliveryDashboardViewState extends State<DeliveryDashboardView> {
                       padding: const EdgeInsets.only(top: 8),
                       child: Text(
                         '+ ${filteredOrders.length - 10} more deliveries',
-                        style: const TextStyle(
+                        style:       TextStyle(
                           color: AppTheme.textSecondary,
                           fontSize: 12,
                         ),
@@ -968,7 +968,7 @@ class _DeliveryDashboardViewState extends State<DeliveryDashboardView> {
                     ),
                     child: Column(
                       children: [
-                        const Text(
+                              Text(
                           'PENDING SETTLEMENT',
                           style: TextStyle(
                             fontSize: 10,
@@ -1038,7 +1038,7 @@ class _CashSummaryCard extends StatelessWidget {
           ),
           Text(
             label,
-            style: const TextStyle(fontSize: 10, color: AppTheme.textSecondary),
+            style:       TextStyle(fontSize: 10, color: AppTheme.textSecondary),
           ),
         ],
       ),
@@ -1121,7 +1121,7 @@ class _AllTimeCard extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             label,
-            style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+            style:       TextStyle(fontSize: 12, color: AppTheme.textSecondary),
           ),
         ],
       ),
@@ -1169,7 +1169,7 @@ class _RecentDeliveryTile extends StatelessWidget {
                 ),
                 Text(
                   order.deliveryAddress,
-                  style: const TextStyle(
+                  style:       TextStyle(
                     color: AppTheme.textSecondary,
                     fontSize: 12,
                   ),
@@ -1218,7 +1218,7 @@ class _RecentDeliveryTile extends StatelessWidget {
               ),
               Text(
                 order.timeAgo,
-                style: const TextStyle(
+                style:       TextStyle(
                   color: AppTheme.textSecondary,
                   fontSize: 11,
                 ),
@@ -1541,7 +1541,7 @@ class _DeliveryMapViewState extends State<_DeliveryMapView> {
                       order.customerName.isNotEmpty
                           ? order.customerName[0]
                           : 'C',
-                      style: const TextStyle(
+                      style:       TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                         color: AppTheme.primaryOrange,
@@ -1563,7 +1563,7 @@ class _DeliveryMapViewState extends State<_DeliveryMapView> {
                       ),
                       Text(
                         order.customerPhone,
-                        style: const TextStyle(color: AppTheme.textSecondary),
+                        style:       TextStyle(color: AppTheme.textSecondary),
                       ),
                     ],
                   ),

@@ -121,7 +121,7 @@ class ShopCard extends StatelessWidget {
                               fit: BoxFit.cover,
                               placeholder: (context, url) => Container(
                                 color: AppTheme.background,
-                                child: const Center(
+                                child:       Center(
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
                                     color: AppTheme.primaryOrange,
@@ -292,7 +292,7 @@ class ShopCard extends StatelessWidget {
                         Expanded(
                           child: Text(
                             address!,
-                            style: const TextStyle(
+                            style:       TextStyle(
                               color: AppTheme.textSecondary,
                               fontSize: 13,
                             ),
@@ -609,7 +609,7 @@ class MenuItemCard extends StatelessWidget {
                       // Item Name
                       Text(
                         name,
-                        style: const TextStyle(
+                        style:       TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
                           color: AppTheme.textPrimary,
@@ -624,7 +624,7 @@ class MenuItemCard extends StatelessWidget {
                         children: [
                           Text(
                             '₹${price.toStringAsFixed(0)}',
-                            style: const TextStyle(
+                            style:       TextStyle(
                               color: AppTheme.primaryOrange,
                               fontWeight: FontWeight.w800,
                               fontSize: 16,
@@ -634,7 +634,7 @@ class MenuItemCard extends StatelessWidget {
                             const SizedBox(width: 6),
                             Text(
                               '₹${originalPrice!.toStringAsFixed(0)}',
-                              style: const TextStyle(
+                              style:       TextStyle(
                                 color: AppTheme.textTertiary,
                                 fontSize: 13,
                                 decoration: TextDecoration.lineThrough,
@@ -666,7 +666,7 @@ class MenuItemCard extends StatelessWidget {
                         const SizedBox(height: 6),
                         Text(
                           description!,
-                          style: const TextStyle(
+                          style:       TextStyle(
                             color: AppTheme.textSecondary,
                             fontSize: 11,
                             height: 1.3,
@@ -701,7 +701,7 @@ class MenuItemCard extends StatelessWidget {
                                     fit: BoxFit.cover,
                                     placeholder: (context, url) => Container(
                                       color: AppTheme.background,
-                                      child: const Center(
+                                      child:       Center(
                                         child: SizedBox(
                                           width: 20,
                                           height: 20,
@@ -750,7 +750,7 @@ class MenuItemCard extends StatelessWidget {
                                       onAdd?.call();
                                     },
                                     borderRadius: BorderRadius.circular(8),
-                                    child: const Center(
+                                    child:       Center(
                                       child: Text(
                                         'ADD',
                                         style: TextStyle(
@@ -777,7 +777,7 @@ class MenuItemCard extends StatelessWidget {
                                           borderRadius: const BorderRadius.horizontal(
                                             left: Radius.circular(8),
                                           ),
-                                          child: const Center(
+                                          child:       Center(
                                             child: Icon(
                                               Icons.remove_rounded,
                                               size: 16,
@@ -789,7 +789,7 @@ class MenuItemCard extends StatelessWidget {
                                     ),
                                     Text(
                                       quantity.toString(),
-                                      style: const TextStyle(
+                                      style:       TextStyle(
                                         fontWeight: FontWeight.w800,
                                         fontSize: 13,
                                         color: AppTheme.primaryOrange,
@@ -806,7 +806,7 @@ class MenuItemCard extends StatelessWidget {
                                           borderRadius: const BorderRadius.horizontal(
                                             right: Radius.circular(8),
                                           ),
-                                          child: const Center(
+                                          child:       Center(
                                             child: Icon(
                                               Icons.add_rounded,
                                               size: 16,

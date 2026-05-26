@@ -8,6 +8,7 @@ import 'package:lottie/lottie.dart';
 import '../../config/lottie_assets.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/cart_provider.dart';
+import '../../providers/user_preferences_provider.dart';
 import '../../models/user_model.dart';
 import '../../models/shop_model.dart';
 import '../../models/menu_item_model.dart';
@@ -81,7 +82,33 @@ class _HomeScreenState extends State<HomeScreen> {
     UserModel? userData,
   ) {
     final cartProvider = Provider.of<CartProvider>(context);
+    final prefsProvider = Provider.of<UserPreferencesProvider>(context);
     FoodyTokens.of(context);
+
+    // Calculate dynamic time-based greeting
+    final now = DateTime.now();
+    final hour = now.hour;
+    String greetingTime = 'Hello';
+    String subGreeting = 'What would you like to eat?';
+    
+    if (hour >= 4 && hour < 12) {
+      greetingTime = 'Good Morning';
+      subGreeting = 'Start your day with a pure breakfast ☀️';
+    } else if (hour >= 12 && hour < 17) {
+      greetingTime = 'Good Afternoon';
+      subGreeting = 'Ready for a wholesome lunch? 🌤️';
+    } else {
+      greetingTime = 'Good Evening';
+      subGreeting = 'Wrap up your day with a peaceful dinner 🌙';
+    }
+
+    // Dynamic greeting name logic
+    String displayName = 'Foodie';
+    if (prefsProvider.customGreetingName.isNotEmpty) {
+      displayName = prefsProvider.customGreetingName;
+    } else if (userData?.displayName != null && userData!.displayName!.isNotEmpty) {
+      displayName = userData.displayName!.split(' ').first;
+    }
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
@@ -96,7 +123,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Hello, ${userData?.displayName?.split(' ').first ?? 'Foodie'}! 👋',
+                      '$greetingTime, $displayName! 👋',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w800,
                         letterSpacing: -0.5,
@@ -106,9 +133,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       overflow: TextOverflow.ellipsis,
                     ).animate().fadeIn(duration: 400.ms).shimmer(duration: 1500.ms, color: AppTheme.primaryOrange.withValues(alpha: 0.15)),
                     const SizedBox(height: 2),
-                    const Text(
-                      'What would you like to eat?',
-                      style: TextStyle(
+                    Text(
+                      subGreeting,
+                      style:       TextStyle(
                         color: AppTheme.textSecondary,
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
@@ -223,9 +250,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                   imageUrl: userData.photoURL!,
                                   fit: BoxFit.cover,
                                   errorWidget: (context, url, error) =>
-                                      _buildInitialsAvatar(userData),
+                                      _buildInitialsAvatar(userData, displayName),
                                 )
-                              : _buildInitialsAvatar(userData),
+                              : _buildInitialsAvatar(userData, displayName),
                         ),
                       ),
                     ),
@@ -257,7 +284,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ],
               ),
-              child: const Row(
+              child:       Row(
                 children: [
                   Icon(
                     Icons.search_rounded,
@@ -454,7 +481,144 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Widget _buildDietaryFilterRow(UserPreferencesProvider prefsProvider) {
+    final filters = [
+      {'id': 'none', 'label': 'All Dishes 🍽️'},
+      {'id': 'veg', 'label': 'Veg Only 🥦'},
+      {'id': 'jain', 'label': 'Jain Friendly 🌾'},
+    ];
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+                Text(
+            "Diet Preference",
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: AppTheme.textSecondary,
+              letterSpacing: 1.0,
+            ),
+          ),
+          const SizedBox(height: 6),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: filters.map((f) {
+                final isSelected = prefsProvider.dietaryFilter == f['id'];
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: ChoiceChip(
+                    label: Text(
+                      f['label']!,
+                      style: TextStyle(
+                        color: isSelected ? Colors.white : AppTheme.textSecondary,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    selected: isSelected,
+                    selectedColor: AppTheme.primaryOrange,
+                    backgroundColor: AppTheme.cardBackground,
+                    onSelected: (selected) {
+                      if (selected) {
+                        prefsProvider.setDietaryFilter(f['id']!);
+                      }
+                    },
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildThemePortalRow(UserPreferencesProvider prefsProvider) {
+    final themes = [
+      {'id': 'orange', 'label': 'Classic Orange 🍊', 'color': const Color(0xFFFC8019)},
+      {'id': 'blue', 'label': 'Ocean Blue 🌊', 'color': const Color(0xFF2563EB)},
+      {'id': 'pink', 'label': 'Sunset Pink 🌇', 'color': const Color(0xFFE23744)},
+      {'id': 'green', 'label': 'Forest Green 🌲', 'color': const Color(0xFF10B981)},
+      {'id': 'dark', 'label': 'Dark Mode 🌌', 'color': const Color(0xFFF59E0B)},
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+              Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          child: Text(
+            "Change Atmosphere",
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: AppTheme.textSecondary,
+              letterSpacing: 1.0,
+            ),
+          ),
+        ),
+        SizedBox(
+          height: 38,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            itemCount: themes.length,
+            itemBuilder: (context, index) {
+              final t = themes[index];
+              final isSelected = prefsProvider.themeMode == t['id'];
+              final themeColor = t['color'] as Color;
+
+              return GestureDetector(
+                onTap: () {
+                  prefsProvider.setThemeMode(t['id'] as String);
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 250),
+                  margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: isSelected ? themeColor : AppTheme.cardBackground,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isSelected ? Colors.transparent : AppTheme.borderLight,
+                      width: 1,
+                    ),
+                    boxShadow: isSelected
+                        ? [
+                            BoxShadow(
+                              color: themeColor.withOpacity(0.3),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            )
+                          ]
+                        : null,
+                  ),
+                  child: Center(
+                    child: Text(
+                      t['label'] as String,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: isSelected ? Colors.white : AppTheme.textSecondary,
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildCustomerHomeTab() {
+    final prefsProvider = Provider.of<UserPreferencesProvider>(context);
+
     return StreamBuilder<List<ShopModel>>(
       stream: _shopsStream,
       builder: (context, snapshot) {
@@ -487,7 +651,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Text(
                     '${snapshot.error}',
                     textAlign: TextAlign.center,
-                    style: const TextStyle(color: AppTheme.textSecondary),
+                    style:       TextStyle(color: AppTheme.textSecondary),
                   ),
                   const SizedBox(height: 24),
                   ElevatedButton.icon(
@@ -519,7 +683,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),
                   const SizedBox(height: 8),
-                  const Text(
+                        Text(
                     'Check back soon for delicious food options!',
                     textAlign: TextAlign.center,
                     style: TextStyle(color: AppTheme.textSecondary),
@@ -545,6 +709,14 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Dynamic Theme Selector
+              _buildThemePortalRow(prefsProvider),
+              const SizedBox(height: 12),
+
+              // Dietary Filter Row
+              _buildDietaryFilterRow(prefsProvider),
+              const SizedBox(height: 16),
+
               // What's on your mind? - Category Icons
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -749,7 +921,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   color: AppTheme.primaryOrange.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: const Icon(
+                child:       Icon(
                   Icons.auto_awesome,
                   size: 14,
                   color: AppTheme.primaryOrange,
@@ -1025,7 +1197,23 @@ class _HomeScreenState extends State<HomeScreen> {
               }
 
               // Handle empty state
-              final items = menuSnapshot.data ?? [];
+              final prefsProvider = Provider.of<UserPreferencesProvider>(context);
+              var items = menuSnapshot.data ?? [];
+              if (prefsProvider.dietaryFilter == 'veg') {
+                items = items.where((item) => item.isVeg).toList();
+              } else if (prefsProvider.dietaryFilter == 'jain') {
+                items = items.where((item) {
+                  if (!item.isVeg) return false;
+                  final nameLower = item.name.toLowerCase();
+                  final descLower = (item.description ?? '').toLowerCase();
+                  return !nameLower.contains('onion') &&
+                         !nameLower.contains('garlic') &&
+                         !nameLower.contains('potato') &&
+                         !descLower.contains('onion') &&
+                         !descLower.contains('garlic') &&
+                         !descLower.contains('potato');
+                }).toList();
+              }
               if (items.isEmpty) {
                 return Center(
                   child: Padding(
@@ -1209,7 +1397,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             const SizedBox(width: 6),
                             Text(
                               '₹${item.originalPrice!.toStringAsFixed(0)}',
-                              style: const TextStyle(
+                              style:       TextStyle(
                                 color: AppTheme.textTertiary,
                                 fontSize: 11,
                                 decoration: TextDecoration.lineThrough,
@@ -1330,7 +1518,7 @@ class _HomeScreenState extends State<HomeScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
-        decoration: const BoxDecoration(
+        decoration:       BoxDecoration(
           color: AppTheme.cardBackground,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
@@ -1400,7 +1588,7 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 4),
               Text(
                 authProvider.userData?.email ?? '',
-                style: const TextStyle(color: AppTheme.textSecondary),
+                style:       TextStyle(color: AppTheme.textSecondary),
               ),
               const SizedBox(height: 8),
               Container(
@@ -1414,7 +1602,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 child: Text(
                   authProvider.userData?.role.value.toUpperCase() ?? 'CUSTOMER',
-                  style: const TextStyle(
+                  style:       TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: AppTheme.primaryOrange,
@@ -1433,7 +1621,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       color: AppTheme.primaryOrange.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(
+                    child:       Icon(
                       Icons.receipt_long,
                       color: AppTheme.primaryOrange,
                     ),
@@ -1485,7 +1673,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ] else ...[
               // Login prompt
-              const Icon(
+                    Icon(
                 Icons.account_circle_outlined,
                 size: 64,
                 color: AppTheme.textTertiary,
@@ -1496,7 +1684,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 8),
-              const Text(
+                    Text(
                 'Sign in to track your orders and get personalized recommendations.',
                 textAlign: TextAlign.center,
                 style: TextStyle(color: AppTheme.textSecondary),
@@ -1538,11 +1726,17 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildInitialsAvatar(UserModel? userData) {
+  Widget _buildInitialsAvatar(UserModel? userData, String displayName) {
+    String initials = 'G';
+    if (displayName.isNotEmpty && displayName != 'Foodie') {
+      initials = displayName[0].toUpperCase();
+    } else if (userData?.initials != null) {
+      initials = userData!.initials;
+    }
     return Center(
       child: Text(
-        userData?.initials ?? 'G',
-        style: const TextStyle(
+        initials,
+        style:       TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w800,
           color: AppTheme.primaryOrange,
@@ -1566,7 +1760,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   listen: false,
                 ).userData?.initials ??
                 'U',
-            style: const TextStyle(
+            style:       TextStyle(
               fontSize: 32,
               fontWeight: FontWeight.bold,
               color: AppTheme.primaryOrange,
@@ -1633,9 +1827,107 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _buildThemeGrid(UserPreferencesProvider prefsProvider) {
+    final themes = [
+      {'id': 'orange', 'label': 'Orange', 'color': const Color(0xFFFC8019)},
+      {'id': 'blue', 'label': 'Blue', 'color': const Color(0xFF2563EB)},
+      {'id': 'pink', 'label': 'Pink', 'color': const Color(0xFFE23744)},
+      {'id': 'green', 'label': 'Green', 'color': const Color(0xFF10B981)},
+      {'id': 'dark', 'label': 'Dark', 'color': const Color(0xFFF59E0B)},
+    ];
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: themes.map((t) {
+        final isSelected = prefsProvider.themeMode == t['id'];
+        final color = t['color'] as Color;
+        return GestureDetector(
+          onTap: () {
+            prefsProvider.setThemeMode(t['id'] as String);
+          },
+          child: Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: color.withOpacity(isSelected ? 1.0 : 0.15),
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: isSelected ? Colors.white : color.withOpacity(0.5),
+                width: 2.5,
+              ),
+              boxShadow: isSelected
+                  ? [
+                      BoxShadow(
+                        color: color.withOpacity(0.4),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      )
+                    ]
+                  : null,
+            ),
+            child: Center(
+              child: Text(
+                (t['label'] as String).substring(0, 1),
+                style: TextStyle(
+                  color: isSelected ? Colors.white : color,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildDietSelector(UserPreferencesProvider prefsProvider) {
+    final diets = [
+      {'id': 'none', 'label': 'All Dishes 🍽️'},
+      {'id': 'veg', 'label': 'Veg Only 🥦'},
+      {'id': 'jain', 'label': 'Jain Only 🌾'},
+    ];
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: diets.map((d) {
+        final isSelected = prefsProvider.dietaryFilter == d['id'];
+        return Expanded(
+          child: GestureDetector(
+            onTap: () {
+              prefsProvider.setDietaryFilter(d['id']!);
+            },
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 4),
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              decoration: BoxDecoration(
+                color: isSelected ? AppTheme.primaryOrange : AppTheme.background,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isSelected ? Colors.transparent : AppTheme.borderLight,
+                ),
+              ),
+              child: Center(
+                child: Text(
+                  d['label']!,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: isSelected ? Colors.white : AppTheme.textSecondary,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
   Widget _buildProfileTab() {
     final authProvider = Provider.of<AuthProvider>(context);
     final userData = authProvider.userData;
+    final prefsProvider = Provider.of<UserPreferencesProvider>(context);
 
     return Scaffold(
       backgroundColor: AppTheme.background,
@@ -1684,7 +1976,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             ? CachedNetworkImage(
                                 imageUrl: userData.photoURL!,
                                 fit: BoxFit.cover,
-                                placeholder: (context, url) => const Center(
+                                placeholder: (context, url) =>       Center(
                                   child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryOrange),
                                 ),
                                 errorWidget: (context, url, error) => _buildLottieProfile(),
@@ -1704,7 +1996,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(height: 4),
                     Text(
                       userData?.email ?? 'Sign in to sync your data',
-                      style: const TextStyle(
+                      style:       TextStyle(
                         color: AppTheme.textSecondary,
                         fontSize: 14,
                       ),
@@ -1719,7 +2011,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         child: Text(
                           userData.role.value.toUpperCase(),
-                          style: const TextStyle(
+                          style:       TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
                             color: AppTheme.primaryOrange,
@@ -1780,6 +2072,103 @@ class _HomeScreenState extends State<HomeScreen> {
                       subtitle: 'Get help or report issues',
                       onTap: () {
                         // Show help dialog or screen
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Personalization Card
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: AppTheme.cardBackground,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.03),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryOrange.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(Icons.palette_outlined, color: AppTheme.primaryOrange, size: 20),
+                        ),
+                        const SizedBox(width: 12),
+                        const Text(
+                          'Personalize App',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Custom Nickname
+                    Text(
+                      'GREETING NICKNAME',
+                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.textSecondary, letterSpacing: 1.0),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: TextEditingController(text: prefsProvider.customGreetingName)
+                        ..selection = TextSelection.fromPosition(TextPosition(offset: prefsProvider.customGreetingName.length)),
+                      decoration: InputDecoration(
+                        hintText: 'Enter your preferred name (e.g., Sakhi)',
+                        prefixIcon: const Icon(Icons.person_outline, size: 18),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      ),
+                      onChanged: (val) {
+                        prefsProvider.setCustomGreetingName(val);
+                      },
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Theme Colors Selector
+                          Text(
+                      'ATMOSPHERE MODE',
+                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.textSecondary, letterSpacing: 1.0),
+                    ),
+                    const SizedBox(height: 10),
+                    _buildThemeGrid(prefsProvider),
+                    const SizedBox(height: 20),
+
+                    // Dietary Preference Selector
+                          Text(
+                      'DEFAULT DIETARY PREFERENCE',
+                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.textSecondary, letterSpacing: 1.0),
+                    ),
+                    const SizedBox(height: 10),
+                    _buildDietSelector(prefsProvider),
+                    const SizedBox(height: 20),
+
+                    // Default Delivery Instructions
+                          Text(
+                      'DEFAULT DELIVERY INSTRUCTIONS',
+                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.textSecondary, letterSpacing: 1.0),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: TextEditingController(text: prefsProvider.deliveryInstructions)
+                        ..selection = TextSelection.fromPosition(TextPosition(offset: prefsProvider.deliveryInstructions.length)),
+                      decoration: InputDecoration(
+                        hintText: 'e.g., Leave with security guard, Ring bell',
+                        prefixIcon: const Icon(Icons.delivery_dining_outlined, size: 18),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      ),
+                      onChanged: (val) {
+                        prefsProvider.setDeliveryInstructions(val);
                       },
                     ),
                   ],
@@ -1855,9 +2244,9 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         subtitle: Text(
           subtitle,
-          style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+          style:       TextStyle(fontSize: 12, color: AppTheme.textSecondary),
         ),
-        trailing: const Icon(Icons.chevron_right, size: 20, color: AppTheme.textTertiary),
+        trailing:       Icon(Icons.chevron_right, size: 20, color: AppTheme.textTertiary),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       ),
     );

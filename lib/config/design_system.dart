@@ -19,9 +19,9 @@ class FoodyTokens {
   }
 
   // Brand Accents
-  static const Color primaryOrange = AppTheme.primaryOrange;
-  static const Color primaryBlue = AppTheme.primaryBlue;
-  static const Color primaryRed = AppTheme.primaryRed;
+  static Color get primaryOrange => AppTheme.primaryOrange;
+  static Color get primaryBlue => AppTheme.primaryBlue;
+  static Color get primaryRed => AppTheme.primaryRed;
   static const Color charcoalDark = Color(0xFF0F0F15);
   
   // Warm Culinary Palette (HSL Harmonized)

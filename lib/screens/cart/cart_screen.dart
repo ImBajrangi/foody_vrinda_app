@@ -173,7 +173,7 @@ class _CartScreenState extends State<CartScreen> {
                               ),
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: const Icon(
+                            child:       Icon(
                               Icons.store,
                               color: AppTheme.primaryOrange,
                             ),
@@ -193,7 +193,7 @@ class _CartScreenState extends State<CartScreen> {
                                 if (_shop!.address != null)
                                   Text(
                                     _shop!.address!,
-                                    style: const TextStyle(
+                                    style:       TextStyle(
                                       color: AppTheme.textSecondary,
                                       fontSize: 12,
                                     ),
@@ -247,7 +247,7 @@ class _CartScreenState extends State<CartScreen> {
                                       ),
                                       Text(
                                         item.menuItem.formattedPrice,
-                                        style: const TextStyle(
+                                        style:       TextStyle(
                                           color: AppTheme.textSecondary,
                                           fontSize: 13,
                                         ),
@@ -374,7 +374,7 @@ class _CartScreenState extends State<CartScreen> {
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceBetween,
                                   children: [
-                                    const Text(
+                                          Text(
                                       'Subtotal',
                                       style: TextStyle(
                                         fontSize: 14,
@@ -398,7 +398,7 @@ class _CartScreenState extends State<CartScreen> {
                                     mainAxisAlignment:
                                         MainAxisAlignment.spaceBetween,
                                     children: [
-                                      const Text(
+                                            Text(
                                         'Delivery Charge',
                                         style: TextStyle(
                                           fontSize: 14,
@@ -425,7 +425,7 @@ class _CartScreenState extends State<CartScreen> {
                                     children: [
                                       Text(
                                         'GST (${gstPercentage.toStringAsFixed(0)}%)',
-                                        style: const TextStyle(
+                                        style:       TextStyle(
                                           fontSize: 14,
                                           color: AppTheme.textSecondary,
                                         ),
@@ -791,7 +791,7 @@ class _CartScreenState extends State<CartScreen> {
       builder: (sheetContext) => StatefulBuilder(
         builder: (context, setSheetState) {
           return Container(
-            decoration: const BoxDecoration(
+            decoration:       BoxDecoration(
               color: AppTheme.cardBackground,
               borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
             ),
@@ -815,7 +815,7 @@ class _CartScreenState extends State<CartScreen> {
                 // Title
                 Row(
                   children: [
-                    const Icon(
+                          Icon(
                       Icons.receipt_long,
                       color: AppTheme.primaryOrange,
                       size: 24,
@@ -849,7 +849,7 @@ class _CartScreenState extends State<CartScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
+                                  Text(
                               'Delivery To',
                               style: TextStyle(
                                 fontSize: 11,
@@ -903,7 +903,7 @@ class _CartScreenState extends State<CartScreen> {
                             ),
                             child: Text(
                               '${item.quantity}x',
-                              style: const TextStyle(
+                              style:       TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: AppTheme.primaryOrange,
                                 fontSize: 12,
@@ -952,7 +952,7 @@ class _CartScreenState extends State<CartScreen> {
                     ),
                     Text(
                       '₹${total.toStringAsFixed(0)}',
-                      style: const TextStyle(
+                      style:       TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 20,
                         color: AppTheme.primaryOrange,
@@ -1032,7 +1032,7 @@ class _CartScreenState extends State<CartScreen> {
         children: [
           Text(
             label,
-            style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+            style:       TextStyle(color: AppTheme.textSecondary, fontSize: 13),
           ),
           Text(
             '₹${amount.toStringAsFixed(0)}',
@@ -1457,7 +1457,7 @@ class _CartScreenState extends State<CartScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
+        title:       Row(
           children: [
             Icon(Icons.phone_android, color: AppTheme.primaryOrange),
             SizedBox(width: 8),
@@ -1487,7 +1487,7 @@ class _CartScreenState extends State<CartScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
+        title:       Row(
           children: [
             Icon(Icons.lock_outline, color: AppTheme.primaryOrange),
             SizedBox(width: 8),

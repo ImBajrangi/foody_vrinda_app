@@ -148,7 +148,7 @@ class _AddressAutocompleteFieldState extends State<AddressAutocompleteField> {
                                     if (prediction.secondaryText.isNotEmpty)
                                       Text(
                                         prediction.secondaryText,
-                                        style: const TextStyle(
+                                        style:       TextStyle(
                                           color: AppTheme.textSecondary,
                                           fontSize: 12,
                                           fontWeight: FontWeight.w500,
@@ -228,11 +228,11 @@ class _AddressAutocompleteFieldState extends State<AddressAutocompleteField> {
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: AppTheme.border),
+                borderSide:       BorderSide(color: AppTheme.border),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(
+                borderSide:       BorderSide(
                   color: AppTheme.primaryOrange,
                   width: 2,
                 ),

@@ -267,7 +267,7 @@ class _DashboardViewState extends State<DashboardView> {
                 ],
               ),
               const SizedBox(height: 8),
-              const Text(
+                    Text(
                 'These orders were not delivered. Verify items are returned to stock.',
                 style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
               ),
@@ -306,7 +306,7 @@ class _DashboardViewState extends State<DashboardView> {
           ),
           Text(
             order.formattedTotal,
-            style: const TextStyle(
+            style:       TextStyle(
               fontWeight: FontWeight.bold,
               color: AppTheme.textPrimary,
             ),
@@ -383,7 +383,7 @@ class _DashboardViewState extends State<DashboardView> {
           const SizedBox(height: 16),
 
           if (shopId == null)
-            const Center(
+                  Center(
               child: Padding(
                 padding: EdgeInsets.all(24),
                 child: Text(
@@ -457,7 +457,7 @@ class _DashboardViewState extends State<DashboardView> {
                             color: AppTheme.textTertiary.withValues(alpha: 0.3),
                           ),
                           const SizedBox(height: 16),
-                          const Text(
+                                Text(
                             'No completed orders yet.',
                             style: TextStyle(color: AppTheme.textSecondary),
                           ),
@@ -575,7 +575,7 @@ class _DashboardViewState extends State<DashboardView> {
                         color: AppTheme.background,
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Center(
+                      child:       Center(
                         child: Text(
                           'No staff members assigned yet.',
                           style: TextStyle(color: AppTheme.textSecondary),
@@ -636,7 +636,7 @@ class _DashboardViewState extends State<DashboardView> {
             ],
           ),
           const SizedBox(height: 8),
-          const Text(
+                Text(
             'Confirm and settle cash payments collected by your delivery team.',
             style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
           ),
@@ -703,7 +703,7 @@ class _DashboardViewState extends State<DashboardView> {
               }
               final orders = snapshot.data ?? [];
               if (orders.isEmpty) {
-                return const Center(
+                return       Center(
                   child: Padding(
                     padding: EdgeInsets.symmetric(vertical: 24),
                     child: Text(
@@ -733,7 +733,7 @@ class _DashboardViewState extends State<DashboardView> {
                                   ),
                                   Text(
                                     'Collected by ${order.collectedBy ?? "Staff"}',
-                                    style: const TextStyle(
+                                    style:       TextStyle(
                                       fontSize: 12,
                                       color: AppTheme.textSecondary,
                                     ),
@@ -861,7 +861,7 @@ class _DashboardViewState extends State<DashboardView> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+                    Text(
                 'Weekly Sales',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
@@ -895,7 +895,7 @@ class _DashboardViewState extends State<DashboardView> {
                     if (value > 0)
                       Text(
                         '₹${value.toStringAsFixed(0)}',
-                        style: const TextStyle(
+                        style:       TextStyle(
                           fontSize: 8,
                           color: AppTheme.textTertiary,
                         ),
@@ -919,7 +919,7 @@ class _DashboardViewState extends State<DashboardView> {
                     const SizedBox(height: 8),
                     Text(
                       days[index],
-                      style: const TextStyle(
+                      style:       TextStyle(
                         fontSize: 10,
                         color: AppTheme.textSecondary,
                       ),
@@ -962,7 +962,7 @@ class _DashboardViewState extends State<DashboardView> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+                    Text(
                 'Order Status',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
@@ -1002,7 +1002,7 @@ class _DashboardViewState extends State<DashboardView> {
                       width: 60,
                       child: Text(
                         data['label'] as String,
-                        style: const TextStyle(
+                        style:       TextStyle(
                           fontSize: 11,
                           color: AppTheme.textSecondary,
                         ),
@@ -1097,7 +1097,7 @@ class _DashboardViewState extends State<DashboardView> {
                               showQueue
                                   ? 'Customers can see how many orders are waiting'
                                   : 'Order queue is hidden from customers',
-                              style: const TextStyle(
+                              style:       TextStyle(
                                 color: AppTheme.textSecondary,
                                 fontSize: 12,
                               ),
@@ -1133,7 +1133,7 @@ class _DashboardViewState extends State<DashboardView> {
                               shop?.showWaitTime ?? false
                                   ? 'Customers see an estimated preparation time'
                                   : 'Waiting time is hidden from customers',
-                              style: const TextStyle(
+                              style:       TextStyle(
                                 color: AppTheme.textSecondary,
                                 fontSize: 12,
                               ),
@@ -1235,7 +1235,7 @@ class _DashboardViewState extends State<DashboardView> {
                   // Minimum Order Amount
                   Row(
                     children: [
-                      const Expanded(
+                            Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -1305,7 +1305,7 @@ class _DashboardViewState extends State<DashboardView> {
                   // Delivery Charge
                   Row(
                     children: [
-                      const Expanded(
+                            Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -1371,7 +1371,7 @@ class _DashboardViewState extends State<DashboardView> {
                   // GST Percentage
                   Row(
                     children: [
-                      const Expanded(
+                            Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -1478,7 +1478,7 @@ class _KPICard extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             title,
-            style: const TextStyle(
+            style:       TextStyle(
               fontSize: 12,
               color: AppTheme.textSecondary,
               fontWeight: FontWeight.w500,
@@ -1569,7 +1569,7 @@ class _CompletedOrderTile extends StatelessWidget {
                 ),
                 Text(
                   order.itemsSummary,
-                  style: const TextStyle(
+                  style:       TextStyle(
                     color: AppTheme.textSecondary,
                     fontSize: 12,
                   ),
@@ -1588,7 +1588,7 @@ class _CompletedOrderTile extends StatelessWidget {
               ),
               Text(
                 order.timeAgo,
-                style: const TextStyle(
+                style:       TextStyle(
                   color: AppTheme.textSecondary,
                   fontSize: 11,
                 ),
@@ -1638,7 +1638,7 @@ class _CashSummaryCard extends StatelessWidget {
           ),
           Text(
             label,
-            style: const TextStyle(fontSize: 10, color: AppTheme.textSecondary),
+            style:       TextStyle(fontSize: 10, color: AppTheme.textSecondary),
           ),
         ],
       ),

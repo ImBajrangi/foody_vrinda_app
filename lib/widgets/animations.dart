@@ -49,7 +49,7 @@ class _AnimatedLoaderState extends State<AnimatedLoader> {
                 width: widget.size,
                 height: widget.size,
                 padding: const EdgeInsets.all(32),
-                child: const CircularProgressIndicator(
+                child:       CircularProgressIndicator(
                   strokeWidth: 3,
                   color: AppTheme.primaryOrange,
                 ),
@@ -59,7 +59,7 @@ class _AnimatedLoaderState extends State<AnimatedLoader> {
             const SizedBox(height: 16),
             Text(
               widget.message!,
-              style: const TextStyle(
+              style:       TextStyle(
                 color: AppTheme.textSecondary,
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
@@ -127,7 +127,7 @@ class EmptyState extends StatelessWidget {
               width: 200,
               height: 200,
               fit: BoxFit.contain,
-              errorBuilder: (context, error, stackTrace) => const Icon(
+              errorBuilder: (context, error, stackTrace) =>       Icon(
                 Icons.inbox_outlined,
                 size: 80,
                 color: AppTheme.textTertiary,
@@ -136,7 +136,7 @@ class EmptyState extends StatelessWidget {
             const SizedBox(height: 24),
             Text(
               title,
-              style: const TextStyle(
+              style:       TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
                 color: AppTheme.textPrimary,
@@ -147,7 +147,7 @@ class EmptyState extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 subtitle!,
-                style: const TextStyle(
+                style:       TextStyle(
                   color: AppTheme.textSecondary,
                   fontSize: 14,
                 ),

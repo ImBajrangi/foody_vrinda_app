@@ -8,6 +8,7 @@ import 'firebase_options.dart';
 import 'config/theme.dart';
 import 'providers/auth_provider.dart';
 import 'providers/cart_provider.dart';
+import 'providers/user_preferences_provider.dart';
 import 'screens/home/home_screen.dart';
 import 'package:lottie/lottie.dart';
 import 'config/lottie_assets.dart';
@@ -59,12 +60,17 @@ class FoodyVrindaApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => CartProvider()),
+        ChangeNotifierProvider(create: (_) => UserPreferencesProvider()),
       ],
-      child: MaterialApp(
-        title: 'Foody Vrinda',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.lightTheme,
-        home: const SplashScreen(),
+      child: Consumer<UserPreferencesProvider>(
+        builder: (context, prefsProvider, child) {
+          return MaterialApp(
+            title: 'Foody Vrinda',
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.getThemeData(prefsProvider.themeMode),
+            home: const SplashScreen(),
+          );
+        },
       ),
     );
   }
@@ -179,7 +185,7 @@ class _SplashScreenState extends State<SplashScreen>
                         imageUrl:
                             'https://imbajrangi.github.io/Company/Vrindopnishad%20Web/class/logo/foodyVrinda-logo.png',
                         fit: BoxFit.cover,
-                        placeholder: (context, url) => const Center(
+                        placeholder: (context, url) =>       Center(
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
                             color: AppTheme.primaryOrange,
@@ -220,7 +226,7 @@ class _SplashScreenState extends State<SplashScreen>
               // Elegant Loading Indicator
               FadeTransition(
                 opacity: _fadeAnimation,
-                child: const SizedBox(
+                child:       SizedBox(
                   width: 32,
                   height: 32,
                   child: CircularProgressIndicator(

@@ -6,7 +6,7 @@ class AppTheme {
   
   // Primary Brand Colors
   static const Color primaryBlue = Color(0xFF2563EB);
-  static const Color primaryOrange = Color(0xFFFC8019);
+  static Color primaryOrange = const Color(0xFFFC8019);
   static const Color primaryRed = Color(0xFFE23744);
   static const Color primaryBlack = Color(0xFF1D1D1F);
 
@@ -22,7 +22,7 @@ class AppTheme {
   static const Color accentCoral = Color(0xFFF97316);
   
   // Legacy alias
-  static const Color primaryGreen = success;
+  static Color get primaryGreen => success;
 
   // Status Colors (Modern vibrant)
   static const Color success = Color(0xFF10B981);
@@ -43,20 +43,20 @@ class AppTheme {
   static const Color statusCompletedText = Color(0xFF4B5563);
 
   // Background Colors (Clean & Modern)
-  static const Color background = Color(0xFFF8FAFC);
-  static const Color cardBackground = Colors.white;
-  static const Color inputBackground = Colors.white;
-  static const Color surfaceElevated = Color(0xFFFFFFFF);
+  static Color background = const Color(0xFFF8FAFC);
+  static Color cardBackground = Colors.white;
+  static Color inputBackground = Colors.white;
+  static Color surfaceElevated = const Color(0xFFFFFFFF);
 
   // Text Colors
-  static const Color textPrimary = Color(0xFF1F2937);
-  static const Color textSecondary = Color(0xFF6B7280);
-  static const Color textTertiary = Color(0xFF9CA3AF);
+  static Color textPrimary = const Color(0xFF1F2937);
+  static Color textSecondary = const Color(0xFF6B7280);
+  static Color textTertiary = const Color(0xFF9CA3AF);
   static const Color textOnPrimary = Colors.white;
 
   // Border Colors
-  static const Color border = Color(0xFFE5E7EB);
-  static const Color borderColor = border;
+  static Color border = const Color(0xFFE5E7EB);
+  static Color get borderColor => border;
   static const Color borderLight = Color(0xFFF3F4F6);
 
   // Role Colors (Distinct for each user type)
@@ -64,6 +64,44 @@ class AppTheme {
   static const Color developerColor = Color(0xFFE11D48);
   static const Color kitchenColor = Color(0xFFEA580C);
   static const Color deliveryColor = Color(0xFF059669);
+
+  // Dynamic Theme Method
+  static void updateThemeColors(String mode) {
+    if (mode == 'dark') {
+      primaryOrange = const Color(0xFFF59E0B); // Gold/Amber accent
+      background = const Color(0xFF0F172A); // slate-900
+      cardBackground = const Color(0xFF1E293B); // slate-800
+      surfaceElevated = const Color(0xFF1E293B);
+      inputBackground = const Color(0xFF1E293B);
+      textPrimary = const Color(0xFFF8FAFC); // slate-50
+      textSecondary = const Color(0xFF94A3B8); // slate-400
+      textTertiary = const Color(0xFF64748B); // slate-500
+      border = const Color(0xFF334155); // slate-700
+    } else {
+      cardBackground = Colors.white;
+      surfaceElevated = const Color(0xFFFFFFFF);
+      inputBackground = Colors.white;
+      textPrimary = const Color(0xFF1F2937);
+      textSecondary = const Color(0xFF6B7280);
+      textTertiary = const Color(0xFF9CA3AF);
+      border = const Color(0xFFE5E7EB);
+      
+      if (mode == 'blue') {
+        primaryOrange = const Color(0xFF2563EB);
+        background = const Color(0xFFF0F7FF);
+      } else if (mode == 'pink') {
+        primaryOrange = const Color(0xFFE23744);
+        background = const Color(0xFFFFF1F2);
+      } else if (mode == 'green') {
+        primaryOrange = const Color(0xFF10B981);
+        background = const Color(0xFFF0FDF4);
+      } else { // 'orange' (default)
+        primaryOrange = const Color(0xFFFC8019);
+        background = const Color(0xFFF8FAFC);
+      }
+    }
+  }
+
 
   // ============ GRADIENTS ============
   
@@ -95,92 +133,104 @@ class AppTheme {
     end: Alignment.bottomCenter,
   );
 
-  static ThemeData get lightTheme {
+  static ThemeData get lightTheme => getThemeData('orange');
+
+  static ThemeData getThemeData(String mode) {
+    updateThemeColors(mode);
+    final isDark = mode == 'dark';
+    final brightness = isDark ? Brightness.dark : Brightness.light;
+    final baseTextTheme = isDark ? ThemeData.dark().textTheme : ThemeData.light().textTheme;
+
+    final displayTextColor = isDark ? const Color(0xFFF8FAFC) : textPrimary;
+    final bodyTextColor = isDark ? const Color(0xFFE2E8F0) : textPrimary;
+    final secondaryTextColor = isDark ? const Color(0xFF94A3B8) : textSecondary;
+    final tertiaryTextColor = isDark ? const Color(0xFF64748B) : textTertiary;
+
     return ThemeData(
       useMaterial3: true,
-      brightness: Brightness.light,
+      brightness: brightness,
       primaryColor: primaryOrange,
       scaffoldBackgroundColor: background,
       colorScheme: ColorScheme.fromSeed(
         seedColor: primaryOrange,
-        brightness: Brightness.light,
+        brightness: brightness,
         surface: cardBackground,
       ),
-      textTheme: GoogleFonts.interTextTheme().copyWith(
+      textTheme: GoogleFonts.interTextTheme(baseTextTheme).copyWith(
         displayLarge: GoogleFonts.inter(
           fontSize: 32,
           fontWeight: FontWeight.w600,
-          color: textPrimary,
+          color: displayTextColor,
         ),
         displayMedium: GoogleFonts.inter(
           fontSize: 28,
           fontWeight: FontWeight.w600,
-          color: textPrimary,
+          color: displayTextColor,
         ),
         displaySmall: GoogleFonts.inter(
           fontSize: 24,
           fontWeight: FontWeight.w600,
-          color: textPrimary,
+          color: displayTextColor,
         ),
         headlineLarge: GoogleFonts.inter(
           fontSize: 22,
           fontWeight: FontWeight.w600,
-          color: textPrimary,
+          color: displayTextColor,
         ),
         headlineMedium: GoogleFonts.inter(
           fontSize: 20,
           fontWeight: FontWeight.w600,
-          color: textPrimary,
+          color: displayTextColor,
         ),
         headlineSmall: GoogleFonts.inter(
           fontSize: 18,
           fontWeight: FontWeight.w600,
-          color: textPrimary,
+          color: displayTextColor,
         ),
         titleLarge: GoogleFonts.inter(
           fontSize: 16,
           fontWeight: FontWeight.w600,
-          color: textPrimary,
+          color: displayTextColor,
         ),
         titleMedium: GoogleFonts.inter(
           fontSize: 14,
           fontWeight: FontWeight.w500,
-          color: textPrimary,
+          color: displayTextColor,
         ),
         titleSmall: GoogleFonts.inter(
           fontSize: 12,
           fontWeight: FontWeight.w500,
-          color: textSecondary,
+          color: secondaryTextColor,
         ),
         bodyLarge: GoogleFonts.inter(
           fontSize: 16,
           fontWeight: FontWeight.w400,
-          color: textPrimary,
+          color: bodyTextColor,
         ),
         bodyMedium: GoogleFonts.inter(
           fontSize: 14,
           fontWeight: FontWeight.w400,
-          color: textPrimary,
+          color: bodyTextColor,
         ),
         bodySmall: GoogleFonts.inter(
           fontSize: 12,
           fontWeight: FontWeight.w400,
-          color: textSecondary,
+          color: secondaryTextColor,
         ),
         labelLarge: GoogleFonts.inter(
           fontSize: 14,
           fontWeight: FontWeight.w500,
-          color: textPrimary,
+          color: bodyTextColor,
         ),
         labelMedium: GoogleFonts.inter(
           fontSize: 12,
           fontWeight: FontWeight.w500,
-          color: textSecondary,
+          color: secondaryTextColor,
         ),
         labelSmall: GoogleFonts.inter(
           fontSize: 10,
           fontWeight: FontWeight.w500,
-          color: textTertiary,
+          color: tertiaryTextColor,
         ),
       ),
       cardTheme: CardThemeData(
@@ -233,15 +283,15 @@ class AppTheme {
         fillColor: inputBackground,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: border),
+          borderSide:       BorderSide(color: border),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: border),
+          borderSide:       BorderSide(color: border),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: primaryOrange, width: 2),
+          borderSide:       BorderSide(color: primaryOrange, width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -257,7 +307,7 @@ class AppTheme {
         backgroundColor: cardBackground,
         elevation: 0,
         centerTitle: false,
-        iconTheme: const IconThemeData(color: textPrimary),
+        iconTheme:       IconThemeData(color: textPrimary),
         titleTextStyle: GoogleFonts.inter(
           fontSize: 20,
           fontWeight: FontWeight.w600,

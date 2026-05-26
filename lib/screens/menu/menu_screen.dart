@@ -12,6 +12,7 @@ import '../../services/shop_service.dart';
 import '../../services/review_service.dart';
 import '../../services/resource_cache_service.dart';
 import '../../providers/cart_provider.dart';
+import '../../providers/user_preferences_provider.dart';
 import '../../widgets/cards.dart';
 import '../cart/cart_screen.dart';
 
@@ -58,7 +59,7 @@ class _MenuScreenState extends State<MenuScreen> {
       child: Container(
         height: 60,
         width: double.infinity,
-        decoration: const BoxDecoration(
+        decoration:       BoxDecoration(
           color: AppTheme.cardBackground,
           border: Border(
             bottom: BorderSide(color: AppTheme.border, width: 1),
@@ -161,9 +162,26 @@ class _MenuScreenState extends State<MenuScreen> {
             ResourceCacheService().cacheImages(menuImages);
           }
 
-          final filteredItems = _selectedCategory == 'All'
+          final prefsProvider = Provider.of<UserPreferencesProvider>(context);
+          var filteredItems = _selectedCategory == 'All'
               ? menuItems
               : menuItems.where((item) => (item.category ?? 'General') == _selectedCategory).toList();
+
+          if (prefsProvider.dietaryFilter == 'veg') {
+            filteredItems = filteredItems.where((item) => item.isVeg).toList();
+          } else if (prefsProvider.dietaryFilter == 'jain') {
+            filteredItems = filteredItems.where((item) {
+              if (!item.isVeg) return false;
+              final nameLower = item.name.toLowerCase();
+              final descLower = (item.description ?? '').toLowerCase();
+              return !nameLower.contains('onion') &&
+                     !nameLower.contains('garlic') &&
+                     !nameLower.contains('potato') &&
+                     !descLower.contains('onion') &&
+                     !descLower.contains('garlic') &&
+                     !descLower.contains('potato');
+            }).toList();
+          }
 
           return NestedScrollView(
             headerSliverBuilder: (context, innerBoxIsScrolled) {
@@ -179,7 +197,7 @@ class _MenuScreenState extends State<MenuScreen> {
                     opacity: innerBoxIsScrolled ? 1.0 : 0.0,
                     child: Text(
                       widget.shop.name,
-                      style: const TextStyle(
+                      style:       TextStyle(
                         color: AppTheme.textPrimary,
                         fontWeight: FontWeight.w800,
                         fontSize: 18,
@@ -236,13 +254,13 @@ class _MenuScreenState extends State<MenuScreen> {
                                   placeholder: (context, url) => const Center(
                                     child: CircularProgressIndicator(),
                                   ),
-                                  errorWidget: (context, url, error) => const Icon(
+                                  errorWidget: (context, url, error) =>       Icon(
                                     Icons.store,
                                     size: 80,
                                     color: AppTheme.textTertiary,
                                   ),
                                 )
-                              : const Icon(
+                              :       Icon(
                                   Icons.store,
                                   size: 80,
                                   color: AppTheme.textTertiary,
@@ -405,14 +423,14 @@ class _MenuScreenState extends State<MenuScreen> {
                               children: [
                                 Text(
                                   '${cartProvider.totalItems} item${cartProvider.totalItems > 1 ? 's' : ''}',
-                                  style: const TextStyle(
+                                  style:       TextStyle(
                                     fontSize: 12,
                                     color: AppTheme.textSecondary,
                                   ),
                                 ),
                                 Text(
                                   cartProvider.formattedTotal,
-                                  style: const TextStyle(
+                                  style:       TextStyle(
                                     fontSize: 22,
                                     fontWeight: FontWeight.bold,
                                     color: AppTheme.primaryOrange,
@@ -519,7 +537,7 @@ class _MenuScreenState extends State<MenuScreen> {
                               count == 0
                                   ? 'No waiting orders'
                                   : '$count order${count > 1 ? 's' : ''} being prepared',
-                              style: const TextStyle(
+                              style:       TextStyle(
                                 color: AppTheme.textSecondary,
                                 fontSize: 13,
                               ),
@@ -598,7 +616,7 @@ class _MenuScreenState extends State<MenuScreen> {
                                 count > 0
                                     ? 'Including $count orders ahead of you'
                                     : 'Queue is clear! Ready soon.',
-                                style: const TextStyle(
+                                style:       TextStyle(
                                   color: AppTheme.textSecondary,
                                   fontSize: 13,
                                 ),
@@ -636,7 +654,7 @@ class _MenuScreenState extends State<MenuScreen> {
           ],
 
           // Reviews Section
-          const Text(
+                Text(
             'CUSTOMER REVIEWS',
             style: TextStyle(
               fontSize: 12,
@@ -663,7 +681,7 @@ class _MenuScreenState extends State<MenuScreen> {
                     color: AppTheme.cardBackground,
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: const Center(
+                  child:       Center(
                     child: Column(
                       children: [
                         Icon(
@@ -728,7 +746,7 @@ class _MenuScreenState extends State<MenuScreen> {
                         review.userName.isNotEmpty
                             ? review.userName[0].toUpperCase()
                             : 'A',
-                        style: const TextStyle(
+                        style:       TextStyle(
                           color: AppTheme.primaryOrange,
                           fontWeight: FontWeight.w600,
                         ),
@@ -765,7 +783,7 @@ class _MenuScreenState extends State<MenuScreen> {
               ),
               Text(
                 _formatDate(review.createdAt),
-                style: const TextStyle(
+                style:       TextStyle(
                   color: AppTheme.textTertiary,
                   fontSize: 11,
                 ),
@@ -776,7 +794,7 @@ class _MenuScreenState extends State<MenuScreen> {
             const SizedBox(height: 8),
             Text(
               review.comment!,
-              style: const TextStyle(
+              style:       TextStyle(
                 color: AppTheme.textSecondary,
                 fontSize: 13,
               ),

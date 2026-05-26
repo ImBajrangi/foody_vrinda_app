@@ -450,7 +450,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
 
     // Show loading
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
+            SnackBar(
         content: Text('Fixing data issues...'),
         backgroundColor: AppTheme.primaryOrange,
       ),
@@ -735,7 +735,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
                   const SizedBox(height: 8),
 
                   if (transactions.isEmpty)
-                    const Padding(
+                          Padding(
                       padding: EdgeInsets.symmetric(vertical: 32),
                       child: Center(
                         child: Column(
@@ -872,7 +872,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
             ),
             child: Text(
               '#${tx.orderId.length > 4 ? tx.orderId.substring(tx.orderId.length - 4) : tx.orderId}',
-              style: const TextStyle(
+              style:       TextStyle(
                 fontSize: 12,
                 color: AppTheme.textSecondary,
               ),
@@ -1159,7 +1159,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
                 color: AppTheme.primaryOrange.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(
+              child:       Icon(
                 Icons.storefront_outlined,
                 color: AppTheme.primaryOrange,
                 size: 18,
@@ -1190,7 +1190,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
                 ],
               ),
             ),
-            const Icon(
+                  Icon(
               Icons.unfold_more,
               size: 20,
               color: AppTheme.textSecondary,
@@ -1286,7 +1286,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
               ),
               Expanded(
                 child: filteredShops.isEmpty
-                    ? const Center(
+                    ?       Center(
                         child: Text(
                           'No shops found',
                           style: TextStyle(color: AppTheme.textSecondary),
@@ -1359,7 +1359,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
                                     ),
                                   ),
                                   if (isSelected)
-                                    const Icon(
+                                          Icon(
                                       Icons.check_circle,
                                       color: AppTheme.primaryOrange,
                                       size: 20,
@@ -1603,7 +1603,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
                 ),
               ),
               const SizedBox(width: 10),
-              const Expanded(
+                    Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -1667,7 +1667,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                            Text(
                         'Online Payments',
                         style: TextStyle(
                           fontSize: 14,
@@ -1773,7 +1773,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                            Text(
                         'Cash on Delivery',
                         style: TextStyle(
                           fontSize: 14,
@@ -2074,7 +2074,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(
+                        icon:       Icon(
                           Icons.map,
                           color: AppTheme.primaryOrange,
                         ),
@@ -2164,7 +2164,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
           // Existing shops - compact list
           Row(
             children: [
-              const Icon(
+                    Icon(
                 Icons.storefront,
                 size: 16,
                 color: AppTheme.primaryOrange,
@@ -2198,7 +2198,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
                     ),
                     child: Text(
                       '$count',
-                      style: const TextStyle(
+                      style:       TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
                         color: AppTheme.primaryOrange,
@@ -2260,7 +2260,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
                       dense: true,
                       visualDensity: VisualDensity.compact,
                       contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-                      leading: const Icon(
+                      leading:       Icon(
                         Icons.store,
                         color: AppTheme.primaryOrange,
                         size: 18,
@@ -2687,7 +2687,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
                           const SizedBox(height: 16),
                           Row(
                             children: [
-                              const Icon(
+                                    Icon(
                                 Icons.local_offer,
                                 size: 18,
                                 color: AppTheme.primaryOrange,
@@ -2890,7 +2890,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+              Text(
           'Item Image',
           style: TextStyle(
             fontSize: 13,
@@ -2935,7 +2935,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
                       color: AppTheme.primaryOrange.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(
+                    child:       Icon(
                       Icons.image_outlined,
                       color: AppTheme.primaryOrange,
                       size: 20,
@@ -2954,7 +2954,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
                     ),
                   ),
                 ),
-                const Icon(
+                      Icon(
                   Icons.arrow_forward_ios,
                   size: 14,
                   color: AppTheme.textSecondary,
@@ -3278,7 +3278,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
                 color: AppTheme.primaryOrange.withValues(alpha: 0.3),
               ),
             ),
-            child: const Row(
+            child:       Row(
               children: [
                 Icon(Icons.info_outline, color: AppTheme.primaryOrange, size: 20),
                 SizedBox(width: 8),
@@ -3338,7 +3338,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
                         }
                         final menuItems = menuSnapshot.data!;
                         if (menuItems.isEmpty) {
-                          return const Text(
+                          return       Text(
                             'No menu items available for this shop.',
                             style: TextStyle(color: AppTheme.textSecondary),
                           );
@@ -3851,7 +3851,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
         children: [
           Row(
             children: [
-              const Icon(
+                    Icon(
                 Icons.people_outline,
                 size: 16,
                 color: AppTheme.primaryOrange,
@@ -3873,7 +3873,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
                 ),
                 child: Text(
                   '${managableUsers.length}',
-                  style: const TextStyle(
+                  style:       TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
                     color: AppTheme.primaryOrange,
@@ -3883,7 +3883,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
               const SizedBox(width: 8),
               IconButton(
                 onPressed: _loadAllUsers,
-                icon: const Icon(
+                icon:       Icon(
                   Icons.refresh,
                   color: AppTheme.primaryOrange,
                   size: 20,
@@ -3945,7 +3945,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
                       _userSearch.isNotEmpty
                           ? 'No users found for "$_userSearch"'
                           : 'No users found or permission denied.',
-                      style: const TextStyle(color: AppTheme.textSecondary),
+                      style:       TextStyle(color: AppTheme.textSecondary),
                     ),
                   ),
                 );
@@ -4661,7 +4661,7 @@ class _ShopDashboardCard extends StatelessWidget {
                     if (shop.schedule.openTime != null)
                       Text(
                         '${shop.schedule.openTime} - ${shop.schedule.closeTime}',
-                        style: const TextStyle(
+                        style:       TextStyle(
                           color: AppTheme.textSecondary,
                           fontSize: 12,
                         ),
@@ -4914,7 +4914,7 @@ class _FullShopDashboardState extends State<_FullShopDashboard> {
                         letterSpacing: -0.5,
                       ),
                     ),
-                    const Text(
+                          Text(
                       'Performance & Insights',
                       style: TextStyle(
                         color: AppTheme.textSecondary,
@@ -4926,7 +4926,7 @@ class _FullShopDashboardState extends State<_FullShopDashboard> {
               ),
               IconButton(
                 onPressed: () => Navigator.pop(context),
-                icon: const Icon(
+                icon:       Icon(
                   Icons.close_rounded,
                   color: AppTheme.textSecondary,
                 ),
@@ -5035,7 +5035,7 @@ class _FullShopDashboardState extends State<_FullShopDashboard> {
 
   Widget _buildSalesChart() {
     if (_dailyRevenue.isEmpty) {
-      return const Center(
+      return       Center(
         child: Text(
           'No sales data available',
           style: TextStyle(color: AppTheme.textSecondary),
@@ -5099,7 +5099,7 @@ class _FullShopDashboardState extends State<_FullShopDashboard> {
                   padding: const EdgeInsets.only(top: 8.0),
                   child: Text(
                     DateFormat('E').format(dt),
-                    style: const TextStyle(
+                    style:       TextStyle(
                       fontSize: 10,
                       color: AppTheme.textSecondary,
                     ),
@@ -5164,7 +5164,7 @@ class _FullShopDashboardState extends State<_FullShopDashboard> {
                     const SizedBox(width: 8),
                     Text(
                       s.toUpperCase(),
-                      style: const TextStyle(
+                      style:       TextStyle(
                         fontSize: 10,
                         color: AppTheme.textSecondary,
                       ),
@@ -5198,7 +5198,7 @@ class _FullShopDashboardState extends State<_FullShopDashboard> {
         ),
         const SizedBox(height: 16),
         if (_filteredOrders.isEmpty)
-          const Center(
+                Center(
             child: Padding(
               padding: EdgeInsets.all(24.0),
               child: Text(
@@ -5464,7 +5464,7 @@ class _FullShopDashboardState extends State<_FullShopDashboard> {
         ),
         const SizedBox(height: 16),
         if (_staffMembers.isEmpty)
-          const Center(
+                Center(
             child: Text(
               'No staff assigned to this shop',
               style: TextStyle(color: AppTheme.textSecondary),
@@ -5499,7 +5499,7 @@ class _FullShopDashboardState extends State<_FullShopDashboard> {
                         ),
                         Text(
                           staff['role'].toString().toUpperCase(),
-                          style: const TextStyle(
+                          style:       TextStyle(
                             fontSize: 10,
                             color: AppTheme.textSecondary,
                             fontWeight: FontWeight.bold,
@@ -5664,7 +5664,7 @@ class _AnalyticsCard extends StatelessWidget {
           ),
           Text(
             subtitle,
-            style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+            style:       TextStyle(color: AppTheme.textSecondary, fontSize: 12),
           ),
           const SizedBox(height: 20),
           SizedBox(height: height, child: child),
@@ -5720,7 +5720,7 @@ class _KPICard extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             title,
-            style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+            style:       TextStyle(color: AppTheme.textSecondary, fontSize: 12),
           ),
           const SizedBox(height: 4),
           Text(
@@ -5845,7 +5845,7 @@ class _DevCard extends StatelessWidget {
                     ),
                     Text(
                       subtitle,
-                      style: const TextStyle(
+                      style:       TextStyle(
                         fontSize: 12,
                         color: AppTheme.textSecondary,
                       ),
@@ -5891,7 +5891,7 @@ class _SummaryTile extends StatelessWidget {
           ],
           Text(
             label,
-            style: const TextStyle(
+            style:       TextStyle(
               color: AppTheme.textSecondary,
               fontSize: 10,
               fontWeight: FontWeight.w500,
@@ -5901,7 +5901,7 @@ class _SummaryTile extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             value,
-            style: const TextStyle(
+            style:       TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
               color: AppTheme.textPrimary,
@@ -6132,7 +6132,7 @@ class _OrderMonitorTile extends StatelessWidget {
                 ),
                 Text(
                   order.customerName,
-                  style: const TextStyle(
+                  style:       TextStyle(
                     fontSize: 12,
                     color: AppTheme.textSecondary,
                   ),
@@ -6192,7 +6192,7 @@ class _OrderMonitorTile extends StatelessWidget {
           Expanded(
             child: Text(
               order.timeAgo,
-              style: const TextStyle(
+              style:       TextStyle(
                 fontSize: 11,
                 color: AppTheme.textSecondary,
               ),
@@ -6304,7 +6304,7 @@ class _AuditSummaryCard extends StatelessWidget {
           ),
           Text(
             label,
-            style: const TextStyle(fontSize: 10, color: AppTheme.textSecondary),
+            style:       TextStyle(fontSize: 10, color: AppTheme.textSecondary),
           ),
         ],
       ),

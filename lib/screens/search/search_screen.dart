@@ -97,7 +97,7 @@ class _SearchScreenState extends State<SearchScreen> {
       onChanged: _onSearchChanged,
       decoration: InputDecoration(
         hintText: 'Search shops, items, cuisines...',
-        hintStyle: const TextStyle(color: AppTheme.textTertiary, fontSize: 16),
+        hintStyle:       TextStyle(color: AppTheme.textTertiary, fontSize: 16),
         border: InputBorder.none,
         suffixIcon: _searchController.text.isNotEmpty
             ? IconButton(
@@ -186,7 +186,7 @@ class _SearchScreenState extends State<SearchScreen> {
           padding: const EdgeInsets.all(16),
           children: [
             // Search Nearby Section
-            const Text(
+                  Text(
               'SEARCH NEARBY',
               style: TextStyle(
                 fontSize: 12,
@@ -293,7 +293,7 @@ class _SearchScreenState extends State<SearchScreen> {
             const SizedBox(height: 8),
             Text(
               label,
-              style: const TextStyle(
+              style:       TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w500,
                 color: AppTheme.textSecondary,
@@ -348,7 +348,7 @@ class _SearchScreenState extends State<SearchScreen> {
               color: AppTheme.cardBackground,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Text(
+            child:       Text(
               'No shops available yet.',
               style: TextStyle(color: AppTheme.textSecondary),
             ),
@@ -389,9 +389,9 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
           subtitle: Text(
             shop.subtitle ?? '',
-            style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+            style:       TextStyle(fontSize: 12, color: AppTheme.textSecondary),
           ),
-          trailing: const Icon(Icons.chevron_right, color: AppTheme.textTertiary),
+          trailing:       Icon(Icons.chevron_right, color: AppTheme.textTertiary),
         ),
       ),
     );
@@ -428,9 +428,9 @@ class _SearchScreenState extends State<SearchScreen> {
           title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
           subtitle: Text(
             subtitle,
-            style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+            style:       TextStyle(fontSize: 12, color: AppTheme.textSecondary),
           ),
-          trailing: const Icon(Icons.chevron_right, color: AppTheme.textTertiary),
+          trailing:       Icon(Icons.chevron_right, color: AppTheme.textTertiary),
         ),
       ),
     );
