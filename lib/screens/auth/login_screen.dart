@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../config/theme.dart';
+import '../../widgets/pressable_scale.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/buttons.dart';
 import '../../widgets/inputs.dart';
@@ -63,13 +64,18 @@ class _LoginScreenState extends State<LoginScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Back button
-              IconButton(
-                onPressed: () => Navigator.pop(context),
-                icon: const Icon(Icons.arrow_back),
-                style: IconButton.styleFrom(
-                  backgroundColor: AppTheme.cardBackground,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+              PressableScale(
+                onTap: () => Navigator.pop(context),
+                child: IconButton(
+                  onPressed: null,
+                  icon: const Icon(Icons.arrow_back),
+                  style: IconButton.styleFrom(
+                    backgroundColor: AppTheme.cardBackground,
+                    disabledBackgroundColor: AppTheme.cardBackground,
+                    disabledForegroundColor: AppTheme.textPrimary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 ),
               ).animate().fadeIn(duration: 300.ms).slideX(begin: -0.2, end: 0, curve: Curves.easeOutQuad),
@@ -115,11 +121,26 @@ class _LoginScreenState extends State<LoginScreen> {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Center(
-                    child: Text(
-                      'Welcome back 🍕',
-                      style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.5,
+                    child: RichText(
+                      text: TextSpan(
+                        style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.5,
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.white
+                              : Colors.black,
+                        ),
+                        children: [
+                          const TextSpan(text: 'Welcome back '),
+                          WidgetSpan(
+                            alignment: PlaceholderAlignment.middle,
+                            child: Icon(
+                              Icons.local_pizza_outlined,
+                              size: 28,
+                              color: AppTheme.primaryOrange,
+                            ).animate().shake(delay: 500.ms, duration: 800.ms),
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -308,11 +329,14 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   // Guest option
                   Center(
-                    child: TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child:       Text(
-                        'Continue as Guest',
-                        style: TextStyle(color: AppTheme.textSecondary),
+                    child: PressableScale(
+                      onTap: () => Navigator.pop(context),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        child: Text(
+                          'Continue as Guest',
+                          style: TextStyle(color: AppTheme.textSecondary),
+                        ),
                       ),
                     ),
                   ),
@@ -338,60 +362,65 @@ class _GoogleSignInButton extends StatelessWidget {
     return SizedBox(
       width: double.infinity,
       height: 56,
-      child: OutlinedButton(
-        onPressed: onPressed,
-        style: OutlinedButton.styleFrom(
-          backgroundColor: AppTheme.cardBackground,
-          side: BorderSide(color: AppTheme.border),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+      child: PressableScale(
+        onTap: onPressed,
+        child: OutlinedButton(
+          onPressed: null,
+          style: OutlinedButton.styleFrom(
+            backgroundColor: AppTheme.cardBackground,
+            disabledBackgroundColor: AppTheme.cardBackground,
+            disabledForegroundColor: AppTheme.textPrimary,
+            side: BorderSide(color: AppTheme.border),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
           ),
-        ),
-        child: isLoading
-            ? Lottie.network(
-                LottieAssets.dotsLoading,
-                width: 50,
-                height: 50,
-                fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) => const SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-              )
-            : Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Google logo
-                  Container(
+          child: isLoading
+              ? Lottie.network(
+                  LottieAssets.dotsLoading,
+                  width: 50,
+                  height: 50,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) => const SizedBox(
                     width: 24,
                     height: 24,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: SvgPicture.network(
-                      'https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg',
-                      width: 18,
-                      height: 18,
-                      placeholderBuilder: (context) => const SizedBox(
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                )
+              : Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Google logo
+                    Container(
+                      width: 24,
+                      height: 24,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: SvgPicture.network(
+                        'https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg',
                         width: 18,
                         height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 1),
+                        placeholderBuilder: (context) => const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 1),
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                        Text(
-                    'Continue with Google',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: AppTheme.textPrimary,
+                    const SizedBox(width: 12),
+                    Text(
+                      'Continue with Google',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: AppTheme.textPrimary,
+                      ),
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
+        ),
       ),
     );
   }

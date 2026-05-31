@@ -131,7 +131,7 @@ class NotificationService {
       macOS: iosDetails,
     );
 
-    final String title = '🛍️ New Order!';
+    final String title = 'New Order!';
     final String body = shopName != null
         ? '$customerName ordered ₹${amount.toStringAsFixed(0)} from $shopName'
         : '$customerName ordered ₹${amount.toStringAsFixed(0)}';
@@ -175,7 +175,7 @@ class NotificationService {
 
     await _notifications.show(
       orderId.hashCode,
-      '🚚 Ready for Delivery!',
+      'Ready for Delivery!',
       'Order for $customerName is ready. Deliver to: $address',
       details,
       payload: orderId,
@@ -210,28 +210,9 @@ class NotificationService {
       macOS: iosDetails,
     );
 
-    String emoji = '📦';
-    switch (status.toLowerCase()) {
-      case 'confirmed':
-        emoji = '✅';
-        break;
-      case 'preparing':
-        emoji = '👨‍🍳';
-        break;
-      case 'ready':
-        emoji = '🎉';
-        break;
-      case 'out_for_delivery':
-        emoji = '🚚';
-        break;
-      case 'delivered':
-        emoji = '✨';
-        break;
-    }
-
     await _notifications.show(
       orderId.hashCode,
-      '$emoji Order ${status.replaceAll('_', ' ').toUpperCase()}',
+      'Order ${status.replaceAll('_', ' ').toUpperCase()}',
       message,
       details,
       payload: orderId,

@@ -250,13 +250,24 @@ class _TimePeriodCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    Text(
-                      '${period.emoji} ${period.displayName}',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: isSelected ? Colors.white : AppTheme.textPrimary,
-                      ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          _fallbackIcon,
+                          size: 16,
+                          color: isSelected ? Colors.white : AppTheme.primaryOrange,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          period.displayName,
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: isSelected ? Colors.white : AppTheme.textPrimary,
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 4),
                     Text(
@@ -333,13 +344,32 @@ class TimePeriodDisplay extends StatelessWidget {
             color: AppTheme.primaryOrange.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Text(
-            '${period.emoji} ${period.displayName}',
-            style:       TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-              color: AppTheme.primaryOrange,
-            ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                period == TimePeriod.morning
+                    ? Icons.wb_twilight
+                    : period == TimePeriod.forenoon
+                        ? Icons.wb_sunny
+                        : period == TimePeriod.afternoon
+                            ? Icons.lunch_dining
+                            : period == TimePeriod.evening
+                                ? Icons.nightlight_round
+                                : Icons.bedtime,
+                size: 12,
+                color: AppTheme.primaryOrange,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                period.displayName,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                  color: AppTheme.primaryOrange,
+                ),
+              ),
+            ],
           ),
         );
       }).toList(),

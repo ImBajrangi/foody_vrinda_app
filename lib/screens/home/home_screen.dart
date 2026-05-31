@@ -28,6 +28,8 @@ import '../developer/developer_panel.dart';
 import '../search/search_screen.dart';
 import '../order/order_history_screen.dart';
 import '../settings/notification_settings_screen.dart';
+import '../../config/emoji_to_icon.dart';
+import '../../widgets/pressable_scale.dart';
 import '../../widgets/animations.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -115,16 +117,24 @@ class _HomeScreenState extends State<HomeScreen> {
     final hour = now.hour;
     String greetingTime = 'Hello';
     String subGreeting = 'What would you like to eat?';
+    IconData subGreetingIcon = Icons.restaurant_outlined;
+    Color subGreetingIconColor = AppTheme.primaryOrange;
     
     if (hour >= 4 && hour < 12) {
       greetingTime = 'Good Morning';
-      subGreeting = 'Start your day with a pure breakfast ☀️';
+      subGreeting = 'Start your day with a pure breakfast';
+      subGreetingIcon = Icons.wb_sunny_outlined;
+      subGreetingIconColor = Colors.orange;
     } else if (hour >= 12 && hour < 17) {
       greetingTime = 'Good Afternoon';
-      subGreeting = 'Ready for a wholesome lunch? 🌤️';
+      subGreeting = 'Ready for a wholesome lunch?';
+      subGreetingIcon = Icons.light_mode_outlined;
+      subGreetingIconColor = Colors.amber;
     } else {
       greetingTime = 'Good Evening';
-      subGreeting = 'Wrap up your day with a peaceful dinner 🌙';
+      subGreeting = 'Wrap up your day with a peaceful dinner';
+      subGreetingIcon = Icons.nightlight_round_outlined;
+      subGreetingIconColor = Colors.indigoAccent;
     }
 
     // Dynamic greeting name logic
@@ -147,24 +157,46 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      '$greetingTime, $displayName! 👋',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.5,
-                        fontSize: 18,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            '$greetingTime, $displayName!',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -0.5,
+                              fontSize: 18,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        const Icon(
+                          Icons.waving_hand_outlined,
+                          size: 20,
+                          color: Colors.orangeAccent,
+                        ).animate().shake(delay: 500.ms, duration: 800.ms),
+                      ],
                     ).animate().fadeIn(duration: 400.ms).shimmer(duration: 1500.ms, color: AppTheme.primaryOrange.withValues(alpha: 0.15)),
                     const SizedBox(height: 2),
-                    Text(
-                      subGreeting,
-                      style:       TextStyle(
-                        color: AppTheme.textSecondary,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                      ),
+                    Row(
+                      children: [
+                        Text(
+                          subGreeting,
+                          style: TextStyle(
+                            color: AppTheme.textSecondary,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Icon(
+                          subGreetingIcon,
+                          size: 14,
+                          color: subGreetingIconColor,
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -175,11 +207,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   // Cart badge (for customers)
                   if (_selectedViewIndex == 0 && cartProvider.isNotEmpty)
-                    IconButton(
-                      visualDensity: VisualDensity.compact,
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      onPressed: () {
+                    PressableScale(
+                      onTap: () {
                         Navigator.push(
                           context,
                           TelegramPageRoute(
@@ -187,51 +216,55 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         );
                       },
-                      icon: Stack(
-                        children: [
-                          const Icon(Icons.shopping_bag_outlined, size: 22),
-                          Positioned(
-                            right: 0,
-                            top: 0,
-                            child: Container(
-                              padding: const EdgeInsets.all(3),
-                              decoration: const BoxDecoration(
-                                color: AppTheme.error,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Text(
-                                cartProvider.totalItems.toString(),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 8,
-                                  fontWeight: FontWeight.bold,
+                      child: Container(
+                        width: 44,
+                        height: 44,
+                        alignment: Alignment.center,
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            const Icon(Icons.shopping_bag_outlined, size: 22),
+                            Positioned(
+                              right: -4,
+                              top: -4,
+                              child: Container(
+                                padding: const EdgeInsets.all(3),
+                                decoration: const BoxDecoration(
+                                  color: AppTheme.error,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Text(
+                                  cartProvider.totalItems.toString(),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 8,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
 
                   // Order history icon
-                  IconButton(
-                    visualDensity: VisualDensity.compact,
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    constraints: const BoxConstraints(),
-                    onPressed: () {
+                  PressableScale(
+                    onTap: () {
                       setState(() {
                         _customerTabIndex = 2;
                       });
                     },
-                    icon: const Icon(Icons.receipt_long_outlined, size: 22),
-                    tooltip: 'My Orders',
+                    child: Container(
+                      width: 44,
+                      height: 44,
+                      alignment: Alignment.center,
+                      child: const Icon(Icons.receipt_long_outlined, size: 22),
+                    ),
                   ),
 
-                  IconButton(
-                    visualDensity: VisualDensity.compact,
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    constraints: const BoxConstraints(),
-                    onPressed: () {
+                  PressableScale(
+                    onTap: () {
                       Navigator.push(
                         context,
                         TelegramPageRoute(
@@ -239,44 +272,53 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       );
                     },
-                    icon: const Icon(Icons.notifications_outlined, size: 22),
+                    child: Container(
+                      width: 44,
+                      height: 44,
+                      alignment: Alignment.center,
+                      child: const Icon(Icons.notifications_outlined, size: 22),
+                    ),
                   ),
 
                   // Profile Avatar Only
-                  GestureDetector(
+                  PressableScale(
                     onTap: () {
                       setState(() {
                         _customerTabIndex = 3;
                       });
                     },
                     child: Container(
-                      margin: const EdgeInsets.only(left: 6),
-                      padding: const EdgeInsets.all(1.5),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: AppTheme.primaryOrange.withValues(alpha: 0.2),
-                          width: 1.5,
-                        ),
-                      ),
+                      width: 44,
+                      height: 44,
+                      alignment: Alignment.center,
                       child: Container(
-                        width: 30,
-                        height: 30,
+                        padding: const EdgeInsets.all(1.5),
                         decoration: BoxDecoration(
-                          color: AppTheme.primaryOrange.withValues(alpha: 0.1),
                           shape: BoxShape.circle,
+                          border: Border.all(
+                            color: AppTheme.primaryOrange.withValues(alpha: 0.2),
+                            width: 1.5,
+                          ),
                         ),
-                        child: ClipOval(
-                          child:
-                              userData?.photoURL != null &&
-                                  userData!.photoURL!.isNotEmpty
-                              ? CachedNetworkImage(
-                                  imageUrl: userData.photoURL!,
-                                  fit: BoxFit.cover,
-                                  errorWidget: (context, url, error) =>
-                                      _buildInitialsAvatar(userData, displayName),
-                                )
-                              : _buildInitialsAvatar(userData, displayName),
+                        child: Container(
+                          width: 30,
+                          height: 30,
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryOrange.withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: ClipOval(
+                            child:
+                                userData?.photoURL != null &&
+                                    userData!.photoURL!.isNotEmpty
+                                ? CachedNetworkImage(
+                                    imageUrl: userData.photoURL!,
+                                    fit: BoxFit.cover,
+                                    errorWidget: (context, url, error) =>
+                                        _buildInitialsAvatar(userData, displayName),
+                                  )
+                                : _buildInitialsAvatar(userData, displayName),
+                          ),
                         ),
                       ),
                     ),
@@ -288,7 +330,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
           // Modern Search Bar
           const SizedBox(height: 10),
-          GestureDetector(
+          PressableScale(
             onTap: () {
               setState(() {
                 _customerTabIndex = 1;
@@ -507,9 +549,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildDietaryFilterRow(UserPreferencesProvider prefsProvider) {
     final filters = [
-      {'id': 'none', 'label': 'All Dishes 🍽️'},
-      {'id': 'veg', 'label': 'Veg Only 🥦'},
-      {'id': 'jain', 'label': 'Jain Friendly 🌾'},
+      {'id': 'none', 'label': 'All Dishes', 'icon': Icons.restaurant_outlined},
+      {'id': 'veg', 'label': 'Veg Only', 'icon': Icons.eco_outlined},
+      {'id': 'jain', 'label': 'Jain Friendly', 'icon': Icons.grain_outlined},
     ];
 
     return Padding(
@@ -517,7 +559,7 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-                Text(
+          Text(
             "Diet Preference",
             style: TextStyle(
               fontSize: 11,
@@ -534,23 +576,33 @@ class _HomeScreenState extends State<HomeScreen> {
                 final isSelected = prefsProvider.dietaryFilter == f['id'];
                 return Padding(
                   padding: const EdgeInsets.only(right: 8),
-                  child: ChoiceChip(
-                    label: Text(
-                      f['label']!,
-                      style: TextStyle(
-                        color: isSelected ? Colors.white : AppTheme.textSecondary,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    selected: isSelected,
-                    selectedColor: AppTheme.primaryOrange,
-                    backgroundColor: AppTheme.cardBackground,
-                    onSelected: (selected) {
-                      if (selected) {
-                        prefsProvider.setDietaryFilter(f['id']!);
-                      }
+                  child: PressableScale(
+                    onTap: () {
+                      prefsProvider.setDietaryFilter(f['id'] as String);
                     },
+                    child: ChoiceChip(
+                      avatar: Icon(
+                        f['icon'] as IconData,
+                        size: 14,
+                        color: isSelected ? Colors.white : AppTheme.textSecondary,
+                      ),
+                      label: Text(
+                        f['label'] as String,
+                        style: TextStyle(
+                          color: isSelected ? Colors.white : AppTheme.textSecondary,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      selected: isSelected,
+                      selectedColor: AppTheme.primaryOrange,
+                      backgroundColor: AppTheme.cardBackground,
+                      onSelected: (selected) {
+                        if (selected) {
+                          prefsProvider.setDietaryFilter(f['id'] as String);
+                        }
+                      },
+                    ),
                   ),
                 );
               }).toList(),
@@ -563,18 +615,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildThemePortalRow(UserPreferencesProvider prefsProvider) {
     final themes = [
-      {'id': 'orange', 'label': 'Classic Orange 🍊', 'color': const Color(0xFFFC8019)},
-      {'id': 'blue', 'label': 'Ocean Blue 🌊', 'color': const Color(0xFF2563EB)},
-      {'id': 'pink', 'label': 'Sunset Pink 🌇', 'color': const Color(0xFFE23744)},
-      {'id': 'green', 'label': 'Forest Green 🌲', 'color': const Color(0xFF10B981)},
-      {'id': 'dark', 'label': 'Dark Mode 🌌', 'color': const Color(0xFFF59E0B)},
+      {'id': 'orange', 'label': 'Classic Orange', 'color': const Color(0xFFFC8019)},
+      {'id': 'blue', 'label': 'Ocean Blue', 'color': const Color(0xFF2563EB)},
+      {'id': 'pink', 'label': 'Sunset Pink', 'color': const Color(0xFFE23744)},
+      {'id': 'green', 'label': 'Forest Green', 'color': const Color(0xFF10B981)},
+      {'id': 'dark', 'label': 'Dark Mode', 'color': const Color(0xFFF59E0B)},
     ];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-              Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           child: Text(
             "Change Atmosphere",
             style: TextStyle(
@@ -596,7 +648,7 @@ class _HomeScreenState extends State<HomeScreen> {
               final isSelected = prefsProvider.themeMode == t['id'];
               final themeColor = t['color'] as Color;
 
-              return GestureDetector(
+              return PressableScale(
                 onTap: () {
                   prefsProvider.setThemeMode(t['id'] as String);
                 },
@@ -622,13 +674,27 @@ class _HomeScreenState extends State<HomeScreen> {
                         : null,
                   ),
                   child: Center(
-                    child: Text(
-                      t['label'] as String,
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: isSelected ? Colors.white : AppTheme.textSecondary,
-                      ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: isSelected ? Colors.white : themeColor,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          t['label'] as String,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: isSelected ? Colors.white : AppTheme.textSecondary,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -806,12 +872,22 @@ class _HomeScreenState extends State<HomeScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Row(
                   children: [
-                    Text(
-                      'Restaurants to explore 🍽️',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 16,
-                      ),
+                    Row(
+                      children: [
+                        Text(
+                          'Restaurants to explore',
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 16,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Icon(
+                          Icons.restaurant_outlined,
+                          size: 18,
+                          color: AppTheme.primaryOrange,
+                        ),
+                      ],
                     ),
                     const Spacer(),
                     Text(
@@ -1078,7 +1154,7 @@ class _HomeScreenState extends State<HomeScreen> {
     String label, {
     String? lottieAsset,
   }) {
-    return GestureDetector(
+    return PressableScale(
       onTap: () {
         // Navigate to search with category filter
         Navigator.push(
@@ -1125,13 +1201,18 @@ class _HomeScreenState extends State<HomeScreen> {
                         height: 36,
                         fit: BoxFit.contain,
                         errorBuilder: (context, error, stackTrace) {
-                          return Text(
-                            emoji ?? '🍴',
-                            style: const TextStyle(fontSize: 26),
+                          return EmojiToIcon.getIconWidget(
+                            emoji ?? '🍽️',
+                            size: 26,
+                            color: AppTheme.primaryOrange,
                           );
                         },
                       )
-                    : Text(emoji ?? '🍴', style: const TextStyle(fontSize: 26)),
+                    : EmojiToIcon.getIconWidget(
+                        emoji ?? '🍽️',
+                        size: 26,
+                        color: AppTheme.primaryOrange,
+                      ),
               ),
             ),
             const SizedBox(height: 6),
@@ -1907,9 +1988,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildDietSelector(UserPreferencesProvider prefsProvider) {
     final diets = [
-      {'id': 'none', 'label': 'All Dishes 🍽️'},
-      {'id': 'veg', 'label': 'Veg Only 🥦'},
-      {'id': 'jain', 'label': 'Jain Only 🌾'},
+      {'id': 'none', 'label': 'All Dishes', 'icon': Icons.restaurant_outlined},
+      {'id': 'veg', 'label': 'Veg Only', 'icon': Icons.eco_outlined},
+      {'id': 'jain', 'label': 'Jain Only', 'icon': Icons.grain_outlined},
     ];
 
     return Row(
@@ -1917,9 +1998,9 @@ class _HomeScreenState extends State<HomeScreen> {
       children: diets.map((d) {
         final isSelected = prefsProvider.dietaryFilter == d['id'];
         return Expanded(
-          child: GestureDetector(
+          child: PressableScale(
             onTap: () {
-              prefsProvider.setDietaryFilter(d['id']!);
+              prefsProvider.setDietaryFilter(d['id'] as String);
             },
             child: Container(
               margin: const EdgeInsets.symmetric(horizontal: 4),
@@ -1931,15 +2012,24 @@ class _HomeScreenState extends State<HomeScreen> {
                   color: isSelected ? Colors.transparent : AppTheme.borderLight,
                 ),
               ),
-              child: Center(
-                child: Text(
-                  d['label']!,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    d['icon'] as IconData,
+                    size: 14,
                     color: isSelected ? Colors.white : AppTheme.textSecondary,
                   ),
-                ),
+                  const SizedBox(width: 4),
+                  Text(
+                    d['label'] as String,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: isSelected ? Colors.white : AppTheme.textSecondary,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),

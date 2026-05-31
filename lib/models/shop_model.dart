@@ -226,7 +226,7 @@ class ShopSchedule {
     // If time periods are set, display them
     if (timePeriods.isNotEmpty) {
       final periodNames = selectedTimePeriods
-          .map((p) => '${p.emoji} ${p.displayName}')
+          .map((p) => p.displayName)
           .join(', ');
       return periodNames;
     }

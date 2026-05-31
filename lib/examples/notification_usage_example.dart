@@ -125,7 +125,7 @@ class NotificationUsageExample {
     switch (user.role) {
       case UserRole.owner:
         await _notificationService.showNotification(
-          title: '💼 Owner Alert',
+          title: 'Owner Alert',
           body: message,
           payload: orderId,
           userRole: UserRole.owner,
@@ -133,7 +133,7 @@ class NotificationUsageExample {
         break;
       case UserRole.kitchen:
         await _notificationService.showNotification(
-          title: '👨‍🍳 Kitchen Alert',
+          title: 'Kitchen Alert',
           body: message,
           payload: orderId,
           userRole: UserRole.kitchen,
@@ -141,7 +141,7 @@ class NotificationUsageExample {
         break;
       case UserRole.delivery:
         await _notificationService.showNotification(
-          title: '🚚 Delivery Alert',
+          title: 'Delivery Alert',
           body: message,
           payload: orderId,
           userRole: UserRole.delivery,
@@ -149,7 +149,7 @@ class NotificationUsageExample {
         break;
       default:
         await _notificationService.showNotification(
-          title: '📱 Notification',
+          title: 'Notification',
           body: message,
           payload: orderId,
           userRole: user.role,

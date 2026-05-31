@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../config/theme.dart';
+import 'pressable_scale.dart';
 
 class AppCard extends StatelessWidget {
   final Widget child;
@@ -39,12 +39,9 @@ class AppCard extends StatelessWidget {
     );
 
     if (onTap != null) {
-      return GestureDetector(
+      return PressableScale(
         onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          child: card,
-        ),
+        child: card,
       );
     }
 
@@ -83,7 +80,7 @@ class ShopCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return PressableScale(
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
@@ -742,23 +739,16 @@ class MenuItemCard extends StatelessWidget {
                             ],
                           ),
                           child: quantity == 0
-                              ? Material(
-                                  color: Colors.transparent,
-                                  child: InkWell(
-                                    onTap: () {
-                                      HapticFeedback.lightImpact();
-                                      onAdd?.call();
-                                    },
-                                    borderRadius: BorderRadius.circular(8),
-                                    child:       Center(
-                                      child: Text(
-                                        'ADD',
-                                        style: TextStyle(
-                                          color: AppTheme.primaryOrange,
-                                          fontWeight: FontWeight.w800,
-                                          fontSize: 12,
-                                          letterSpacing: 0.5,
-                                        ),
+                              ? PressableScale(
+                                  onTap: onAdd,
+                                  child: Center(
+                                    child: Text(
+                                      'ADD',
+                                      style: TextStyle(
+                                        color: AppTheme.primaryOrange,
+                                        fontWeight: FontWeight.w800,
+                                        fontSize: 12,
+                                        letterSpacing: 0.5,
                                       ),
                                     ),
                                   ),
@@ -767,51 +757,33 @@ class MenuItemCard extends StatelessWidget {
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
                                     Expanded(
-                                      child: Material(
-                                        color: Colors.transparent,
-                                        child: InkWell(
-                                          onTap: () {
-                                            HapticFeedback.lightImpact();
-                                            onDecrement?.call();
-                                          },
-                                          borderRadius: const BorderRadius.horizontal(
-                                            left: Radius.circular(8),
-                                          ),
-                                          child:       Center(
-                                            child: Icon(
-                                              Icons.remove_rounded,
-                                              size: 16,
-                                              color: AppTheme.primaryOrange,
-                                            ),
+                                      child: PressableScale(
+                                        onTap: onDecrement,
+                                        child: Center(
+                                          child: Icon(
+                                            Icons.remove_rounded,
+                                            size: 16,
+                                            color: AppTheme.primaryOrange,
                                           ),
                                         ),
                                       ),
                                     ),
                                     Text(
                                       quantity.toString(),
-                                      style:       TextStyle(
+                                      style: TextStyle(
                                         fontWeight: FontWeight.w800,
                                         fontSize: 13,
                                         color: AppTheme.primaryOrange,
                                       ),
                                     ),
                                     Expanded(
-                                      child: Material(
-                                        color: Colors.transparent,
-                                        child: InkWell(
-                                          onTap: () {
-                                            HapticFeedback.lightImpact();
-                                            onIncrement?.call();
-                                          },
-                                          borderRadius: const BorderRadius.horizontal(
-                                            right: Radius.circular(8),
-                                          ),
-                                          child:       Center(
-                                            child: Icon(
-                                              Icons.add_rounded,
-                                              size: 16,
-                                              color: AppTheme.primaryOrange,
-                                            ),
+                                      child: PressableScale(
+                                        onTap: onIncrement,
+                                        child: Center(
+                                          child: Icon(
+                                            Icons.add_rounded,
+                                            size: 16,
+                                            color: AppTheme.primaryOrange,
                                           ),
                                         ),
                                       ),
