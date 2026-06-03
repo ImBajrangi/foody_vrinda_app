@@ -1,0 +1,26 @@
+# Standard graphify ignores to focus on code and save tokens
+.agents/
+build/
+dist/
+node_modules/
+android/
+ios/
+linux/
+macos/
+windows/
+web/
+assets/
+*.png
+*.jpg
+*.jpeg
+*.webp
+*.gif
+*.svg
+*.mp3
+*.wav
+*.json
+*.ico
+*.woff
+*.woff2
+*.ttf
+*.eot

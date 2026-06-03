@@ -1,0 +1,392 @@
+{
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/.dart_tool/dartpad/web_plugin_registrant.dart": {
+    "mtime": 1780238610.400218,
+    "ast_hash": "d341ccabc712b594ad10b5145dd184e5",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/lib/config/app_config.dart": {
+    "mtime": 1779291008.9124644,
+    "ast_hash": "a2d1ccecf8b868463dc53e44a309e036",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/lib/config/design_system.dart": {
+    "mtime": 1779768566.9420953,
+    "ast_hash": "28e4be9d6cf9582b8a8ac6cfeab1bdb0",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/lib/config/emoji_to_icon.dart": {
+    "mtime": 1780238632.6617186,
+    "ast_hash": "23720435ea90eb35b982715f3bd6fb9e",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/lib/config/firebase_config.dart": {
+    "mtime": 1779291008.9125562,
+    "ast_hash": "7393fc22808166a566ba440f95059b4a",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/lib/config/lottie_assets.dart": {
+    "mtime": 1779291008.9127188,
+    "ast_hash": "9434aa4326e263872c93868a14845342",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/lib/config/menu_images.dart": {
+    "mtime": 1779291008.9128282,
+    "ast_hash": "fe000185093d2acf528a48ad1e73943e",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/lib/config/notification_sound_config.dart": {
+    "mtime": 1779291008.912941,
+    "ast_hash": "90c1a06f92a91f99115a3b70356fc963",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/lib/config/telegram_page_route.dart": {
+    "mtime": 1779772873.1256158,
+    "ast_hash": "9716cb98d2252e3ab2ec676d92f84a9d",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/lib/config/theme.dart": {
+    "mtime": 1779770100.4426568,
+    "ast_hash": "f923ace15a9cc418cce56f197b529106",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/lib/examples/notification_usage_example.dart": {
+    "mtime": 1780238756.5296683,
+    "ast_hash": "f9291c65a6662bbae371a93874721da0",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/lib/firebase_options.dart": {
+    "mtime": 1779291008.9135997,
+    "ast_hash": "5d840f26134c705ee3be3d634995371b",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/lib/main.dart": {
+    "mtime": 1779771540.1119497,
+    "ast_hash": "c2f3637e5ef60a0b8755c2687fcb9e7e",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/lib/models/cart_item_model.dart": {
+    "mtime": 1779291008.9139466,
+    "ast_hash": "e9ebf8a2bbc45df8f85384309eccf4e7",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/lib/models/cash_transaction_model.dart": {
+    "mtime": 1779291008.9140604,
+    "ast_hash": "ad9546a4f54a8334891c7303e6b81a58",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/lib/models/menu_item_model.dart": {
+    "mtime": 1779291008.9141717,
+    "ast_hash": "e1943294170a4fd54e7bc736f3f5a14d",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/lib/models/notification_model.dart": {
+    "mtime": 1779291008.914283,
+    "ast_hash": "728587a886bbab7fb62dd69b9f8a2cd3",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/lib/models/order_model.dart": {
+    "mtime": 1779291008.9144793,
+    "ast_hash": "28579380fd63675a2cfc0eb6f3f60fa9",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/lib/models/review_model.dart": {
+    "mtime": 1779291008.9145863,
+    "ast_hash": "8a2c73fd92b4e8a8334df8c10db69580",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/lib/models/shop_model.dart": {
+    "mtime": 1780238649.1390367,
+    "ast_hash": "5b564cd5b502fdc91ddc2e7a7b04f5e5",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/lib/models/user_model.dart": {
+    "mtime": 1779772745.319413,
+    "ast_hash": "69b4113aeb75900e5bfd2c6608bb19db",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/lib/providers/auth_provider.dart": {
+    "mtime": 1779772765.0253837,
+    "ast_hash": "605d6a96680f06315d5a2d6e00afd490",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/lib/providers/cart_provider.dart": {
+    "mtime": 1779291008.915541,
+    "ast_hash": "e68f997b716013405e4a64647d2bd169",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/lib/providers/user_preferences_provider.dart": {
+    "mtime": 1779768542.212819,
+    "ast_hash": "ecea54deba781541458eb7fe729f2543",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/lib/screens/auth/login_screen.dart": {
+    "mtime": 1780238738.0018268,
+    "ast_hash": "09ccc85b809ec390371dfc9a81575518",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/lib/screens/cart/cart_screen.dart": {
+    "mtime": 1779772840.956884,
+    "ast_hash": "3c234d6707edc7c0a7f29d849ee3e7ee",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/lib/screens/dashboard/dashboard_view.dart": {
+    "mtime": 1779770100.4676316,
+    "ast_hash": "7f6de4e1ff0e12b91981feaa5651234f",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/lib/screens/delivery/delivery_dashboard_view.dart": {
+    "mtime": 1779772665.7465305,
+    "ast_hash": "9781f131d4929856531f63c4738de01c",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/lib/screens/delivery/delivery_view.dart": {
+    "mtime": 1779770100.484428,
+    "ast_hash": "961739b92151f1a1a944d577e39ccfed",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/lib/screens/developer/developer_panel.dart": {
+    "mtime": 1779770100.5014565,
+    "ast_hash": "ffbadae6217c607033cad178c554d466",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/lib/screens/developer/notification_sound_settings.dart": {
+    "mtime": 1779295945.8341756,
+    "ast_hash": "bb22c2bdd99a24b93c45af8f077b6481",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/lib/screens/home/home_screen.dart": {
+    "mtime": 1780238718.6844625,
+    "ast_hash": "ad73f7f5be944be742617d69bc69531c",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/lib/screens/kitchen/kitchen_view.dart": {
+    "mtime": 1779770100.5200174,
+    "ast_hash": "87fafd41bf0ba573d626547d7df7dda6",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/lib/screens/menu/menu_screen.dart": {
+    "mtime": 1779772640.4513376,
+    "ast_hash": "9a111d5d072982096a4ee7688c2d21ee",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/lib/screens/order/order_history_screen.dart": {
+    "mtime": 1779772616.1271935,
+    "ast_hash": "8bad9782632d4eabb63efef39f89cf01",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/lib/screens/order/order_tracking_screen.dart": {
+    "mtime": 1779770100.5323522,
+    "ast_hash": "2f2a09a035c1a1469dc69df0d6b86e08",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/lib/screens/search/search_screen.dart": {
+    "mtime": 1779772629.6418266,
+    "ast_hash": "fff6d12ab91b4eeda2a9c5297cdaaad5",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/lib/screens/settings/notification_settings_screen.dart": {
+    "mtime": 1779770100.5437908,
+    "ast_hash": "1801aa33f4c17f748f063694f1b69724",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/lib/services/auth_service.dart": {
+    "mtime": 1779772754.3720531,
+    "ast_hash": "b15eec01e023b693e1b375af2fe3fde1",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/lib/services/delivery_alarm_service.dart": {
+    "mtime": 1779291008.9207146,
+    "ast_hash": "57616198aea1733bb2157c9c9f7d9a40",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/lib/services/foody_cache_service.dart": {
+    "mtime": 1779291462.0943615,
+    "ast_hash": "c98d88db003317deace332de6fa3cd19",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/lib/services/hit_soochi_service.dart": {
+    "mtime": 1779291008.9208984,
+    "ast_hash": "61b7fc1415da9427092fea1d84b3d41e",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/lib/services/kitchen_alarm_service.dart": {
+    "mtime": 1779291008.920998,
+    "ast_hash": "a5823d631145c45162a05b4be950965e",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/lib/services/location_service.dart": {
+    "mtime": 1779291008.9211783,
+    "ast_hash": "429d10915afd2f98e52385c6b402a9ed",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/lib/services/notification_service.dart": {
+    "mtime": 1780238760.2536056,
+    "ast_hash": "a4d349ffa951404affe1e455bceba184",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/lib/services/order_notification_manager.dart": {
+    "mtime": 1779291008.921552,
+    "ast_hash": "ee3e3b81340ffcd5ffb7460f96a505ec",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/lib/services/order_service.dart": {
+    "mtime": 1779291008.921683,
+    "ast_hash": "b7e0ec8995452fc1601aad8588c5ddfc",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/lib/services/payment_service.dart": {
+    "mtime": 1779291008.9218163,
+    "ast_hash": "3726708c928bbf6db77bdb2c6620b7a9",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/lib/services/resource_cache_service.dart": {
+    "mtime": 1779771548.2362454,
+    "ast_hash": "844702604459c9ce798911201bca5503",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/lib/services/review_service.dart": {
+    "mtime": 1779291008.922029,
+    "ast_hash": "915e152d3fc9e94f1207120d8aa950b5",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/lib/services/search_service.dart": {
+    "mtime": 1779291008.9222014,
+    "ast_hash": "2e1b91cb4b51bd1c42705553c9ca7517",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/lib/services/shop_service.dart": {
+    "mtime": 1779291475.9747713,
+    "ast_hash": "1d8673a1d314291215b140afb33f4baf",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/lib/widgets/address_autocomplete_field.dart": {
+    "mtime": 1779770100.5472922,
+    "ast_hash": "20fd5d2b59d1ac4e30e984ae85cc167b",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/lib/widgets/animations.dart": {
+    "mtime": 1779770100.5502398,
+    "ast_hash": "143db50a2ab90a6c6ae01fcdb21e74ff",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/lib/widgets/buttons.dart": {
+    "mtime": 1779295990.577658,
+    "ast_hash": "6730a69cd9932b7a24b97ce0be78c087",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/lib/widgets/cards.dart": {
+    "mtime": 1780238781.3724346,
+    "ast_hash": "add29ef7d3dc23de26d2de3d5335873a",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/lib/widgets/inputs.dart": {
+    "mtime": 1779770100.5589437,
+    "ast_hash": "743d5473f7a8f3a1fad59c7c2d5f57d5",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/lib/widgets/location_picker_dialog.dart": {
+    "mtime": 1779770100.563265,
+    "ast_hash": "db036b31a03c727ca0a0bf42b394b9a0",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/lib/widgets/order_widgets.dart": {
+    "mtime": 1779770100.5661018,
+    "ast_hash": "0fa9141e57ad16128c7ea111893ed035",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/lib/widgets/pressable_scale.dart": {
+    "mtime": 1780238637.2742512,
+    "ast_hash": "801cbde43419e07899fafe5edcb75401",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/lib/widgets/time_period_selector.dart": {
+    "mtime": 1780238779.5870097,
+    "ast_hash": "e61b9f740ae31c38da58cc9d4fc0dd68",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/setup_notification_sounds.sh": {
+    "mtime": 1779291008.9247682,
+    "ast_hash": "152f43009702e8e7bac3589edf621fca",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/test/widget_test.dart": {
+    "mtime": 1779291008.9779818,
+    "ast_hash": "a06816c01173085692a7c446381de7d9",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/NOTIFICATION_FLOW_DIAGRAM.txt": {
+    "mtime": 1779291008.7823162,
+    "ast_hash": "ef262609d6b45a0ba86af80e2b00aff7",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/README.md": {
+    "mtime": 1779291008.7824252,
+    "ast_hash": "c801181b09f93592f8a3d9f7863872d9",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/RULES.md": {
+    "mtime": 1779769115.7226868,
+    "ast_hash": "76fe4f3f2d327776f374700a76917818",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/analysis_options.yaml": {
+    "mtime": 1779291008.7825289,
+    "ast_hash": "f90273435a4c662e5e81ba600fa6ebf9",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/devtools_options.yaml": {
+    "mtime": 1779291008.9020913,
+    "ast_hash": "d1ff5187b1b67653e7357395895e8449",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/doc/IMPLEMENTATION_SUMMARY.md": {
+    "mtime": 1779291008.902343,
+    "ast_hash": "fc60f145d94ec32784fb6862ca534b8c",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/doc/INTEGRATION_GUIDE.md": {
+    "mtime": 1779291008.9025402,
+    "ast_hash": "d8e3c0fc795c70a2a1c0e2af47a88d05",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/doc/NOTIFICATION_SOUNDS_GUIDE.md": {
+    "mtime": 1779291008.9027364,
+    "ast_hash": "98a8475d6c8fae388e682ca793ef8346",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/doc/QUICK_REFERENCE.md": {
+    "mtime": 1779291008.9029129,
+    "ast_hash": "daad1a4e061fc26495f6198731a9a3dc",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/doc/google_sign_in_fix.md": {
+    "mtime": 1779291008.9030552,
+    "ast_hash": "f6e9946fb4e15d9a6c0807cb7e8c7657",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/doc/image_rendering_plan.md": {
+    "mtime": 1779291008.9031565,
+    "ast_hash": "774b24f5e096e36de643fefe2058a108",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/doc/multi_shop_assignment_plan.md": {
+    "mtime": 1779291008.9032607,
+    "ast_hash": "907848b26336e154bf4b64ba76c3dcc7",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/doc/search_implementation_plan.md": {
+    "mtime": 1779291008.9033835,
+    "ast_hash": "c9dbec83b4da23e3ae743cfd8d8fa672",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/doc/walkthrough.md": {
+    "mtime": 1779291008.9035006,
+    "ast_hash": "113e204d7128a34743537708640c9dc3",
+    "semantic_hash": ""
+  },
+  "/Users/sakhi/Code/Foody-Vrinda/foody_vrinda_app/pubspec.yaml": {
+    "mtime": 1779771515.8250406,
+    "ast_hash": "cb46256771db529ced77c57b77f7fe45",
+    "semantic_hash": ""
+  }
+}
