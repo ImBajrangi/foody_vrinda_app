@@ -28,6 +28,7 @@ import '../developer/developer_panel.dart';
 import '../search/search_screen.dart';
 import '../order/order_history_screen.dart';
 import '../settings/notification_settings_screen.dart';
+import '../../services/order_notification_manager.dart';
 import '../../config/emoji_to_icon.dart';
 import '../../widgets/pressable_scale.dart';
 import '../../widgets/animations.dart';
@@ -81,6 +82,15 @@ class _HomeScreenState extends State<HomeScreen> {
     final authProvider = Provider.of<AuthProvider>(context);
     final userData = authProvider.userData;
     final role = userData?.role ?? UserRole.customer;
+
+    // Start background role-aware order notification and alarm listener
+    if (userData != null) {
+      OrderNotificationManager().startListening(
+        userRole: userData.role,
+        shopId: userData.shopId,
+        userId: userData.uid,
+      );
+    }
 
     return Scaffold(
       backgroundColor: AppTheme.background,
@@ -2155,7 +2165,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           ),
                           child: const Text(
-                            'Sign In / Register',
+                            'Register',
                             style: TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,

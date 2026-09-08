@@ -182,7 +182,7 @@ class OrderService {
         );
   }
 
-  // Get delivery orders (ready_for_pickup and out_for_delivery)
+  // Get delivery orders (ready_for_pickup, ready, out_of_kitchen, out_for_delivery, in_transit)
   Stream<List<OrderModel>> getDeliveryOrders(String? shopId) {
     Query<Map<String, dynamic>> query = _firestore.collection('orders');
 
@@ -191,7 +191,19 @@ class OrderService {
     }
 
     return query
-        .where('status', whereIn: ['ready_for_pickup', 'out_for_delivery'])
+        .where(
+          'status',
+          whereIn: [
+            'ready_for_pickup',
+            'readyForPickup',
+            'ready',
+            'out_of_kitchen',
+            'out_for_delivery',
+            'outForDelivery',
+            'picked_up',
+            'in_transit',
+          ],
+        )
         .snapshots()
         .map(
           (snapshot) =>
@@ -213,7 +225,19 @@ class OrderService {
     return _firestore
         .collection('orders')
         .where('shopId', whereIn: shopIds)
-        .where('status', whereIn: ['ready_for_pickup', 'out_for_delivery'])
+        .where(
+          'status',
+          whereIn: [
+            'ready_for_pickup',
+            'readyForPickup',
+            'ready',
+            'out_of_kitchen',
+            'out_for_delivery',
+            'outForDelivery',
+            'picked_up',
+            'in_transit',
+          ],
+        )
         .snapshots()
         .map(
           (snapshot) =>

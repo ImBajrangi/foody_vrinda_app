@@ -63,12 +63,23 @@ extension OrderStatusExtension on OrderStatus {
   static OrderStatus fromString(String? status) {
     switch (status?.toLowerCase()) {
       case 'preparing':
+      case 'in_kitchen':
+      case 'accepted':
         return OrderStatus.preparing;
       case 'ready_for_pickup':
+      case 'readyforpickup':
+      case 'ready':
+      case 'out_of_kitchen':
+      case 'ready_for_dispatch':
         return OrderStatus.readyForPickup;
       case 'out_for_delivery':
+      case 'outfordelivery':
+      case 'picked_up':
+      case 'in_transit':
         return OrderStatus.outForDelivery;
       case 'completed':
+      case 'delivered':
+      case 'done':
         return OrderStatus.completed;
       case 'cancelled':
         return OrderStatus.cancelled;

@@ -5,8 +5,9 @@ import '../models/order_model.dart';
 import '../models/user_model.dart';
 import 'notification_service.dart';
 import 'kitchen_alarm_service.dart';
+import 'delivery_alarm_service.dart';
 
-/// Manages real-time order listeners and triggers notifications for staff
+/// Manages real-time order listeners and triggers role-tailored notifications and alarms for staff
 class OrderNotificationManager {
   static final OrderNotificationManager _instance =
       OrderNotificationManager._internal();
@@ -17,10 +18,11 @@ class OrderNotificationManager {
   final NotificationService _notificationService = NotificationService();
 
   StreamSubscription<QuerySnapshot>? _ordersSubscription;
-  Set<String> _knownOrderIds = {};
+  final Map<String, OrderStatus> _knownOrderStatusMap = {};
   bool _isFirstLoad = true;
   UserRole? _currentUserRole;
   String? _currentShopId;
+  String? _currentUserId;
 
   /// Start listening for new orders based on user role
   Future<void> _initNotifications() async {
@@ -31,11 +33,13 @@ class OrderNotificationManager {
   Future<void> startListening({
     required UserRole userRole,
     String? shopId,
+    String? userId,
   }) async {
-    // Optimization: Skip restart if we are already listening for the same role/shop
+    // Optimization: Skip restart if we are already listening for the same role/shop/user
     if (_ordersSubscription != null &&
         _currentUserRole == userRole &&
-        _currentShopId == shopId) {
+        _currentShopId == shopId &&
+        _currentUserId == userId) {
       return;
     }
 
@@ -44,17 +48,16 @@ class OrderNotificationManager {
 
     _currentUserRole = userRole;
     _currentShopId = shopId;
+    _currentUserId = userId;
     _isFirstLoad = true;
-    _knownOrderIds.clear();
+    _knownOrderStatusMap.clear();
 
     // Initialize notification service
     await _initNotifications();
 
-    // Build query - listen to recent orders only
-    // Filter by shopId client-side to avoid composite index requirement
+    // Build query - listen to recent orders only (last 24 hours)
     Query<Map<String, dynamic>> query = _firestore.collection('orders');
 
-    // Listen only to recent orders (last 24 hours) to avoid overwhelming on startup
     final yesterday = DateTime.now().subtract(const Duration(hours: 24));
     query = query.where(
       'createdAt',
@@ -62,9 +65,8 @@ class OrderNotificationManager {
     );
 
     _ordersSubscription = query.snapshots().listen(
-      (snapshot) => _handleOrdersSnapshot(snapshot, shopId, userRole),
+      (snapshot) => _handleOrdersSnapshot(snapshot, shopId, userRole, userId),
       onError: (error) {
-        // Log errors only
         debugPrint('OrderNotificationManager Error: $error');
       },
     );
@@ -74,9 +76,11 @@ class OrderNotificationManager {
     QuerySnapshot snapshot,
     String? shopId,
     UserRole userRole,
+    String? userId,
   ) {
-    // Filter by shopId client-side for owner/kitchen roles
     var docs = snapshot.docs;
+
+    // Filter by shopId for owner/kitchen
     if ((userRole == UserRole.owner || userRole == UserRole.kitchen) &&
         shopId != null) {
       docs = docs
@@ -85,48 +89,153 @@ class OrderNotificationManager {
           .toList();
     }
 
-    final currentOrderIds = docs.map((doc) => doc.id).toSet();
+    // Filter for customer role (only listen to this customer's orders)
+    if (userRole == UserRole.customer && userId != null) {
+      docs = docs
+          .where((doc) => (doc.data() as Map?)?.containsKey('userId') == true)
+          .where((doc) => (doc.data() as Map)['userId'] == userId)
+          .toList();
+    }
+
+    final currentOrders = <String, OrderModel>{};
+    for (final doc in docs) {
+      try {
+        final order = OrderModel.fromFirestore(doc);
+        currentOrders[order.id] = order;
+      } catch (e) {
+        debugPrint('Error parsing order ${doc.id}: $e');
+      }
+    }
 
     if (_isFirstLoad) {
-      // On first load, just record existing order IDs without notifying
-      _knownOrderIds = currentOrderIds;
+      // On first load, record existing order statuses without sounding alarm
+      for (final entry in currentOrders.entries) {
+        _knownOrderStatusMap[entry.key] = entry.value.status;
+      }
       _isFirstLoad = false;
       return;
     }
 
-    // Find new orders
-    final newOrderIds = currentOrderIds.difference(_knownOrderIds);
+    // Process each order for additions or status transitions
+    for (final entry in currentOrders.entries) {
+      final orderId = entry.key;
+      final order = entry.value;
+      final oldStatus = _knownOrderStatusMap[orderId];
+      final newStatus = order.status;
 
-    if (newOrderIds.isEmpty) {
-      // Update known orders (some may have been removed)
-      _knownOrderIds = currentOrderIds;
-      return;
+      if (oldStatus == null) {
+        // Brand new order arrived
+        _handleNewOrderArrival(order, userRole);
+      } else if (oldStatus != newStatus) {
+        // Status transitioned
+        _handleOrderStatusTransition(order, oldStatus, newStatus, userRole);
+      }
+
+      // Update known status
+      _knownOrderStatusMap[orderId] = newStatus;
     }
 
-    // Show notification for each new order
-    for (final orderId in newOrderIds) {
-      final doc = snapshot.docs.firstWhere((d) => d.id == orderId);
-      final order = OrderModel.fromFirestore(doc);
-      _showNewOrderNotification(order);
-    }
-
-    // Update known orders
-    _knownOrderIds = currentOrderIds;
+    // Clean up orders that were deleted
+    _knownOrderStatusMap.removeWhere((id, _) => !currentOrders.containsKey(id));
   }
 
-  void _showNewOrderNotification(OrderModel order) {
-    _notificationService.showNewOrderNotification(
-      orderId: order.id,
-      customerName: order.customerName,
-      amount: order.totalAmount,
-      userRole: _currentUserRole,
-    );
+  void _handleNewOrderArrival(OrderModel order, UserRole userRole) {
+    if (order.status == OrderStatus.newOrder) {
+      // Kitchen / Owner / Developer alerts
+      if (userRole == UserRole.owner ||
+          userRole == UserRole.kitchen ||
+          userRole == UserRole.developer) {
+        _notificationService.showNewOrderNotification(
+          orderId: order.id,
+          customerName: order.customerName,
+          amount: order.totalAmount,
+          userRole: userRole,
+        );
+        KitchenAlarmService().triggerAlarm(order.id);
+      }
+    } else if (order.status == OrderStatus.readyForPickup) {
+      // Delivery / Owner / Developer alerts
+      if (userRole == UserRole.delivery ||
+          userRole == UserRole.owner ||
+          userRole == UserRole.developer) {
+        _notificationService.showReadyForDeliveryNotification(
+          orderId: order.id,
+          customerName: order.customerName,
+          address: order.deliveryAddress,
+          userRole: userRole,
+        );
+        DeliveryAlarmService().triggerAlarm(order.id);
+      }
+    }
+  }
 
-    // Trigger persistent kitchen alarm for owner/kitchen/developer roles
-    if (_currentUserRole == UserRole.owner ||
-        _currentUserRole == UserRole.kitchen ||
-        _currentUserRole == UserRole.developer) {
-      KitchenAlarmService().triggerAlarm(order.id);
+  void _handleOrderStatusTransition(
+    OrderModel order,
+    OrderStatus oldStatus,
+    OrderStatus newStatus,
+    UserRole userRole,
+  ) {
+    // 1. Auto-silence / acknowledge alarms based on progression
+    if (newStatus == OrderStatus.preparing) {
+      KitchenAlarmService().acknowledgeOrder(order.id);
+      
+      if (userRole == UserRole.customer) {
+        _notificationService.showOrderStatusNotification(
+          orderId: order.id,
+          status: 'Preparing',
+          message: 'The kitchen is preparing your sacred Satvik meal in pure desi ghee.',
+          userRole: userRole,
+        );
+      }
+    } else if (newStatus == OrderStatus.readyForPickup) {
+      KitchenAlarmService().acknowledgeOrder(order.id);
+
+      // Trigger delivery alert
+      if (userRole == UserRole.delivery ||
+          userRole == UserRole.owner ||
+          userRole == UserRole.developer) {
+        _notificationService.showReadyForDeliveryNotification(
+          orderId: order.id,
+          customerName: order.customerName,
+          address: order.deliveryAddress,
+          userRole: userRole,
+        );
+        DeliveryAlarmService().triggerAlarm(order.id);
+      } else if (userRole == UserRole.customer) {
+        _notificationService.showOrderStatusNotification(
+          orderId: order.id,
+          status: 'Ready',
+          message: 'Your prasad is packed and waiting for Sarathi pickup.',
+          userRole: userRole,
+        );
+      }
+    } else if (newStatus == OrderStatus.outForDelivery) {
+      DeliveryAlarmService().acknowledgeOrder(order.id);
+      KitchenAlarmService().acknowledgeOrder(order.id);
+
+      if (userRole == UserRole.customer) {
+        _notificationService.showOrderStatusNotification(
+          orderId: order.id,
+          status: 'Out for Delivery',
+          message: 'Your Sarathi rider is on the way with your warm meal!',
+          userRole: userRole,
+        );
+      }
+    } else if (newStatus == OrderStatus.completed) {
+      DeliveryAlarmService().acknowledgeOrder(order.id);
+      KitchenAlarmService().acknowledgeOrder(order.id);
+
+      if (userRole == UserRole.customer) {
+        _notificationService.showOrderStatusNotification(
+          orderId: order.id,
+          status: 'Delivered',
+          message: 'Your prasad has been delivered safely. Radhe Radhe!',
+          userRole: userRole,
+        );
+      }
+    } else if (newStatus == OrderStatus.cancelled || newStatus == OrderStatus.returned) {
+      DeliveryAlarmService().acknowledgeOrder(order.id);
+      KitchenAlarmService().acknowledgeOrder(order.id);
     }
   }
 
@@ -134,10 +243,11 @@ class OrderNotificationManager {
   Future<void> stopListening() async {
     await _ordersSubscription?.cancel();
     _ordersSubscription = null;
-    _knownOrderIds.clear();
+    _knownOrderStatusMap.clear();
     _isFirstLoad = true;
     _currentUserRole = null;
     _currentShopId = null;
+    _currentUserId = null;
   }
 
   /// Check if currently listening

@@ -275,7 +275,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(height: 24),
 
                       AppButton(
-                        text: 'Sign In / Register',
+                        text: 'Register',
                         isFullWidth: true,
                         isLoading: authProvider.isLoading,
                         height: 52,

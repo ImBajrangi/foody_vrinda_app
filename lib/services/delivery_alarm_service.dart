@@ -51,10 +51,10 @@ class DeliveryAlarmService extends ChangeNotifier {
     
     try {
       _isPlaying = true;
-      // Use a different sound for delivery - motorcycle horn style
+      // Use distinct delivery alert sound - clear announce tone
       await _audioPlayer.setReleaseMode(ReleaseMode.loop);
       await _audioPlayer.play(
-        AssetSource('sounds/mixkit-urgent-simple-tone-loop-2976.wav'),
+        AssetSource('sounds/mixkit-clear-announce-tones-2861.wav'),
       );
     } catch (e) {
       debugPrint('DeliveryAlarmService: Error playing alarm: $e');
