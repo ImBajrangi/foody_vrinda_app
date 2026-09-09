@@ -50,6 +50,7 @@ class AppCard extends StatelessWidget {
 }
 
 class ShopCard extends StatelessWidget {
+  final String? id;
   final String name;
   final String? address;
   final String? imageUrl;
@@ -65,6 +66,7 @@ class ShopCard extends StatelessWidget {
 
   const ShopCard({
     super.key,
+    this.id,
     required this.name,
     this.address,
     this.imageUrl,
@@ -109,7 +111,7 @@ class ShopCard extends StatelessWidget {
                     top: Radius.circular(16),
                   ),
                   child: Hero(
-                    tag: 'shop-${imageUrl ?? name}',
+                    tag: 'shop-${(id != null && id!.isNotEmpty) ? id : ((imageUrl != null && imageUrl!.isNotEmpty) ? imageUrl : '$name-${identityHashCode(this)}')}',
                     child: AspectRatio(
                       aspectRatio: 16 / 9,
                       child: imageUrl?.isNotEmpty == true
@@ -132,6 +134,7 @@ class ShopCard extends StatelessWidget {
                     ),
                   ),
                 ),
+
                 // Status badge overlay
                 Positioned(
                   top: 12,
@@ -485,6 +488,7 @@ class ShopCard extends StatelessWidget {
 }
 
 class MenuItemCard extends StatelessWidget {
+  final String? id;
   final String name;
   final double price;
   final double? originalPrice;
@@ -499,6 +503,7 @@ class MenuItemCard extends StatelessWidget {
 
   const MenuItemCard({
     super.key,
+    this.id,
     required this.name,
     required this.price,
     this.originalPrice,
@@ -511,6 +516,7 @@ class MenuItemCard extends StatelessWidget {
     this.onIncrement,
     this.onDecrement,
   });
+
 
   @override
   Widget build(BuildContext context) {
@@ -692,8 +698,9 @@ class MenuItemCard extends StatelessWidget {
                           borderRadius: BorderRadius.circular(12),
                           child: (imageUrl != null && imageUrl!.isNotEmpty)
                               ? Hero(
-                                  tag: 'menu-item-${imageUrl ?? name}',
+                                  tag: 'menu-item-${(id != null && id!.isNotEmpty) ? id : ((imageUrl != null && imageUrl!.isNotEmpty) ? imageUrl : '$name-${identityHashCode(this)}')}',
                                   child: CachedNetworkImage(
+
                                     imageUrl: imageUrl!,
                                     fit: BoxFit.cover,
                                     placeholder: (context, url) => Container(

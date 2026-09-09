@@ -931,6 +931,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       vertical: 8,
                     ),
                     child: ShopCard(
+                      id: shop.id,
                       name: shop.name,
                       address: shop.address,
                       imageUrl: shop.imageUrl,
@@ -940,6 +941,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       deliveryTime: shop.showWaitTime
                           ? '${shop.estimatedWaitTime} min'
                           : null,
+
                       onTap: () {
                         Navigator.push(
                           context,

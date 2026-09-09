@@ -247,9 +247,10 @@ class _MenuScreenState extends State<MenuScreen> {
                       fit: StackFit.expand,
                       children: [
                         Hero(
-                          tag: 'shop-${widget.shop.imageUrl ?? widget.shop.name}',
+                          tag: 'shop-${widget.shop.id.isNotEmpty ? widget.shop.id : ((widget.shop.imageUrl != null && widget.shop.imageUrl!.isNotEmpty) ? widget.shop.imageUrl : widget.shop.name)}',
                           child: widget.shop.imageUrl != null && widget.shop.imageUrl!.isNotEmpty
                               ? CachedNetworkImage(
+
                                   imageUrl: widget.shop.imageUrl!,
                                   fit: BoxFit.cover,
                                   placeholder: (context, url) => const Center(
@@ -374,6 +375,7 @@ class _MenuScreenState extends State<MenuScreen> {
                           );
 
                            return MenuItemCard(
+                            id: item.id,
                             name: item.name,
                             price: item.price,
                             originalPrice: item.originalPrice,
@@ -386,6 +388,7 @@ class _MenuScreenState extends State<MenuScreen> {
                             onIncrement: () => cartProvider.incrementItem(item.id),
                             onDecrement: () => cartProvider.decrementItem(item.id),
                           ).animate()
+
                            .fade(duration: 250.ms)
                            .slideX(begin: 0.1, end: 0, duration: 250.ms, curve: Curves.easeOutBack);
                         },
