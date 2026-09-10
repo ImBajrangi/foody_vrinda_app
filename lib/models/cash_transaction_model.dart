@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 enum CashTransactionType { collection, settlement, refund }
 
 class CashTransactionModel {
@@ -27,33 +25,38 @@ class CashTransactionModel {
 
   String get formattedAmount => '₹${amount.toStringAsFixed(0)}';
 
-  factory CashTransactionModel.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
+  factory CashTransactionModel.fromMap(Map<String, dynamic> data) {
+    DateTime ts = DateTime.now();
+    if (data['timestamp'] != null) {
+      ts = DateTime.tryParse(data['timestamp'].toString()) ?? DateTime.now();
+    }
+
     return CashTransactionModel(
-      id: doc.id,
-      orderId: data['orderId'] ?? '',
-      shopId: data['shopId'] ?? '',
-      amount: (data['amount'] ?? 0).toDouble(),
+      id: data['id']?.toString() ?? '',
+      orderId: data['order_id']?.toString() ?? data['orderId']?.toString() ?? '',
+      shopId: data['shop_id']?.toString() ?? data['shopId']?.toString() ?? '',
+      amount: ((data['amount'] ?? 0) as num).toDouble(),
       type: CashTransactionType.values.firstWhere(
         (e) => e.name == data['type'],
         orElse: () => CashTransactionType.collection,
       ),
-      userId: data['userId'] ?? '',
-      userName: data['userName'] ?? 'Unknown',
-      timestamp: (data['timestamp'] as Timestamp).toDate(),
-      notes: data['notes'],
+      userId: data['user_id']?.toString() ?? data['userId']?.toString() ?? '',
+      userName: data['user_name']?.toString() ?? data['userName']?.toString() ?? 'Unknown',
+      timestamp: ts,
+      notes: data['notes']?.toString(),
     );
   }
 
-  Map<String, dynamic> toFirestore() {
+  Map<String, dynamic> toMap() {
     return {
-      'orderId': orderId,
-      'shopId': shopId,
+      'id': id,
+      'order_id': orderId,
+      'shop_id': shopId,
       'amount': amount,
       'type': type.name,
-      'userId': userId,
-      'userName': userName,
-      'timestamp': Timestamp.fromDate(timestamp),
+      'user_id': userId,
+      'user_name': userName,
+      'timestamp': timestamp.toUtc().toIso8601String(),
       'notes': notes,
     };
   }

@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 class MenuItemModel {
   final String id;
   final String shopId;
@@ -31,57 +29,51 @@ class MenuItemModel {
     this.createdAt,
   });
 
-  factory MenuItemModel.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>?;
-    if (data == null) {
-      return MenuItemModel(
-        id: doc.id,
-        shopId: '',
-        name: 'Unknown Item',
-        price: 0,
-      );
+  factory MenuItemModel.fromMap(Map<String, dynamic> data, [String? id]) {
+    final itemId = id ?? data['id']?.toString() ?? '';
+    String? image = data['image'] ?? data['imageUrl'] ?? data['image_url'];
+
+    DateTime? parsedCreatedAt;
+    if (data['created_at'] != null) {
+      parsedCreatedAt = DateTime.tryParse(data['created_at'].toString());
+    } else if (data['createdAt'] != null) {
+      parsedCreatedAt = DateTime.tryParse(data['createdAt'].toString());
     }
 
-    // Handle both 'image' and 'imageUrl' field names for compatibility
-    String? image = data['imageUrl'] ?? data['image'];
-
     return MenuItemModel(
-      id: doc.id,
-      shopId: data['shopId'] ?? '',
-      name: data['name'] ?? 'Unnamed Item',
-      price: (data['price'] ?? 0).toDouble(),
-      originalPrice: data['originalPrice'] != null 
-          ? (data['originalPrice']).toDouble() 
+      id: itemId,
+      shopId: (data['shop_id'] ?? data['shopId'] ?? '').toString(),
+      name: (data['name'] ?? 'Unnamed Item').toString(),
+      price: (data['price'] is num ? data['price'] : num.tryParse(data['price']?.toString() ?? '0') ?? 0).toDouble(),
+      originalPrice: data['original_price'] != null || data['originalPrice'] != null
+          ? ((data['original_price'] ?? data['originalPrice']) as num).toDouble()
           : null,
-      imageUrl: image,
-      isAvailable: data['isAvailable'] ?? true,
-      category: data['category'],
-      description: data['description'],
-      isVeg: data['isVeg'] ?? true,
-      rating: (data['rating'] ?? 0.0).toDouble(),
-      ratingCount: data['ratingCount'] ?? 0,
-      createdAt: data['createdAt'] != null
-          ? (data['createdAt'] as Timestamp).toDate()
-          : null,
+      imageUrl: image?.toString(),
+      isAvailable: data['is_available'] ?? data['isAvailable'] ?? true,
+      category: data['category']?.toString(),
+      description: data['description']?.toString(),
+      isVeg: data['is_veg'] ?? data['isVeg'] ?? true,
+      rating: ((data['rating'] ?? 0.0) as num).toDouble(),
+      ratingCount: (data['rating_count'] ?? data['ratingCount'] ?? 0) as int,
+      createdAt: parsedCreatedAt,
     );
   }
 
-  Map<String, dynamic> toFirestore() {
+  Map<String, dynamic> toMap() {
     return {
-      'shopId': shopId,
+      'id': id,
+      'shop_id': shopId,
       'name': name,
       'price': price,
-      'originalPrice': originalPrice,
+      'original_price': originalPrice,
       'image': imageUrl,
-      'isAvailable': isAvailable,
+      'is_available': isAvailable,
       'category': category,
       'description': description,
-      'isVeg': isVeg,
+      'is_veg': isVeg,
       'rating': rating,
-      'ratingCount': ratingCount,
-      'createdAt': createdAt != null
-          ? Timestamp.fromDate(createdAt!)
-          : FieldValue.serverTimestamp(),
+      'rating_count': ratingCount,
+      'created_at': createdAt?.toUtc().toIso8601String(),
     };
   }
 

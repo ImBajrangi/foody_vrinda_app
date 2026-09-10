@@ -1,4 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+
 
 /// Time periods for intuitive scheduling
 enum TimePeriod {
@@ -321,16 +321,23 @@ class ShopModel {
   }) : schedule = schedule ?? ShopSchedule(),
        alarmSettings = alarmSettings ?? AlarmSettings();
 
-  factory ShopModel.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>?;
-    if (data == null) {
-      return ShopModel(id: doc.id, name: 'Unknown Shop');
+  factory ShopModel.fromMap(Map<String, dynamic> data, [String? id]) {
+    final shopId = id ?? data['id']?.toString() ?? '';
+    String? image = data['image'] ?? data['imageUrl'] ?? data['image_url'];
+
+    // Parse coordinates - either coordinates: {lat, lng} or separate latitude/longitude
+    double? lat;
+    double? lng;
+    if (data['coordinates'] != null && data['coordinates'] is Map) {
+      final coords = data['coordinates'] as Map;
+      lat = (coords['lat'] as num?)?.toDouble();
+      lng = (coords['lng'] as num?)?.toDouble();
+    } else {
+      lat = (data['latitude'] ?? data['lat']) != null ? ((data['latitude'] ?? data['lat']) as num).toDouble() : null;
+      lng = (data['longitude'] ?? data['lng']) != null ? ((data['longitude'] ?? data['lng']) as num).toDouble() : null;
     }
 
-    // Handle both 'image' and 'imageUrl' field names
-    String? image = data['imageUrl'] ?? data['image'];
-
-    // Parse schedule - handle both object and non-existent cases
+    // Parse schedule
     ShopSchedule schedule;
     if (data['schedule'] != null && data['schedule'] is Map) {
       schedule = ShopSchedule.fromMap(data['schedule'] as Map<String, dynamic>);
@@ -340,71 +347,69 @@ class ShopModel {
 
     // Parse alarm settings
     AlarmSettings alarmSettings;
-    if (data['alarmSettings'] != null && data['alarmSettings'] is Map) {
-      alarmSettings = AlarmSettings.fromMap(
-        data['alarmSettings'] as Map<String, dynamic>,
-      );
+    final alarmData = data['alarm_settings'] ?? data['alarmSettings'];
+    if (alarmData != null && alarmData is Map) {
+      alarmSettings = AlarmSettings.fromMap(alarmData as Map<String, dynamic>);
     } else {
       alarmSettings = AlarmSettings();
     }
 
     // Parse createdAt
     DateTime? createdAt;
-    if (data['createdAt'] != null) {
-      if (data['createdAt'] is Timestamp) {
-        createdAt = (data['createdAt'] as Timestamp).toDate();
-      }
+    if (data['created_at'] != null) {
+      createdAt = DateTime.tryParse(data['created_at'].toString());
+    } else if (data['createdAt'] != null) {
+      createdAt = DateTime.tryParse(data['createdAt'].toString());
     }
 
     return ShopModel(
-      id: doc.id,
+      id: shopId,
       name: data['name']?.toString() ?? 'Unnamed Shop',
       address: data['address']?.toString(),
-      phoneNumber: data['phoneNumber']?.toString(),
-      latitude: (data['latitude'] ?? data['lat'])?.toDouble(),
-      longitude: (data['longitude'] ?? data['lng'])?.toDouble(),
+      phoneNumber: (data['phone'] ?? data['phoneNumber'])?.toString(),
+      latitude: lat,
+      longitude: lng,
       imageUrl: image,
-      ownerId: data['ownerId']?.toString(),
+      ownerId: (data['owner_id'] ?? data['ownerId'])?.toString(),
       schedule: schedule,
       alarmSettings: alarmSettings,
       createdAt: createdAt,
-      rating: (data['rating'] ?? 0.0).toDouble(),
-      ratingCount: data['ratingCount'] ?? 0,
-      showOrderQueue: data['showOrderQueue'] ?? false,
-      estimatedWaitTime: data['estimatedWaitTime'] ?? 15,
-      showWaitTime: data['showWaitTime'] ?? false,
-      minimumOrderAmount: (data['minimumOrderAmount'] ?? 0.0).toDouble(),
-      deliveryCharge: (data['deliveryCharge'] ?? 0.0).toDouble(),
-      gstPercentage: (data['gstPercentage'] ?? 5.0).toDouble(),
-      discountTag: data['discountTag']?.toString(),
-      discountDescription: data['discountDescription']?.toString(),
+      rating: ((data['rating'] ?? 0.0) as num).toDouble(),
+      ratingCount: (data['rating_count'] ?? data['ratingCount'] ?? 0) as int,
+      showOrderQueue: data['show_order_queue'] ?? data['showOrderQueue'] ?? false,
+      estimatedWaitTime: (data['estimated_wait_time'] ?? data['estimatedWaitTime'] ?? 15) as int,
+      showWaitTime: data['show_wait_time'] ?? data['showWaitTime'] ?? false,
+      minimumOrderAmount: ((data['minimum_order_amount'] ?? data['minimumOrderAmount'] ?? 0.0) as num).toDouble(),
+      deliveryCharge: ((data['delivery_charge'] ?? data['deliveryCharge'] ?? 0.0) as num).toDouble(),
+      gstPercentage: ((data['gst_percentage'] ?? data['gstPercentage'] ?? 5.0) as num).toDouble(),
+      discountTag: (data['discount_tag'] ?? data['discountTag'])?.toString(),
+      discountDescription: (data['discount_description'] ?? data['discountDescription'])?.toString(),
     );
   }
 
-  Map<String, dynamic> toFirestore() {
+  Map<String, dynamic> toMap() {
     return {
+      'id': id,
       'name': name,
       'address': address,
-      'phoneNumber': phoneNumber,
+      'phone': phoneNumber,
       'latitude': latitude,
       'longitude': longitude,
-      'image': imageUrl, // Use 'image' to match existing data
-      'ownerId': ownerId,
+      'image': imageUrl,
+      'owner_id': ownerId,
       'schedule': schedule.toMap(),
-      'alarmSettings': alarmSettings.toMap(),
-      'createdAt': createdAt != null
-          ? Timestamp.fromDate(createdAt!)
-          : FieldValue.serverTimestamp(),
+      'alarm_settings': alarmSettings.toMap(),
+      'created_at': createdAt?.toUtc().toIso8601String(),
       'rating': rating,
-      'ratingCount': ratingCount,
-      'showOrderQueue': showOrderQueue,
-      'estimatedWaitTime': estimatedWaitTime,
-      'showWaitTime': showWaitTime,
-      'minimumOrderAmount': minimumOrderAmount,
-      'deliveryCharge': deliveryCharge,
-      'gstPercentage': gstPercentage,
-      'discountTag': discountTag,
-      'discountDescription': discountDescription,
+      'rating_count': ratingCount,
+      'show_order_queue': showOrderQueue,
+      'estimated_wait_time': estimatedWaitTime,
+      'show_wait_time': showWaitTime,
+      'minimum_order_amount': minimumOrderAmount,
+      'delivery_charge': deliveryCharge,
+      'gst_percentage': gstPercentage,
+      'discount_tag': discountTag,
+      'discount_description': discountDescription,
     };
   }
 

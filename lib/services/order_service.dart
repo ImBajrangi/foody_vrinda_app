@@ -1,10 +1,12 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:async';
 import '../models/order_model.dart';
 import '../models/cart_item_model.dart';
 import '../models/cash_transaction_model.dart';
+import 'supabase_service.dart';
+import '../config/supabase_config.dart';
 
 class OrderService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final SupabaseService _supabase = SupabaseService();
 
   // Create a new order
   Future<String> createOrder({
@@ -25,10 +27,6 @@ class OrderService {
     double? totalAmount,
   }) async {
     try {
-      print('OrderService: Creating order for shop $shopId');
-      print('OrderService: Customer: $customerName, Phone: $customerPhone');
-      print('OrderService: Items count: ${cartItems.length}');
-
       final items = cartItems
           .map(
             (cartItem) => OrderItem(
@@ -40,55 +38,65 @@ class OrderService {
           )
           .toList();
 
-      // Calculate subtotal from items if not provided
       final calculatedSubtotal = subtotal > 0
           ? subtotal
           : cartItems.fold<double>(0, (sum, item) => sum + item.total);
 
-      // Calculate total if not provided
       final calculatedTotal =
           totalAmount ?? (calculatedSubtotal + deliveryCharge + gstAmount);
 
-      print(
-        'OrderService: Subtotal: $calculatedSubtotal, Delivery: $deliveryCharge, GST: $gstAmount, Total: $calculatedTotal',
-      );
-
-      // Generate order number based on timestamp
       final now = DateTime.now();
-      final orderNumber = '${now.millisecondsSinceEpoch}';
+      final orderId =
+          'order-${now.millisecondsSinceEpoch}-${(1000 + (now.microsecond % 9000))}';
 
       final orderData = {
+        'id': orderId,
         'shopId': shopId,
+        'shop_id': shopId,
         'userId': userId,
+        'user_id': userId,
         'customerName': customerName,
+        'customer_name': customerName,
         'customerPhone': customerPhone,
+        'customer_phone': customerPhone,
         'deliveryAddress': deliveryAddress,
+        'delivery_address': deliveryAddress,
+        'customer_address': deliveryAddress,
         'items': items.map((item) => item.toMap()).toList(),
         'subtotal': calculatedSubtotal,
         'deliveryCharge': deliveryCharge,
+        'delivery_charge': deliveryCharge,
         'gstAmount': gstAmount,
+        'gst_amount': gstAmount,
         'totalAmount': calculatedTotal,
+        'total_amount': calculatedTotal,
         'status': 'new',
         'paymentId': paymentId,
+        'payment_id': paymentId,
         'isTestOrder': isTestOrder,
+        'is_test_order': isTestOrder,
         'customerLatitude': customerLatitude,
         'customerLongitude': customerLongitude,
+        'delivery_coordinates': {
+          'lat': customerLatitude ?? 27.5706,
+          'lng': customerLongitude ?? 77.6593,
+        },
         'paymentMethod': paymentMethod.value,
+        'payment_method': paymentMethod.value,
         'cashStatus': paymentMethod == PaymentMethod.online
             ? CashStatus.none.value
             : CashStatus.pending.value,
-        'orderNumber': orderNumber,
-        'createdAt': FieldValue.serverTimestamp(),
-        'updatedAt': FieldValue.serverTimestamp(),
+        'cash_status': paymentMethod == PaymentMethod.online
+            ? 'collected'
+            : 'pending',
+        'created_at': now.toUtc().toIso8601String(),
+        'updated_at': now.toUtc().toIso8601String(),
       };
 
-      print('OrderService: Saving order to Firestore...');
-      final docRef = await _firestore.collection('orders').add(orderData);
-
-      print('OrderService: Order created successfully with ID: ${docRef.id}');
-      return docRef.id;
+      await _supabase.createOrder(orderData);
+      return orderId;
     } catch (e) {
-      print('OrderService: Error creating order: $e');
+      print('Error creating order: $e');
       rethrow;
     }
   }
@@ -96,688 +104,508 @@ class OrderService {
   // Get order by ID
   Future<OrderModel?> getOrder(String orderId) async {
     try {
-      final doc = await _firestore.collection('orders').doc(orderId).get();
-      if (doc.exists) {
-        return OrderModel.fromFirestore(doc);
+      final data = await _supabase.getOrder(orderId);
+      if (data != null) {
+        return OrderModel.fromMap(data);
       }
       return null;
     } catch (e) {
-      print('OrderService: Error getting order: $e');
+      print('Error getting order: $e');
       return null;
     }
   }
 
-  // Order stream
+  // Stream single order for real-time tracking
   Stream<OrderModel?> orderStream(String orderId) {
-    return _firestore.collection('orders').doc(orderId).snapshots().map((doc) {
-      if (doc.exists) {
-        print('OrderService: Order stream update for $orderId');
-        return OrderModel.fromFirestore(doc);
-      }
-      return null;
+    return _supabase.streamOrder(orderId).map((data) {
+      if (data == null) return null;
+      return OrderModel.fromMap(data);
     });
   }
 
-  // Get orders for a shop (without ordering to avoid index requirement)
-  Stream<List<OrderModel>> getShopOrders(String shopId, {OrderStatus? status}) {
-    Query<Map<String, dynamic>> query = _firestore
-        .collection('orders')
-        .where('shopId', isEqualTo: shopId);
+  // Stream orders for a specific shop
+  Stream<List<OrderModel>> getOrdersForShop(String shopId, {OrderStatus? status, int? limit}) {
+    return _supabase.client
+        .from(SupabaseConfig.ordersTable)
+        .stream(primaryKey: ['id'])
+        .eq('shop_id', shopId)
+        .map((records) {
+          var orders = records.map((data) => OrderModel.fromMap(data)).toList();
+          if (status != null) {
+            orders = orders.where((o) => o.status == status).toList();
+          }
+          orders.sort((a, b) => (b.createdAt ?? DateTime.now()).compareTo(a.createdAt ?? DateTime.now()));
+          if (limit != null && orders.length > limit) {
+            orders = orders.take(limit).toList();
+          }
+          return orders;
+        })
+        .handleError((_) => <OrderModel>[]);
+  }
 
-    if (status != null) {
-      query = query.where('status', isEqualTo: status.value);
+  // Stream orders for a user
+  Stream<List<OrderModel>> getUserOrders(String userId) {
+    return getOrdersForUser(userId);
+  }
+
+  Stream<List<OrderModel>> getOrdersForUser(String userId) {
+    return _supabase.client
+        .from(SupabaseConfig.ordersTable)
+        .stream(primaryKey: ['id'])
+        .eq('user_id', userId)
+        .map((records) {
+          final orders = records.map((data) => OrderModel.fromMap(data)).toList();
+          orders.sort((a, b) => (b.createdAt ?? DateTime.now()).compareTo(a.createdAt ?? DateTime.now()));
+          return orders;
+        })
+        .handleError((_) => <OrderModel>[]);
+  }
+
+  // Stream all orders
+  Stream<List<OrderModel>> getAllOrders({int? limit}) {
+    return _supabase.client
+        .from(SupabaseConfig.ordersTable)
+        .stream(primaryKey: ['id'])
+        .map((records) {
+          var orders = records.map((data) => OrderModel.fromMap(data)).toList();
+          orders.sort((a, b) => (b.createdAt ?? DateTime.now()).compareTo(a.createdAt ?? DateTime.now()));
+          if (limit != null && orders.length > limit) {
+            orders = orders.take(limit).toList();
+          }
+          return orders;
+        })
+        .handleError((_) => <OrderModel>[]);
+  }
+
+  // Stream kitchen orders (new or preparing)
+  Stream<List<OrderModel>> getKitchenOrders([String? shopId]) {
+    var stream = _supabase.client.from(SupabaseConfig.ordersTable).stream(primaryKey: ['id']);
+    if (shopId != null && shopId.isNotEmpty) {
+      stream = stream.eq('shop_id', shopId);
     }
-
-    return query.snapshots().map(
-      (snapshot) =>
-          snapshot.docs.map((doc) => OrderModel.fromFirestore(doc)).toList()
-            ..sort(
-              (a, b) => (b.createdAt ?? DateTime.now()).compareTo(
-                a.createdAt ?? DateTime.now(),
-              ),
-            ),
-    );
+    return stream.map((records) {
+      final orders = records
+          .map((data) => OrderModel.fromMap(data))
+          .where((o) => o.status == OrderStatus.newOrder || o.status == OrderStatus.preparing)
+          .toList();
+      orders.sort((a, b) => (a.createdAt ?? DateTime.now()).compareTo(b.createdAt ?? DateTime.now()));
+      return orders;
+    }).handleError((_) => <OrderModel>[]);
   }
 
-  // Get active orders for a shop (new, preparing, ready_for_pickup, out_for_delivery)
-  Stream<List<OrderModel>> getActiveOrders(String shopId) {
-    return _firestore
-        .collection('orders')
-        .where('shopId', isEqualTo: shopId)
-        .where(
-          'status',
-          whereIn: ['new', 'preparing', 'ready_for_pickup', 'out_for_delivery'],
-        )
-        .snapshots()
-        .map(
-          (snapshot) =>
-              snapshot.docs.map((doc) => OrderModel.fromFirestore(doc)).toList()
-                ..sort(
-                  (a, b) => (b.createdAt ?? DateTime.now()).compareTo(
-                    a.createdAt ?? DateTime.now(),
-                  ),
-                ),
-        );
-  }
-
-  // Get kitchen orders (new and preparing)
-  Stream<List<OrderModel>> getKitchenOrders(String? shopId) {
-    Query<Map<String, dynamic>> query = _firestore.collection('orders');
-
-    if (shopId != null) {
-      query = query.where('shopId', isEqualTo: shopId);
+  // Stream delivery orders
+  Stream<List<OrderModel>> getDeliveryOrders([String? shopId]) {
+    var stream = _supabase.client.from(SupabaseConfig.ordersTable).stream(primaryKey: ['id']);
+    if (shopId != null && shopId.isNotEmpty) {
+      stream = stream.eq('shop_id', shopId);
     }
-
-    return query
-        .where('status', whereIn: ['new', 'preparing'])
-        .snapshots()
-        .map(
-          (snapshot) =>
-              snapshot.docs.map((doc) => OrderModel.fromFirestore(doc)).toList()
-                ..sort(
-                  (a, b) => (b.createdAt ?? DateTime.now()).compareTo(
-                    a.createdAt ?? DateTime.now(),
-                  ),
-                ),
-        );
+    return stream.map((records) {
+      final orders = records
+          .map((data) => OrderModel.fromMap(data))
+          .where((o) =>
+              o.status == OrderStatus.readyForPickup ||
+              o.status == OrderStatus.outForDelivery)
+          .toList();
+      orders.sort((a, b) => (b.createdAt ?? DateTime.now()).compareTo(a.createdAt ?? DateTime.now()));
+      return orders;
+    }).handleError((_) => <OrderModel>[]);
   }
 
-  // Get delivery orders (ready_for_pickup, ready, out_of_kitchen, out_for_delivery, in_transit)
-  Stream<List<OrderModel>> getDeliveryOrders(String? shopId) {
-    Query<Map<String, dynamic>> query = _firestore.collection('orders');
-
-    if (shopId != null) {
-      query = query.where('shopId', isEqualTo: shopId);
-    }
-
-    return query
-        .where(
-          'status',
-          whereIn: [
-            'ready_for_pickup',
-            'readyForPickup',
-            'ready',
-            'out_of_kitchen',
-            'out_for_delivery',
-            'outForDelivery',
-            'picked_up',
-            'in_transit',
-          ],
-        )
-        .snapshots()
-        .map(
-          (snapshot) =>
-              snapshot.docs.map((doc) => OrderModel.fromFirestore(doc)).toList()
-                ..sort(
-                  (a, b) => (b.createdAt ?? DateTime.now()).compareTo(
-                    a.createdAt ?? DateTime.now(),
-                  ),
-                ),
-        );
-  }
-
-  // Get delivery orders for multiple shops
+  // Stream delivery orders for multi-shop
   Stream<List<OrderModel>> getDeliveryOrdersMultiShop(List<String> shopIds) {
-    if (shopIds.isEmpty) {
-      return Stream.value([]);
-    }
-
-    return _firestore
-        .collection('orders')
-        .where('shopId', whereIn: shopIds)
-        .where(
-          'status',
-          whereIn: [
-            'ready_for_pickup',
-            'readyForPickup',
-            'ready',
-            'out_of_kitchen',
-            'out_for_delivery',
-            'outForDelivery',
-            'picked_up',
-            'in_transit',
-          ],
-        )
-        .snapshots()
-        .map(
-          (snapshot) =>
-              snapshot.docs.map((doc) => OrderModel.fromFirestore(doc)).toList()
-                ..sort(
-                  (a, b) => (b.createdAt ?? DateTime.now()).compareTo(
-                    a.createdAt ?? DateTime.now(),
-                  ),
-                ),
-        );
+    return _supabase.client
+        .from(SupabaseConfig.ordersTable)
+        .stream(primaryKey: ['id'])
+        .map((records) {
+          final orders = records
+              .where((r) => shopIds.contains(r['shop_id'] ?? r['shopId']))
+              .map((data) => OrderModel.fromMap(data))
+              .where((o) =>
+                  o.status == OrderStatus.readyForPickup ||
+                  o.status == OrderStatus.outForDelivery)
+              .toList();
+          orders.sort((a, b) => (b.createdAt ?? DateTime.now()).compareTo(a.createdAt ?? DateTime.now()));
+          return orders;
+        })
+        .handleError((_) => <OrderModel>[]);
   }
 
-  // Get completed orders for a shop
-  Stream<List<OrderModel>> getCompletedOrders(
-    String shopId, {
+  // Stream completed orders
+  Stream<List<OrderModel>> getCompletedOrders([
+    String? shopId,
+    String? deliveryStaffId,
     DateTime? startDate,
     DateTime? endDate,
-  }) {
-    return _firestore
-        .collection('orders')
-        .where('shopId', isEqualTo: shopId)
-        .where('status', isEqualTo: 'completed')
-        .snapshots()
-        .map(
-          (snapshot) =>
-              snapshot.docs.map((doc) => OrderModel.fromFirestore(doc)).toList()
-                ..sort(
-                  (a, b) => (b.createdAt ?? DateTime.now()).compareTo(
-                    a.createdAt ?? DateTime.now(),
-                  ),
-                ),
-        );
+  ]) {
+    var stream = _supabase.client.from(SupabaseConfig.ordersTable).stream(primaryKey: ['id']);
+    if (shopId != null && shopId.isNotEmpty) {
+      stream = stream.eq('shop_id', shopId);
+    }
+    return stream.map((records) {
+      var orders = records
+          .map((data) => OrderModel.fromMap(data))
+          .where((o) => o.status == OrderStatus.completed)
+          .toList();
+      if (deliveryStaffId != null) {
+        orders = orders.where((o) => o.collectedBy == deliveryStaffId).toList();
+      }
+      if (startDate != null) {
+        orders = orders.where((o) => o.createdAt != null && o.createdAt!.isAfter(startDate)).toList();
+      }
+      if (endDate != null) {
+        orders = orders.where((o) => o.createdAt != null && o.createdAt!.isBefore(endDate)).toList();
+      }
+      orders.sort((a, b) => (b.createdAt ?? DateTime.now()).compareTo(a.createdAt ?? DateTime.now()));
+      return orders;
+    }).handleError((_) => <OrderModel>[]);
   }
 
-  // Get user's orders
-  Stream<List<OrderModel>> getUserOrders(String userId) {
-    return _firestore
-        .collection('orders')
-        .where('userId', isEqualTo: userId)
-        .snapshots()
-        .map(
-          (snapshot) =>
-              snapshot.docs.map((doc) => OrderModel.fromFirestore(doc)).toList()
-                ..sort(
-                  (a, b) => (b.createdAt ?? DateTime.now()).compareTo(
-                    a.createdAt ?? DateTime.now(),
-                  ),
-                ),
-        );
+  // Stream returned orders
+  Stream<List<OrderModel>> getReturnedOrders([String? shopId]) {
+    var stream = _supabase.client.from(SupabaseConfig.ordersTable).stream(primaryKey: ['id']);
+    if (shopId != null && shopId.isNotEmpty) {
+      stream = stream.eq('shop_id', shopId);
+    }
+    return stream.map((records) {
+      final orders = records
+          .map((data) => OrderModel.fromMap(data))
+          .where((o) => o.status == OrderStatus.returned)
+          .toList();
+      orders.sort((a, b) => (b.createdAt ?? DateTime.now()).compareTo(a.createdAt ?? DateTime.now()));
+      return orders;
+    }).handleError((_) => <OrderModel>[]);
+  }
+
+  // Stream unsettled cash orders
+  Stream<List<OrderModel>> getUnsettledCashOrders([String? shopId]) {
+    var stream = _supabase.client.from(SupabaseConfig.ordersTable).stream(primaryKey: ['id']);
+    if (shopId != null && shopId.isNotEmpty) {
+      stream = stream.eq('shop_id', shopId);
+    }
+    return stream.map((records) {
+      final orders = records
+          .map((data) => OrderModel.fromMap(data))
+          .where((o) =>
+              o.paymentMethod == PaymentMethod.cash &&
+              o.cashStatus == CashStatus.collected)
+          .toList();
+      orders.sort((a, b) => (b.createdAt ?? DateTime.now()).compareTo(a.createdAt ?? DateTime.now()));
+      return orders;
+    }).handleError((_) => <OrderModel>[]);
+  }
+
+  // Orders placed today
+  Future<List<OrderModel>> getOrdersToday([String? shopId]) async {
+    final now = DateTime.now();
+    final startOfDay = DateTime(now.year, now.month, now.day);
+    try {
+      var query = _supabase.client.from(SupabaseConfig.ordersTable).select('*');
+      if (shopId != null && shopId.isNotEmpty) {
+        query = query.eq('shop_id', shopId);
+      }
+      final data = await query;
+      final orders = List<Map<String, dynamic>>.from(data)
+          .map((d) => OrderModel.fromMap(d))
+          .where((o) => o.createdAt != null && o.createdAt!.isAfter(startOfDay))
+          .toList();
+      return orders;
+    } catch (_) {
+      return [];
+    }
   }
 
   // Update order status
-  Future<void> updateOrderStatus(String orderId, OrderStatus status) async {
-    try {
-      print('OrderService: Updating order $orderId to status ${status.value}');
-      await _firestore.collection('orders').doc(orderId).update({
-        'status': status.value,
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
-      print('OrderService: Order status updated successfully');
-    } catch (e) {
-      print('OrderService: Error updating order status: $e');
-      rethrow;
-    }
-  }
-
-  // Cancel order
-  Future<void> cancelOrder(String orderId) async {
-    try {
-      await _firestore.collection('orders').doc(orderId).delete();
-      print('OrderService: Order $orderId cancelled');
-    } catch (e) {
-      print('OrderService: Error cancelling order: $e');
-      rethrow;
-    }
-  }
-
-  // Get all orders (developer only)
-  Stream<List<OrderModel>> getAllOrders({int limit = 50}) {
-    return _firestore
-        .collection('orders')
-        .limit(limit)
-        .snapshots()
-        .map(
-          (snapshot) =>
-              snapshot.docs.map((doc) => OrderModel.fromFirestore(doc)).toList()
-                ..sort(
-                  (a, b) => (b.createdAt ?? DateTime.now()).compareTo(
-                    a.createdAt ?? DateTime.now(),
-                  ),
-                ),
-        );
-  }
-
-  // Get orders today
-  Future<List<OrderModel>> getOrdersToday() async {
-    final now = DateTime.now();
-    final startOfDay = DateTime(now.year, now.month, now.day);
-
-    final snapshot = await _firestore
-        .collection('orders')
-        .where(
-          'createdAt',
-          isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay),
-        )
-        .get();
-
-    return snapshot.docs.map((doc) => OrderModel.fromFirestore(doc)).toList();
-  }
-
-  // Get order statistics for a shop
-  Future<Map<String, dynamic>> getOrderStats(String shopId) async {
-    // Get all orders for this shop (not just completed)
-    final allOrdersSnapshot = await _firestore
-        .collection('orders')
-        .where('shopId', isEqualTo: shopId)
-        .get();
-
-    final allOrders = allOrdersSnapshot.docs
-        .map((doc) => OrderModel.fromFirestore(doc))
-        .toList();
-
-    // Calculate status counts
-    int pending = 0;
-    int preparing = 0;
-    int ready = 0;
-    int completed = 0;
-    int unreachable = 0;
-
-    for (final order in allOrders) {
-      if (order.isUnreachable &&
-          order.status != OrderStatus.completed &&
-          order.status != OrderStatus.cancelled &&
-          order.status != OrderStatus.returned) {
-        unreachable++;
-      }
-      switch (order.status) {
-        case OrderStatus.newOrder:
-          pending++;
-          break;
-        case OrderStatus.preparing:
-          preparing++;
-          break;
-        case OrderStatus.readyForPickup:
-          ready++;
-          break;
-        case OrderStatus.outForDelivery:
-          completed++;
-          break;
-        case OrderStatus.completed:
-          completed++;
-          break;
-        case OrderStatus.cancelled:
-        case OrderStatus.returned:
-          break;
-      }
-    }
-
-    // Calculate weekly sales (last 7 days)
-    final now = DateTime.now();
-    final weeklySales = List<double>.filled(7, 0.0);
-
-    for (final order in allOrders) {
-      if (order.status == OrderStatus.completed) {
-        final orderDate = order.createdAt;
-        if (orderDate != null) {
-          final dayOfWeek = orderDate.weekday - 1; // 0 = Monday, 6 = Sunday
-          if (dayOfWeek >= 0 && dayOfWeek < 7) {
-            // Check if this order is from the current week
-            final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
-            final startOfWeekDate = DateTime(
-              startOfWeek.year,
-              startOfWeek.month,
-              startOfWeek.day,
-            );
-            if (orderDate.isAfter(startOfWeekDate) ||
-                orderDate.isAtSameMomentAs(startOfWeekDate)) {
-              weeklySales[dayOfWeek] += order.totalAmount;
-            }
-          }
-        }
-      }
-    }
-
-    // Calculate totals (from completed orders only)
-    final completedOrders = allOrders
-        .where((o) => o.status == OrderStatus.completed)
-        .toList();
-
-    final totalRevenue = completedOrders.fold<double>(
-      0,
-      (sum, order) => sum + order.totalAmount,
-    );
-    final totalOrders = completedOrders.length;
-    final avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0.0;
-
-    return {
-      'totalRevenue': totalRevenue,
-      'totalOrders': totalOrders,
-      'avgOrderValue': avgOrderValue,
-      'pending': pending,
-      'preparing': preparing,
-      'ready': ready,
-      'delivered': completed,
-      'unreachable': unreachable,
-      'weeklySales': weeklySales,
-    };
-  }
-
-  // Get delivery statistics for delivery staff dashboard
-  Future<Map<String, dynamic>> getDeliveryStats(String? shopId) async {
-    final now = DateTime.now();
-    final startOfToday = DateTime(now.year, now.month, now.day);
-    final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
-    final startOfWeekDate = DateTime(
-      startOfWeek.year,
-      startOfWeek.month,
-      startOfWeek.day,
-    );
-
-    // Build query based on shopId
-    Query<Map<String, dynamic>> query = _firestore.collection('orders');
-    if (shopId != null) {
-      query = query.where('shopId', isEqualTo: shopId);
-    }
-
-    final snapshot = await query.get();
-    final allOrders = snapshot.docs
-        .map((doc) => OrderModel.fromFirestore(doc))
-        .toList();
-
-    // Today's completed deliveries
-    int todayDeliveries = 0;
-    double todayCollections = 0.0;
-
-    // Active orders (ready_for_pickup + out_for_delivery)
-    int activeOrders = 0;
-
-    // Weekly delivery counts (Mon-Sun)
-    final weeklyDeliveries = List<int>.filled(7, 0);
-
-    for (final order in allOrders) {
-      final orderDate = order.createdAt;
-
-      // Count active orders
-      if (order.status == OrderStatus.readyForPickup ||
-          order.status == OrderStatus.outForDelivery) {
-        activeOrders++;
-      }
-
-      // Count completed orders
-      if (order.status == OrderStatus.completed && orderDate != null) {
-        // Today's stats
-        if (orderDate.isAfter(startOfToday) ||
-            orderDate.isAtSameMomentAs(startOfToday)) {
-          todayDeliveries++;
-          // Only add to collections if it's a cash payment
-          if (order.paymentMethod == PaymentMethod.cash) {
-            todayCollections += order.totalAmount;
-          }
-        }
-
-        // Weekly stats
-        if (orderDate.isAfter(startOfWeekDate) ||
-            orderDate.isAtSameMomentAs(startOfWeekDate)) {
-          final dayOfWeek = orderDate.weekday - 1; // 0 = Monday
-          if (dayOfWeek >= 0 && dayOfWeek < 7) {
-            weeklyDeliveries[dayOfWeek]++;
-          }
-        }
-      }
-    }
-
-    // Total completed deliveries (all time)
-    final totalDeliveries = allOrders
-        .where((o) => o.status == OrderStatus.completed)
-        .length;
-
-    // Total collections (all time) - only cash payments
-    final totalCollections = allOrders
-        .where(
-          (o) =>
-              o.status == OrderStatus.completed &&
-              o.paymentMethod == PaymentMethod.cash,
-        )
-        .fold<double>(0, (sum, o) => sum + o.totalAmount);
-
-    return {
-      'todayDeliveries': todayDeliveries,
-      'todayCollections': todayCollections,
-      'activeOrders': activeOrders,
-      'weeklyDeliveries': weeklyDeliveries,
-      'totalDeliveries': totalDeliveries,
-      'totalCollections': totalCollections,
-    };
-  }
-
-  // Collect cash (used by delivery staff)
-  Future<void> collectCash(
+  Future<void> updateOrderStatus(
     String orderId,
-    String userId,
-    String userName,
-  ) async {
+    OrderStatus status, {
+    String? deliveryStaffId,
+    String? notes,
+  }) async {
     try {
-      final doc = await _firestore.collection('orders').doc(orderId).get();
-      if (!doc.exists) return;
-      final order = OrderModel.fromFirestore(doc);
+      final extraFields = <String, dynamic>{};
+      if (deliveryStaffId != null) extraFields['delivery_staff_id'] = deliveryStaffId;
+      if (notes != null) extraFields['notes'] = notes;
 
-      final batch = _firestore.batch();
-
-      // Update order
-      batch.update(_firestore.collection('orders').doc(orderId), {
-        'status': OrderStatus.completed.value,
-        'cashStatus': CashStatus.collected.value,
-        'collectedBy': userId,
-        'cashCollectedAt': FieldValue.serverTimestamp(),
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
-
-      // Create audit transaction
-      final transactionRef = _firestore.collection('cash_transactions').doc();
-      final transaction = CashTransactionModel(
-        id: transactionRef.id,
-        orderId: orderId,
-        shopId: order.shopId,
-        amount: order.totalAmount,
-        type: CashTransactionType.collection,
-        userId: userId,
-        userName: userName,
-        timestamp: DateTime.now(),
-        notes: 'Cash collected by delivery partner',
-      );
-      batch.set(transactionRef, transaction.toFirestore());
-
-      await batch.commit();
-      print('OrderService: Cash collected for $orderId');
+      await _supabase.updateOrderStatus(orderId, status.value, extraFields: extraFields);
     } catch (e) {
-      print('OrderService: Error collecting cash: $e');
+      print('Error updating order status: $e');
       rethrow;
     }
   }
 
-  // Settle cash (used by shop owner)
-  Future<void> settleCash(
-    String orderId,
-    String userId,
-    String userName,
-  ) async {
+  // Delete order
+  Future<void> deleteOrder(String orderId) async {
     try {
-      final doc = await _firestore.collection('orders').doc(orderId).get();
-      if (!doc.exists) return;
-      final order = OrderModel.fromFirestore(doc);
-
-      final batch = _firestore.batch();
-
-      // Update order
-      batch.update(_firestore.collection('orders').doc(orderId), {
-        'cashStatus': CashStatus.settled.value,
-        'settledBy': userId,
-        'cashSettledAt': FieldValue.serverTimestamp(),
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
-
-      // Create audit transaction
-      final transactionRef = _firestore.collection('cash_transactions').doc();
-      final transaction = CashTransactionModel(
-        id: transactionRef.id,
-        orderId: orderId,
-        shopId: order.shopId,
-        amount: order.totalAmount,
-        type: CashTransactionType.settlement,
-        userId: userId,
-        userName: userName,
-        timestamp: DateTime.now(),
-        notes: 'Cash settled with owner',
-      );
-      batch.set(transactionRef, transaction.toFirestore());
-
-      await batch.commit();
-      print('OrderService: Cash settled for $orderId');
+      await _supabase.client
+          .from(SupabaseConfig.ordersTable)
+          .delete()
+          .eq('id', orderId);
     } catch (e) {
-      print('OrderService: Error settling cash: $e');
+      print('Error deleting order: $e');
       rethrow;
     }
   }
 
-  // Settle all collected cash for a shop (used by developer/owner)
-  Future<int> settleAllCashForShop(
-    String shopId,
-    String userId,
-    String userName,
-  ) async {
-    try {
-      final snapshot = await _firestore
-          .collection('orders')
-          .where('shopId', isEqualTo: shopId)
-          .where('paymentMethod', isEqualTo: PaymentMethod.cash.value)
-          .where('cashStatus', isEqualTo: CashStatus.collected.value)
-          .get();
-
-      if (snapshot.docs.isEmpty) return 0;
-
-      final batch = _firestore.batch();
-      final now = DateTime.now();
-      int count = 0;
-
-      for (var doc in snapshot.docs) {
-        final order = OrderModel.fromFirestore(doc);
-
-        // Update order
-        batch.update(doc.reference, {
-          'cashStatus': CashStatus.settled.value,
-          'settledBy': userId,
-          'cashSettledAt': FieldValue.serverTimestamp(),
-          'updatedAt': FieldValue.serverTimestamp(),
-        });
-
-        // Create audit transaction
-        final transactionRef = _firestore.collection('cash_transactions').doc();
-        final transaction = CashTransactionModel(
-          id: transactionRef.id,
-          orderId: doc.id,
-          shopId: shopId,
-          amount: order.totalAmount,
-          type: CashTransactionType.settlement,
-          userId: userId,
-          userName: userName,
-          timestamp: now,
-          notes: 'Batch settlement for shop',
-        );
-        batch.set(transactionRef, transaction.toFirestore());
-        count++;
-      }
-
-      await batch.commit();
-      print('OrderService: Settled $count orders for shop $shopId');
-      return count;
-    } catch (e) {
-      print('OrderService: Error in batch settlement: $e');
-      rethrow;
-    }
-  }
-
-  // Get cash transactions for audit
+  // Stream cash transactions
   Stream<List<CashTransactionModel>> getCashTransactions({
     String? shopId,
+    String? deliveryStaffId,
     String? userId,
-    int limit = 100,
+    CashTransactionType? type,
   }) {
-    Query<Map<String, dynamic>> query = _firestore.collection(
-      'cash_transactions',
-    );
-    if (shopId != null) {
-      query = query.where('shopId', isEqualTo: shopId);
+    var stream = _supabase.client
+        .from('foody_cash_transactions')
+        .stream(primaryKey: ['id']);
+
+    if (shopId != null && shopId.isNotEmpty) {
+      stream = stream.eq('shop_id', shopId);
     }
-    if (userId != null) {
-      query = query.where('userId', isEqualTo: userId);
-    }
-    return query
-        .orderBy('timestamp', descending: true)
-        .limit(limit)
-        .snapshots()
-        .map(
-          (snapshot) => snapshot.docs
-              .map((doc) => CashTransactionModel.fromFirestore(doc))
-              .toList(),
-        );
+
+    final targetUser = userId ?? deliveryStaffId;
+
+    return stream.map((records) {
+      var list = records.map((data) => CashTransactionModel.fromMap(data)).toList();
+      if (targetUser != null) {
+        list = list.where((t) => t.userId == targetUser).toList();
+      }
+      if (type != null) {
+        list = list.where((t) => t.type == type).toList();
+      }
+      list.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+      return list;
+    }).handleError((_) => <CashTransactionModel>[]);
   }
 
-  // Delete a cash transaction (developer only)
+  Stream<List<CashTransactionModel>> streamCashTransactions({
+    String? deliveryStaffId,
+    String? userId,
+    CashTransactionType? type,
+    int limit = 50,
+  }) {
+    return getCashTransactions(deliveryStaffId: deliveryStaffId, userId: userId, type: type);
+  }
+
+  // Collect cash (delivery completed)
+  Future<void> collectCash(
+    String orderId,
+    String deliveryStaffId,
+    String deliveryStaffName, [
+    double? amount,
+    String? notes,
+  ]) async {
+    try {
+      await _supabase.client
+          .from(SupabaseConfig.ordersTable)
+          .update({
+            'status': 'completed',
+            'cash_status': 'collected',
+            'collected_by': deliveryStaffId,
+            'cash_collected_at': DateTime.now().toUtc().toIso8601String(),
+            'updated_at': DateTime.now().toUtc().toIso8601String(),
+          })
+          .eq('id', orderId);
+    } catch (e) {
+      print('Error collecting cash: $e');
+    }
+  }
+
+  Future<void> markCashCollected({
+    required String orderId,
+    required String deliveryStaffId,
+    required String deliveryStaffName,
+    required double amount,
+    String? notes,
+  }) async {
+    return collectCash(orderId, deliveryStaffId, deliveryStaffName, amount, notes);
+  }
+
+  // Settle single cash order
+  Future<void> settleCash(
+    String orderId,
+    String settledWithUserId,
+    String settledWithUserName, [
+    double? amount,
+  ]) async {
+    try {
+      await _supabase.client
+          .from(SupabaseConfig.ordersTable)
+          .update({
+            'cash_status': 'settled',
+            'settled_by': settledWithUserId,
+            'cash_settled_at': DateTime.now().toUtc().toIso8601String(),
+            'updated_at': DateTime.now().toUtc().toIso8601String(),
+          })
+          .eq('id', orderId);
+    } catch (e) {
+      print('Error settling cash: $e');
+    }
+  }
+
+  Future<void> markCashSettled({
+    required String orderId,
+    required String settledWithUserId,
+    required String settledWithUserName,
+    required double amount,
+    String? notes,
+  }) async {
+    return settleCash(orderId, settledWithUserId, settledWithUserName, amount);
+  }
+
+  // Settle all cash for a shop
+  Future<int> settleAllCashForShop(
+    String shopId,
+    String settledWithUserId,
+    String settledWithUserName,
+  ) async {
+    try {
+      final res = await _supabase.client
+          .from(SupabaseConfig.ordersTable)
+          .update({
+            'cash_status': 'settled',
+            'settled_by': settledWithUserId,
+            'cash_settled_at': DateTime.now().toUtc().toIso8601String(),
+            'updated_at': DateTime.now().toUtc().toIso8601String(),
+          })
+          .eq('shop_id', shopId)
+          .eq('cash_status', 'collected')
+          .select('id');
+      return (res as List).length;
+    } catch (e) {
+      print('Error settling all cash: $e');
+      return 0;
+    }
+  }
+
+  // Delete a cash transaction
   Future<void> deleteCashTransaction(String transactionId) async {
     try {
-      await _firestore
-          .collection('cash_transactions')
-          .doc(transactionId)
-          .delete();
-      print('OrderService: Cash transaction $transactionId deleted');
-    } catch (e) {
-      print('OrderService: Error deleting cash transaction: $e');
-      rethrow;
-    }
+      await _supabase.client
+          .from('foody_cash_transactions')
+          .delete()
+          .eq('id', transactionId);
+    } catch (_) {}
   }
 
-  // Get unsettled cash orders (for shop owner)
-  Stream<List<OrderModel>> getUnsettledCashOrders(String shopId) {
-    return _firestore
-        .collection('orders')
-        .where('shopId', isEqualTo: shopId)
-        .where('paymentMethod', isEqualTo: PaymentMethod.cash.value)
-        .where('cashStatus', isEqualTo: CashStatus.collected.value)
-        .snapshots()
-        .map(
-          (snapshot) => snapshot.docs
-              .map((doc) => OrderModel.fromFirestore(doc))
-              .toList(),
-        );
-  }
-
-  // Get returned orders for shop owner to acknowledge
-  Stream<List<OrderModel>> getReturnedOrders(String shopId) {
-    return _firestore
-        .collection('orders')
-        .where('shopId', isEqualTo: shopId)
-        .where('status', isEqualTo: OrderStatus.returned.value)
-        .snapshots()
-        .map(
-          (snapshot) => snapshot.docs
-              .map((doc) => OrderModel.fromFirestore(doc))
-              .toList(),
-        );
-  }
-
-  // Mark order as returned to shop
+  // Mark order as returned
   Future<void> markOrderAsReturned(String orderId, String reason) async {
     try {
-      await _firestore.collection('orders').doc(orderId).update({
-        'status': OrderStatus.returned.value,
-        'returnedAt': FieldValue.serverTimestamp(),
-        'returnReason': reason,
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
-      print('OrderService: Order $orderId marked as returned');
+      await _supabase.client
+          .from(SupabaseConfig.ordersTable)
+          .update({
+            'status': 'returned',
+            'return_reason': reason,
+            'returned_at': DateTime.now().toUtc().toIso8601String(),
+            'updated_at': DateTime.now().toUtc().toIso8601String(),
+          })
+          .eq('id', orderId);
     } catch (e) {
-      print('OrderService: Error marking order as returned: $e');
-      rethrow;
+      print('Error marking order as returned: $e');
     }
   }
 
-  // Log a contact attempt (call) to the customer
+  // Log contact attempt
   Future<void> logContactAttempt(String orderId) async {
     try {
-      await _firestore.collection('orders').doc(orderId).update({
-        'contactAttempts': FieldValue.arrayUnion([Timestamp.now()]),
-        'isUnreachable':
-            true, // Mark as unreachable if at least one attempt is made
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
+      await _supabase.client
+          .from(SupabaseConfig.ordersTable)
+          .update({
+            'is_unreachable': true,
+            'updated_at': DateTime.now().toUtc().toIso8601String(),
+          })
+          .eq('id', orderId);
+    } catch (_) {}
+  }
+
+  // Get order statistics for shop/owner
+  Future<Map<String, dynamic>> getOrderStats([String? shopId, String period = 'week']) async {
+    try {
+      var query = _supabase.client.from(SupabaseConfig.ordersTable).select('*');
+      if (shopId != null && shopId.isNotEmpty) {
+        query = query.eq('shop_id', shopId);
+      }
+      final data = await query;
+      final orders = List<Map<String, dynamic>>.from(data);
+
+      double totalSales = 0;
+      int completed = 0;
+      int active = 0;
+      int cancelled = 0;
+
+      for (final o in orders) {
+        final st = o['status']?.toString() ?? '';
+        final amt = ((o['total_amount'] ?? o['totalAmount'] ?? 0) as num).toDouble();
+        if (st == 'completed') {
+          completed++;
+          totalSales += amt;
+        } else if (['new', 'preparing', 'ready_for_pickup', 'out_for_delivery'].contains(st)) {
+          active++;
+        } else if (st == 'cancelled') {
+          cancelled++;
+        }
+      }
+
+      return {
+        'totalOrders': orders.length,
+        'completedOrders': completed,
+        'activeOrders': active,
+        'cancelledOrders': cancelled,
+        'totalRevenue': totalSales,
+      };
     } catch (e) {
-      print('OrderService: Error logging contact attempt: $e');
-      rethrow;
+      return {
+        'totalOrders': 0,
+        'completedOrders': 0,
+        'activeOrders': 0,
+        'cancelledOrders': 0,
+        'totalRevenue': 0.0,
+      };
+    }
+  }
+
+  // Get delivery statistics
+  Future<Map<String, dynamic>> getDeliveryStats([
+    String? deliveryStaffId,
+    String? shopId,
+  ]) async {
+    try {
+      var query = _supabase.client.from(SupabaseConfig.ordersTable).select('*');
+      if (shopId != null && shopId.isNotEmpty) {
+        query = query.eq('shop_id', shopId);
+      }
+      final data = await query;
+      final orders = List<Map<String, dynamic>>.from(data);
+
+      int deliveredToday = 0;
+      double cashInHand = 0.0;
+      int activeDeliveries = 0;
+
+      for (final o in orders) {
+        final st = o['status']?.toString() ?? '';
+        final cs = o['cash_status']?.toString() ?? '';
+        final amt = ((o['total_amount'] ?? o['totalAmount'] ?? 0) as num).toDouble();
+
+        if (st == 'out_for_delivery') {
+          activeDeliveries++;
+        }
+        if (st == 'completed') {
+          deliveredToday++;
+        }
+        if (cs == 'collected') {
+          cashInHand += amt;
+        }
+      }
+
+      return {
+        'deliveredToday': deliveredToday,
+        'cashInHand': cashInHand,
+        'activeDeliveries': activeDeliveries,
+      };
+    } catch (e) {
+      return {
+        'deliveredToday': 0,
+        'cashInHand': 0.0,
+        'activeDeliveries': 0,
+      };
     }
   }
 }

@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 
@@ -120,10 +119,10 @@ class OrderItem {
 
   factory OrderItem.fromMap(Map<String, dynamic> data) {
     return OrderItem(
-      menuItemId: data['menuItemId'] ?? '',
-      name: data['name'] ?? '',
-      price: (data['price'] ?? 0).toDouble(),
-      quantity: data['quantity'] ?? 1,
+      menuItemId: (data['menuItemId'] ?? data['menu_item_id'] ?? data['id'] ?? '').toString(),
+      name: (data['name'] ?? '').toString(),
+      price: (data['price'] is num ? data['price'] : num.tryParse(data['price']?.toString() ?? '0') ?? 0).toDouble(),
+      quantity: (data['quantity'] is int ? data['quantity'] : int.tryParse(data['quantity']?.toString() ?? '1') ?? 1),
     );
   }
 
@@ -202,110 +201,100 @@ class OrderModel {
     this.updatedAt,
   });
 
-  factory OrderModel.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>?;
-    if (data == null) {
-      return OrderModel(
-        id: doc.id,
-        shopId: '',
-        customerName: '',
-        customerPhone: '',
-        deliveryAddress: '',
-        items: [],
-        totalAmount: 0,
-      );
-    }
-
+  factory OrderModel.fromMap(Map<String, dynamic> data, [String? id]) {
+    final orderId = id ?? data['id']?.toString() ?? '';
     final itemsList = data['items'] as List<dynamic>?;
-    final items =
-        itemsList
+    final items = itemsList
             ?.map((item) => OrderItem.fromMap(item as Map<String, dynamic>))
             .toList() ??
         [];
 
+    // Parse coordinates
+    double? lat;
+    double? lng;
+    if (data['delivery_coordinates'] != null && data['delivery_coordinates'] is Map) {
+      final coords = data['delivery_coordinates'] as Map;
+      lat = (coords['lat'] as num?)?.toDouble();
+      lng = (coords['lng'] as num?)?.toDouble();
+    } else {
+      lat = (data['customerLatitude'] ?? data['customer_latitude'] ?? data['lat']) != null
+          ? ((data['customerLatitude'] ?? data['customer_latitude'] ?? data['lat']) as num).toDouble()
+          : null;
+      lng = (data['customerLongitude'] ?? data['customer_longitude'] ?? data['lng']) != null
+          ? ((data['customerLongitude'] ?? data['customer_longitude'] ?? data['lng']) as num).toDouble()
+          : null;
+    }
+
+    // Parse timestamps
+    DateTime? createdAt;
+    if (data['created_at'] != null) {
+      createdAt = DateTime.tryParse(data['created_at'].toString());
+    } else if (data['createdAt'] != null) {
+      createdAt = DateTime.tryParse(data['createdAt'].toString());
+    }
+
+    DateTime? updatedAt;
+    if (data['updated_at'] != null) {
+      updatedAt = DateTime.tryParse(data['updated_at'].toString());
+    } else if (data['updatedAt'] != null) {
+      updatedAt = DateTime.tryParse(data['updatedAt'].toString());
+    }
+
     return OrderModel(
-      id: doc.id,
-      shopId: data['shopId'] ?? '',
-      userId: data['userId'],
-      customerName: data['customerName'] ?? '',
-      customerPhone: data['customerPhone'] ?? '',
-      deliveryAddress: data['deliveryAddress'] ?? '',
+      id: orderId,
+      shopId: (data['shop_id'] ?? data['shopId'] ?? '').toString(),
+      userId: (data['user_id'] ?? data['userId'])?.toString(),
+      customerName: (data['customer_name'] ?? data['customerName'] ?? '').toString(),
+      customerPhone: (data['customer_phone'] ?? data['customerPhone'] ?? '').toString(),
+      deliveryAddress: (data['delivery_address'] ?? data['customer_address'] ?? data['deliveryAddress'] ?? '').toString(),
       items: items,
-      subtotal: (data['subtotal'] ?? 0.0).toDouble(),
-      deliveryCharge: (data['deliveryCharge'] ?? 0.0).toDouble(),
-      gstAmount: (data['gstAmount'] ?? 0.0).toDouble(),
-      totalAmount: (data['totalAmount'] ?? 0).toDouble(),
-      status: OrderStatusExtension.fromString(data['status']),
-      paymentId: data['paymentId'],
-      isTestOrder: data['isTestOrder'] ?? false,
-      paymentMethod: PaymentMethodExtension.fromString(data['paymentMethod']),
-      cashStatus: CashStatusExtension.fromString(data['cashStatus']),
-      collectedBy: data['collectedBy'],
-      settledBy: data['settledBy'],
-      cashCollectedAt: data['cashCollectedAt'] != null
-          ? (data['cashCollectedAt'] as Timestamp).toDate()
-          : null,
-      cashSettledAt: data['cashSettledAt'] != null
-          ? (data['cashSettledAt'] as Timestamp).toDate()
-          : null,
-      returnedAt: data['returnedAt'] != null
-          ? (data['returnedAt'] as Timestamp).toDate()
-          : null,
-      returnReason: data['returnReason'],
-      contactAttempts:
-          (data['contactAttempts'] as List<dynamic>?)
-              ?.map((t) => (t as Timestamp).toDate())
-              .toList() ??
-          [],
-      isUnreachable: data['isUnreachable'] ?? false,
-      customerLatitude: (data['customerLatitude'] as num?)?.toDouble(),
-      customerLongitude: (data['customerLongitude'] as num?)?.toDouble(),
-      createdAt: data['createdAt'] != null
-          ? (data['createdAt'] as Timestamp).toDate()
-          : null,
-      updatedAt: data['updatedAt'] != null
-          ? (data['updatedAt'] as Timestamp).toDate()
-          : null,
+      subtotal: ((data['subtotal'] ?? 0.0) as num).toDouble(),
+      deliveryCharge: ((data['delivery_charge'] ?? data['deliveryCharge'] ?? 0.0) as num).toDouble(),
+      gstAmount: ((data['gst_amount'] ?? data['gstAmount'] ?? 0.0) as num).toDouble(),
+      totalAmount: ((data['total_amount'] ?? data['totalAmount'] ?? 0.0) as num).toDouble(),
+      status: OrderStatusExtension.fromString(data['status']?.toString()),
+      paymentId: (data['payment_id'] ?? data['paymentId'])?.toString(),
+      isTestOrder: data['is_test_order'] ?? data['isTestOrder'] ?? false,
+      paymentMethod: PaymentMethodExtension.fromString(data['payment_method'] ?? data['paymentMethod']),
+      cashStatus: CashStatusExtension.fromString(data['cash_status'] ?? data['cashStatus']),
+      collectedBy: (data['collected_by'] ?? data['collectedBy'])?.toString(),
+      settledBy: (data['settled_by'] ?? data['settledBy'])?.toString(),
+      customerLatitude: lat,
+      customerLongitude: lng,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
     );
   }
 
-  Map<String, dynamic> toFirestore() {
+  Map<String, dynamic> toMap() {
     return {
-      'shopId': shopId,
-      'userId': userId,
-      'customerName': customerName,
-      'customerPhone': customerPhone,
-      'deliveryAddress': deliveryAddress,
+      'id': id,
+      'shop_id': shopId,
+      'user_id': userId,
+      'customer_name': customerName,
+      'customer_phone': customerPhone,
+      'delivery_address': deliveryAddress,
       'items': items.map((item) => item.toMap()).toList(),
       'subtotal': subtotal,
-      'deliveryCharge': deliveryCharge,
-      'gstAmount': gstAmount,
-      'totalAmount': totalAmount,
+      'delivery_charge': deliveryCharge,
+      'gst_amount': gstAmount,
+      'total_amount': totalAmount,
       'status': status.value,
-      'paymentId': paymentId,
-      'isTestOrder': isTestOrder,
-      'paymentMethod': paymentMethod.value,
-      'cashStatus': cashStatus.value,
-      'collectedBy': collectedBy,
-      'settledBy': settledBy,
-      'cashCollectedAt': cashCollectedAt != null
-          ? Timestamp.fromDate(cashCollectedAt!)
-          : null,
-      'cashSettledAt': cashSettledAt != null
-          ? Timestamp.fromDate(cashSettledAt!)
-          : null,
-      'returnedAt': returnedAt != null ? Timestamp.fromDate(returnedAt!) : null,
-      'returnReason': returnReason,
-      'contactAttempts': contactAttempts
-          .map((t) => Timestamp.fromDate(t))
-          .toList(),
-      'isUnreachable': isUnreachable,
-      'customerLatitude': customerLatitude,
-      'customerLongitude': customerLongitude,
-      'createdAt': createdAt != null
-          ? Timestamp.fromDate(createdAt!)
-          : FieldValue.serverTimestamp(),
-      'updatedAt': FieldValue.serverTimestamp(),
+      'payment_id': paymentId,
+      'is_test_order': isTestOrder,
+      'payment_method': paymentMethod.value,
+      'cash_status': cashStatus.value,
+      'collected_by': collectedBy,
+      'settled_by': settledBy,
+      'cash_collected_at': cashCollectedAt?.toUtc().toIso8601String(),
+      'cash_settled_at': cashSettledAt?.toUtc().toIso8601String(),
+      'returned_at': returnedAt?.toUtc().toIso8601String(),
+      'return_reason': returnReason,
+      'is_unreachable': isUnreachable,
+      'customer_latitude': customerLatitude,
+      'customer_longitude': customerLongitude,
+      'created_at': createdAt?.toUtc().toIso8601String(),
+      'updated_at': updatedAt?.toUtc().toIso8601String(),
     };
   }
 

@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 class ReviewModel {
   final String id;
   final String shopId;
@@ -21,47 +19,36 @@ class ReviewModel {
     required this.createdAt,
   });
 
-  factory ReviewModel.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>?;
-    if (data == null) {
-      return ReviewModel(
-        id: doc.id,
-        shopId: '',
-        userId: '',
-        userName: 'Anonymous',
-        rating: 0,
-        createdAt: DateTime.now(),
-      );
-    }
-
+  factory ReviewModel.fromMap(Map<String, dynamic> data) {
     DateTime createdAt = DateTime.now();
-    if (data['createdAt'] != null) {
-      if (data['createdAt'] is Timestamp) {
-        createdAt = (data['createdAt'] as Timestamp).toDate();
-      }
+    if (data['created_at'] != null) {
+      createdAt = DateTime.tryParse(data['created_at'].toString()) ?? DateTime.now();
+    } else if (data['createdAt'] != null) {
+      createdAt = DateTime.tryParse(data['createdAt'].toString()) ?? DateTime.now();
     }
 
     return ReviewModel(
-      id: doc.id,
-      shopId: data['shopId'] ?? '',
-      userId: data['userId'] ?? '',
-      userName: data['userName'] ?? 'Anonymous',
-      userPhotoUrl: data['userPhotoUrl'],
-      rating: (data['rating'] ?? 0.0).toDouble(),
-      comment: data['comment'],
+      id: data['id']?.toString() ?? '',
+      shopId: data['shop_id']?.toString() ?? data['shopId']?.toString() ?? '',
+      userId: data['user_id']?.toString() ?? data['userId']?.toString() ?? '',
+      userName: data['user_name']?.toString() ?? data['userName']?.toString() ?? 'Devotee',
+      userPhotoUrl: data['user_photo_url']?.toString() ?? data['userPhotoUrl']?.toString(),
+      rating: ((data['rating'] ?? 5.0) as num).toDouble(),
+      comment: data['comment']?.toString(),
       createdAt: createdAt,
     );
   }
 
-  Map<String, dynamic> toFirestore() {
+  Map<String, dynamic> toMap() {
     return {
-      'shopId': shopId,
-      'userId': userId,
-      'userName': userName,
-      'userPhotoUrl': userPhotoUrl,
+      'id': id,
+      'shop_id': shopId,
+      'user_id': userId,
+      'user_name': userName,
+      'user_photo_url': userPhotoUrl,
       'rating': rating,
       'comment': comment,
-      'createdAt': FieldValue.serverTimestamp(),
+      'created_at': createdAt.toUtc().toIso8601String(),
     };
   }
 }

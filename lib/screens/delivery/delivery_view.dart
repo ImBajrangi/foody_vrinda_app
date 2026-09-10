@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../config/theme.dart';
+import '../../services/supabase_service.dart';
 import '../../models/order_model.dart';
 import '../../models/user_model.dart';
 import '../../models/shop_model.dart';
@@ -72,15 +72,13 @@ class _DeliveryViewState extends State<DeliveryView> {
   /// Toggle online/offline status for delivery staff
   Future<void> _toggleOnlineStatus(bool value) async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final userId = authProvider.user?.uid;
+    final userId = authProvider.userData?.uid ?? authProvider.user?.id;
     if (userId == null) return;
 
     setState(() => _isTogglingStatus = true);
 
     try {
-      await FirebaseFirestore.instance.collection('users').doc(userId).update({
-        'isOnline': value,
-      });
+      await SupabaseService().updateCloudUser(userId, {'isOnline': value});
       setState(() => _isOnline = value);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1240,7 +1238,7 @@ class _DeliveryOrderCard extends StatelessWidget {
               try {
                 await orderService.collectCash(
                   order.id,
-                  authProvider.user?.uid ?? 'unknown',
+                  authProvider.userData?.uid ?? authProvider.user?.id ?? 'unknown',
                   authProvider.userData?.displayName ?? 'Delivery Partner',
                 );
                 if (context.mounted) {

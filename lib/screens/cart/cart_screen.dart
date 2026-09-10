@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:provider/provider.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../services/supabase_service.dart';
 import '../../config/theme.dart';
 import '../../models/shop_model.dart';
 import '../../providers/cart_provider.dart';
@@ -107,24 +107,28 @@ class _CartScreenState extends State<CartScreen> {
   }
 
   void _initPaymentSettingsListener() {
-    _paymentSettingsSubscription = FirebaseFirestore.instance
-        .collection('settings')
-        .doc('paymentConfig')
-        .snapshots()
-        .listen(
-          (snapshot) {
-            if (snapshot.exists && mounted) {
-              final data = snapshot.data()!;
-              setState(() {
-                _onlinePaymentsEnabled = data['onlinePaymentsEnabled'] ?? true;
-                _codEnabled = data['codEnabled'] ?? true;
-              });
-            }
-          },
-          onError: (e) {
-            debugPrint('CartScreen: Error listening to payment settings: $e');
-          },
-        );
+    try {
+      _paymentSettingsSubscription = SupabaseService().client
+          .from('foody_settings')
+          .stream(primaryKey: ['id'])
+          .listen(
+            (records) {
+              if (records.isNotEmpty && mounted) {
+                final match = records.where((r) => r['id'] == 'paymentConfig').toList();
+                if (match.isNotEmpty) {
+                  final data = match.first;
+                  setState(() {
+                    _onlinePaymentsEnabled = data['onlinePaymentsEnabled'] ?? data['online_payments_enabled'] ?? true;
+                    _codEnabled = data['codEnabled'] ?? data['cod_enabled'] ?? true;
+                  });
+                }
+              }
+            },
+            onError: (e) {
+              debugPrint('CartScreen: Error listening to payment settings: $e');
+            },
+          );
+    } catch (_) {}
   }
 
   @override
@@ -1382,7 +1386,7 @@ class _CartScreenState extends State<CartScreen> {
     try {
       final orderId = await _orderService.createOrder(
         shopId: _shop!.id,
-        userId: authProvider.user?.uid,
+        userId: authProvider.userData?.uid ?? authProvider.user?.id,
         customerName: _pendingCustomerName!,
         customerPhone: _pendingCustomerPhone!,
         deliveryAddress: _pendingDeliveryAddress!,

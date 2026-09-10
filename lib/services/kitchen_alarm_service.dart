@@ -27,20 +27,21 @@ class KitchenAlarmService extends ChangeNotifier {
 
   /// Initialize the alarm service
   Future<void> initialize() async {
-    // Set player to loop mode
-    await _audioPlayer.setReleaseMode(ReleaseMode.loop);
-    
-    // Listen for player state changes
-    _audioPlayer.onPlayerStateChanged.listen((state) {
-      if (state == PlayerState.completed || state == PlayerState.stopped) {
-        // If we still have unacknowledged orders, restart
-        if (_unacknowledgedOrderIds.isNotEmpty && _isPlaying) {
+    try {
+      await _audioPlayer.setVolume(1.0);
+      await _audioPlayer.setReleaseMode(ReleaseMode.loop);
+      
+      _audioPlayer.onPlayerStateChanged.listen((state) {
+        if ((state == PlayerState.completed || state == PlayerState.stopped) &&
+            _unacknowledgedOrderIds.isNotEmpty &&
+            _isPlaying) {
           _playAlarm();
         }
-      }
-    });
-
-    print('KitchenAlarmService: Initialized');
+      });
+      print('KitchenAlarmService: Initialized with loop mode and full volume');
+    } catch (e) {
+      debugPrint('KitchenAlarmService init error: $e');
+    }
   }
 
   /// Trigger alarm for a new order
@@ -62,8 +63,10 @@ class KitchenAlarmService extends ChangeNotifier {
   Future<void> _playAlarm() async {
     try {
       _isPlaying = true;
+      await _audioPlayer.setVolume(1.0);
+      await _audioPlayer.setReleaseMode(ReleaseMode.loop);
       await _audioPlayer.play(AssetSource(_alarmSoundFile));
-      print('KitchenAlarmService: Alarm started');
+      print('KitchenAlarmService: Alarm ringing loop started');
     } catch (e) {
       print('KitchenAlarmService: Error playing alarm: $e');
       _isPlaying = false;

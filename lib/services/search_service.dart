@@ -1,7 +1,8 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/shop_model.dart';
 import '../models/menu_item_model.dart';
 import 'hit_soochi_service.dart';
+import 'supabase_service.dart';
+import 'shop_service.dart';
 
 /// Represents a search result that can be either a Shop or a Menu Item
 class SearchResult {
@@ -48,7 +49,7 @@ class EnhancedSearchResponse {
 }
 
 class SearchService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final SupabaseService _supabase = SupabaseService();
   final HitSoochiService _hitSoochi = HitSoochiService();
 
   /// Enhanced search using HitSoochi for optimization and ranking
@@ -57,7 +58,6 @@ class SearchService {
       return EnhancedSearchResponse(originalQuery: query, results: []);
     }
 
-    // Fetch results and HitSoochi data in parallel
     final resultsFuture = search(query);
     final optimizeFuture = _hitSoochi.optimizeQuery(query);
     final recommendFuture = _hitSoochi.getRecommendations(query);
@@ -66,7 +66,6 @@ class SearchService {
     final optimized = await optimizeFuture;
     final recommendation = await recommendFuture;
 
-    // If we got results and HitSoochi is available, rank them semantically
     List<SearchResult> rankedResults = results;
     if (results.length > 1 && optimized != null) {
       final itemsForRanking = results
@@ -86,7 +85,6 @@ class SearchService {
       );
 
       if (ranked.isNotEmpty) {
-        // Create score map
         final scoreMap = <String, double>{};
         for (final item in ranked) {
           if (item.title != null) {
@@ -94,7 +92,6 @@ class SearchService {
           }
         }
 
-        // Sort results by relevance
         rankedResults = results
             .map(
               (r) => SearchResult(
@@ -138,9 +135,9 @@ class SearchService {
 
     // Search shops
     try {
-      final shopsSnapshot = await _firestore.collection('shops').get();
-      for (final doc in shopsSnapshot.docs) {
-        final shop = ShopModel.fromFirestore(doc);
+      final shopsData = await _supabase.getShops();
+      for (final data in shopsData) {
+        final shop = ShopModel.fromMap(data);
         final nameMatch = shop.name.toLowerCase().contains(queryLower);
         final addressMatch =
             shop.address?.toLowerCase().contains(queryLower) ?? false;
@@ -164,9 +161,9 @@ class SearchService {
 
     // Search menu items
     try {
-      final menusSnapshot = await _firestore.collection('menus').get();
-      for (final doc in menusSnapshot.docs) {
-        final item = MenuItemModel.fromFirestore(doc);
+      final menusData = await _supabase.client.from('foody_menus').select('*');
+      for (final doc in menusData) {
+        final item = MenuItemModel.fromMap(doc);
         final nameMatch = item.name.toLowerCase().contains(queryLower);
         final categoryMatch =
             item.category?.toLowerCase().contains(queryLower) ?? false;
@@ -192,7 +189,6 @@ class SearchService {
       print('SearchService: Error searching menu items: $e');
     }
 
-    // Sort results: shops first, then menu items
     results.sort((a, b) {
       if (a.type == b.type) {
         return a.title.compareTo(b.title);
@@ -203,17 +199,9 @@ class SearchService {
     return results;
   }
 
-  /// Get a shop by its ID (for navigating from menu item results)
+  /// Get a shop by its ID
   Future<ShopModel?> getShopById(String shopId) async {
-    try {
-      final doc = await _firestore.collection('shops').doc(shopId).get();
-      if (doc.exists) {
-        return ShopModel.fromFirestore(doc);
-      }
-    } catch (e) {
-      print('SearchService: Error getting shop: $e');
-    }
-    return null;
+    return ShopService().getShop(shopId);
   }
 
   /// Get autocomplete suggestions

@@ -18,6 +18,25 @@ class DeliveryAlarmService extends ChangeNotifier {
   /// Returns count of unacknowledged orders
   int get unacknowledgedCount => _unacknowledgedOrders.length;
 
+  /// Initialize the delivery alarm service
+  Future<void> initialize() async {
+    try {
+      await _audioPlayer.setVolume(1.0);
+      await _audioPlayer.setReleaseMode(ReleaseMode.loop);
+      
+      _audioPlayer.onPlayerStateChanged.listen((state) {
+        if ((state == PlayerState.completed || state == PlayerState.stopped) &&
+            _unacknowledgedOrders.isNotEmpty &&
+            _isPlaying) {
+          _startAlarmSound();
+        }
+      });
+      debugPrint('DeliveryAlarmService: Initialized with loop mode and full volume');
+    } catch (e) {
+      debugPrint('DeliveryAlarmService init error: $e');
+    }
+  }
+
   /// Trigger alarm for a new order ready for delivery
   Future<void> triggerAlarm(String orderId) async {
     if (_unacknowledgedOrders.contains(orderId)) return;
@@ -47,15 +66,15 @@ class DeliveryAlarmService extends ChangeNotifier {
   }
 
   Future<void> _startAlarmSound() async {
-    if (_isPlaying) return;
-    
     try {
       _isPlaying = true;
       // Use distinct delivery alert sound - clear announce tone
+      await _audioPlayer.setVolume(1.0);
       await _audioPlayer.setReleaseMode(ReleaseMode.loop);
       await _audioPlayer.play(
         AssetSource('sounds/mixkit-clear-announce-tones-2861.wav'),
       );
+      debugPrint('DeliveryAlarmService: Alarm ringing loop started');
     } catch (e) {
       debugPrint('DeliveryAlarmService: Error playing alarm: $e');
       _isPlaying = false;

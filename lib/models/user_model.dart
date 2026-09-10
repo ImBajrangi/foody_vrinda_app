@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 enum UserRole { customer, kitchen, delivery, owner, developer }
 
 extension UserRoleExtension on UserRole {
@@ -64,56 +62,6 @@ class UserModel {
     this.lastLogin,
     this.devPermissions = const [],
   });
-
-  factory UserModel.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>?;
-    if (data == null) {
-      return UserModel(uid: doc.id, email: '');
-    }
-
-    return UserModel(
-      uid: doc.id,
-      email: data['email'] ?? '',
-      displayName: data['displayName'],
-      photoURL: data['photoURL'],
-      phoneNumber: data['phoneNumber'],
-      deliveryAddress: data['deliveryAddress'],
-      role: UserRoleExtension.fromString(data['role']),
-      shopId: data['shopId'],
-      shopIds: data['shopIds'] != null
-          ? List<String>.from(data['shopIds'])
-          : null,
-      isOnline: data['isOnline'] ?? false,
-      createdAt: data['createdAt'] != null
-          ? (data['createdAt'] as Timestamp).toDate()
-          : null,
-      lastLogin: data['lastLogin'] != null
-          ? (data['lastLogin'] as Timestamp).toDate()
-          : null,
-      devPermissions: data['devPermissions'] != null
-          ? List<String>.from(data['devPermissions'])
-          : const [],
-    );
-  }
-
-  Map<String, dynamic> toFirestore() {
-    return {
-      'email': email,
-      'displayName': displayName,
-      'photoURL': photoURL,
-      'phoneNumber': phoneNumber,
-      'deliveryAddress': deliveryAddress,
-      'role': role.value,
-      'shopId': shopId,
-      'shopIds': shopIds,
-      'isOnline': isOnline,
-      'createdAt': createdAt != null
-          ? Timestamp.fromDate(createdAt!)
-          : FieldValue.serverTimestamp(),
-      'lastLogin': FieldValue.serverTimestamp(),
-      'devPermissions': devPermissions,
-    };
-  }
 
   /// Convert to JSON for local storage (SharedPreferences)
   Map<String, dynamic> toJson() {

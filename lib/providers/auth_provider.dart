@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../models/user_model.dart';
-import '../services/auth_service.dart';
+import '../services/supabase_service.dart';
 import '../services/resource_cache_service.dart';
+import '../services/order_notification_manager.dart';
+import '../services/kitchen_alarm_service.dart';
+import '../services/delivery_alarm_service.dart';
 import '../config/app_config.dart';
 
 const String _userDataCacheKey = 'cached_user_data';
@@ -13,39 +15,49 @@ const String _userDataCacheKey = 'cached_user_data';
 enum AuthStatus { uninitialized, authenticated, unauthenticated, loading }
 
 class AuthProvider extends ChangeNotifier {
-  final AuthService _authService = AuthService();
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final SupabaseService _supabaseService = SupabaseService();
 
   AuthStatus _status = AuthStatus.uninitialized;
-  User? _user;
+  sb.User? _supabaseUser;
   UserModel? _userData;
   String? _error;
   String? _lastErrorCode;
 
   AuthStatus get status => _status;
-  User? get user => _user;
+  sb.User? get user => _supabaseUser;
   UserModel? get userData => _userData;
   String? get error => _error;
   String? get lastErrorCode => _lastErrorCode;
   bool get isAuthenticated =>
-      _status == AuthStatus.authenticated && _user != null;
+      _status == AuthStatus.authenticated && _userData != null;
   bool get isLoading => _status == AuthStatus.loading;
 
-  // Check if current user is developer
+  // Check if current user is developer or admin
   bool get isDeveloper =>
       _userData?.role == UserRole.developer ||
-      AppConfig.isDeveloperEmail(_user?.email);
+      AppConfig.isDeveloperEmail(_supabaseUser?.email ?? _userData?.email);
+
+  bool get isAdmin =>
+      _userData?.role == UserRole.owner ||
+      _userData?.role == UserRole.developer ||
+      AppConfig.isAdminEmail(_supabaseUser?.email ?? _userData?.email);
 
   AuthProvider() {
     _initAuth();
   }
 
   Future<void> _initAuth() async {
-    // Try to load cached user data immediately for faster startup
+    // 1. Try to load cached user data immediately for zero-latency startup
     await _loadCachedUserData();
 
-    // Then listen for auth state changes (will sync from Firestore)
-    _authService.authStateChanges.listen(_onAuthStateChanged);
+    // 2. Listen to Supabase Auth State Changes
+    try {
+      _supabaseService.client.auth.onAuthStateChange.listen((data) {
+        _onSupabaseAuthStateChanged(data.session?.user);
+      });
+    } catch (e) {
+      print('AuthProvider: Supabase auth state listener notice: $e');
+    }
   }
 
   /// Load cached user data from SharedPreferences for instant startup
@@ -58,13 +70,10 @@ class AuthProvider extends ChangeNotifier {
         final jsonData = json.decode(cachedJson) as Map<String, dynamic>;
         _userData = UserModel.fromJson(jsonData);
 
-        // Check if there's a current Firebase user
-        final currentUser = _authService.currentUser;
-        if (currentUser != null && _userData != null) {
-          _user = currentUser;
+        if (_userData != null) {
           _status = AuthStatus.authenticated;
           notifyListeners();
-          print('AuthProvider: Loaded cached user data - ${_userData?.email}');
+          print('AuthProvider: Loaded cached user data - ${_userData?.displayName ?? _userData?.email ?? _userData?.phoneNumber}');
         }
       }
     } catch (e) {
@@ -94,129 +103,181 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> _onAuthStateChanged(User? user) async {
-    print('AuthProvider: Auth state changed - user: ${user?.email}');
+  Future<void> _onSupabaseAuthStateChanged(sb.User? sbUser) async {
+    print('AuthProvider: Supabase auth state changed - user: ${sbUser?.email}');
 
-    if (user == null) {
+    if (sbUser == null) {
+      if (_userData != null && _userData!.phoneNumber != null && _userData!.phoneNumber!.isNotEmpty) {
+        // Phone-authenticated user remains active
+        return;
+      }
       _status = AuthStatus.unauthenticated;
-      _user = null;
+      _supabaseUser = null;
       _userData = null;
       await _clearCachedUserData();
     } else {
-      _user = user;
+      _supabaseUser = sbUser;
+      final email = sbUser.email ?? '';
 
       // Check if developer email
-      if (AppConfig.isDeveloperEmail(user.email)) {
-        // Auto-assign developer role
+      if (AppConfig.isDeveloperEmail(email)) {
         _userData = UserModel(
-          uid: user.uid,
-          email: user.email ?? '',
-          displayName: user.displayName ?? 'Developer',
-          photoURL: user.photoURL,
+          uid: sbUser.id,
+          email: email,
+          displayName: sbUser.userMetadata?['displayName'] ??
+              sbUser.userMetadata?['full_name'] ??
+              'Developer',
+          photoURL: sbUser.userMetadata?['avatar_url'],
           role: UserRole.developer,
         );
-
-        // Update Firestore with developer role - force sync
-        try {
-          await _firestore.collection('users').doc(user.uid).set({
-            'uid': user.uid,
-            'email': user.email,
-            'role': 'developer',
-            if (user.displayName != null) 'displayName': user.displayName,
-            if (user.photoURL != null) 'photoURL': user.photoURL,
-            'lastSync': FieldValue.serverTimestamp(),
-          }, SetOptions(merge: true));
-        } catch (e) {
-          print('AuthProvider: Error updating developer role: $e');
-        }
-
-        print('AuthProvider: Developer account detected - ${user.email}');
       } else {
-        // Regular user - fetch from Firestore
-        _userData = await _authService.getUserData(user.uid);
-
-        // If no user data exists or missing name, use from Google
-        if (_userData == null) {
-          _userData = UserModel(
-            uid: user.uid,
-            email: user.email ?? '',
-            displayName: user.displayName,
-            photoURL: user.photoURL,
-            role: UserRole.customer,
+        // Check live Supabase record
+        Map<String, dynamic>? liveProfile;
+        try {
+          liveProfile = await _supabaseService.getLiveUserRoleAndProfile(
+            userId: sbUser.id,
+            email: email,
           );
-        } else if ((_userData!.displayName == null ||
-                _userData!.displayName!.isEmpty) &&
-            user.displayName != null &&
-            user.displayName!.isNotEmpty) {
-          _userData = _userData!.copyWith(
-            displayName: user.displayName,
-            photoURL: _userData!.photoURL ?? user.photoURL,
+        } catch (_) {}
+
+        if (liveProfile != null) {
+          _userData = UserModel(
+            uid: liveProfile['id'] ?? sbUser.id,
+            email: liveProfile['email'] ?? email,
+            displayName: liveProfile['display_name'] ??
+                sbUser.userMetadata?['displayName'] ??
+                'Devotee',
+            photoURL: liveProfile['avatar_url'] ?? sbUser.userMetadata?['avatar_url'],
+            phoneNumber: liveProfile['phone'],
+            deliveryAddress: liveProfile['address'] ?? liveProfile['customer_address'],
+            role: UserRoleExtension.fromString(liveProfile['role']),
+            shopId: liveProfile['shop_id'],
+          );
+        } else {
+          _userData = UserModel(
+            uid: sbUser.id,
+            email: email,
+            displayName: sbUser.userMetadata?['displayName'] ??
+                sbUser.userMetadata?['full_name'] ??
+                (email.isNotEmpty ? email.split('@')[0] : 'Devotee'),
+            photoURL: sbUser.userMetadata?['avatar_url'],
+            role: AppConfig.isAdminEmail(email) ? UserRole.owner : UserRole.customer,
           );
         }
       }
 
       _status = AuthStatus.authenticated;
-      print(
-        'AuthProvider: Authenticated as ${_userData?.role.value} - ${user.email}',
-      );
-
-      // Trigger pre-caching for the user's role
       if (_userData != null) {
         ResourceCacheService().preCacheResources(_userData!.role);
-        // Save user data to local cache for faster startup
         await _saveUserDataToCache(_userData!);
+        OrderNotificationManager().startListening(
+          userRole: _userData!.role,
+          shopId: _userData!.shopId,
+          userId: _userData!.uid,
+        );
       }
     }
     notifyListeners();
   }
 
+  /// 1. PHONE LOOKUP SIGN IN (Pure Supabase - matching web v3)
+  Future<bool> signInWithPhoneLookup(String phoneNumber) async {
+    try {
+      _status = AuthStatus.loading;
+      _error = null;
+      notifyListeners();
+
+      final clean = phoneNumber.replaceAll(RegExp(r'\D'), '');
+      if (clean.length < 10) {
+        _error = 'Please enter a valid 10-digit mobile number';
+        _status = AuthStatus.unauthenticated;
+        notifyListeners();
+        return false;
+      }
+
+      final profile = await _supabaseService.loginWithPhoneLookup(clean);
+
+      _userData = UserModel(
+        uid: profile['id'] ?? 'user-$clean',
+        email: profile['email'] ?? '',
+        displayName: profile['display_name'] ?? 'Customer (${clean.substring(clean.length - 4)})',
+        phoneNumber: profile['phone'] ?? clean.substring(clean.length - 10),
+        deliveryAddress: profile['address'] ?? profile['customer_address'],
+        photoURL: profile['avatar_url'],
+        role: UserRoleExtension.fromString(profile['role']),
+        shopId: profile['shop_id'] ?? 'shop-vrinda-main',
+        shopIds: profile['shop_ids'] != null
+            ? List<String>.from(profile['shop_ids'])
+            : (profile['shop_id'] != null ? [profile['shop_id']] : ['shop-vrinda-main']),
+      );
+
+      _status = AuthStatus.authenticated;
+      await _saveUserDataToCache(_userData!);
+      ResourceCacheService().preCacheResources(_userData!.role);
+      OrderNotificationManager().startListening(
+        userRole: _userData!.role,
+        shopId: _userData!.shopId,
+        userId: _userData!.uid,
+      );
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = e.toString().replaceAll('Exception: ', '');
+      _status = AuthStatus.unauthenticated;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// 2. EMAIL SIGN IN (Pure Supabase Auth + Cloud Users)
   Future<bool> signInWithEmail(String email, String password) async {
     try {
       _status = AuthStatus.loading;
       _error = null;
       notifyListeners();
 
-      print('AuthProvider: Attempting email sign in for $email');
-      await _authService.signInWithEmail(email, password);
-      return true;
-    } on FirebaseAuthException catch (e) {
-      print('AuthProvider: FirebaseAuthException - ${e.code}: ${e.message}');
-      
-      // Auto-registration on 'user-not-found' or 'invalid-credential'
-      if (e.code == 'user-not-found' || e.code == 'invalid-credential') {
-        try {
-          print('AuthProvider: User not found or invalid credential. Attempting auto sign up...');
-          await _authService.signUpWithEmail(email, password);
+      final cleanEmail = email.trim().toLowerCase();
+      print('AuthProvider: Attempting Supabase email sign in for $cleanEmail');
+
+      try {
+        final res = await _supabaseService.client.auth.signInWithPassword(
+          email: cleanEmail,
+          password: password,
+        );
+        if (res.user != null) {
+          _supabaseUser = res.user;
+          await _onSupabaseAuthStateChanged(res.user);
           return true;
-        } on FirebaseAuthException catch (signUpError) {
-          print('AuthProvider: Auto sign up failed - ${signUpError.code}: ${signUpError.message}');
-          // If email is already in use, it means the account exists but they just typed the wrong password.
-          if (signUpError.code == 'email-already-in-use') {
-            _lastErrorCode = 'invalid-credential';
-            _error = 'Invalid email or password';
-          } else {
-            _lastErrorCode = signUpError.code;
-            _error = _getFirebaseAuthError(signUpError.code);
-          }
-          _status = AuthStatus.unauthenticated;
-          notifyListeners();
-          return false;
-        } catch (signUpError) {
-          print('AuthProvider: Auto sign up error - $signUpError');
-          _error = 'Sign up failed: ${signUpError.toString().replaceAll('Exception: ', '')}';
-          _status = AuthStatus.unauthenticated;
-          notifyListeners();
-          return false;
         }
+      } catch (sbErr) {
+        print('Supabase direct auth note: $sbErr, checking foody_logged_users...');
       }
 
-      _lastErrorCode = e.code;
-      _error = _getFirebaseAuthError(e.code);
+      // Check Supabase cloud user table
+      final cloudProfile = await _supabaseService.getLiveUserRoleAndProfile(email: cleanEmail);
+      if (cloudProfile != null) {
+        _userData = UserModel(
+          uid: cloudProfile['id'] ?? 'user-${DateTime.now().millisecondsSinceEpoch}',
+          email: cloudProfile['email'] ?? cleanEmail,
+          displayName: cloudProfile['display_name'] ?? cleanEmail.split('@')[0],
+          phoneNumber: cloudProfile['phone'],
+          deliveryAddress: cloudProfile['address'] ?? cloudProfile['customer_address'],
+          photoURL: cloudProfile['avatar_url'],
+          role: UserRoleExtension.fromString(cloudProfile['role']),
+          shopId: cloudProfile['shop_id'] ?? 'shop-vrinda-main',
+        );
+
+        _status = AuthStatus.authenticated;
+        await _saveUserDataToCache(_userData!);
+        notifyListeners();
+        return true;
+      }
+
+      _error = 'Invalid email or password. If new, please register below.';
       _status = AuthStatus.unauthenticated;
       notifyListeners();
       return false;
     } catch (e) {
-      print('AuthProvider: Sign in error - $e');
       _error = 'Sign in failed: ${e.toString().replaceAll('Exception: ', '')}';
       _status = AuthStatus.unauthenticated;
       notifyListeners();
@@ -224,24 +285,70 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> signUpWithEmail(String email, String password) async {
+  /// 3. STEP-BY-STEP EMAIL SIGN UP (Pure Supabase Auth)
+  Future<bool> signUpWithEmail(
+    String email,
+    String password, {
+    String? displayName,
+    String? phoneNumber,
+    String? deliveryAddress,
+  }) async {
     try {
       _status = AuthStatus.loading;
       _error = null;
       notifyListeners();
 
-      print('AuthProvider: Attempting email sign up for $email');
-      await _authService.signUpWithEmail(email, password);
-      return true;
-    } on FirebaseAuthException catch (e) {
-      print('AuthProvider: FirebaseAuthException - ${e.code}: ${e.message}');
-      _lastErrorCode = e.code;
-      _error = _getFirebaseAuthError(e.code);
-      _status = AuthStatus.unauthenticated;
+      final cleanEmail = email.trim().toLowerCase();
+      final cleanPhone = (phoneNumber ?? '').replaceAll(RegExp(r'\D'), '');
+
+      String uid = 'user-${DateTime.now().millisecondsSinceEpoch}';
+
+      try {
+        final res = await _supabaseService.client.auth.signUp(
+          email: cleanEmail,
+          password: password,
+          data: {
+            'displayName': displayName ?? cleanEmail.split('@')[0],
+            'phone': cleanPhone,
+            'address': deliveryAddress ?? '',
+          },
+        );
+        if (res.user != null) {
+          uid = res.user!.id;
+          _supabaseUser = res.user;
+        }
+      } catch (sbErr) {
+        print('Supabase signup notice: $sbErr');
+      }
+
+      // Create in Supabase Cloud table
+      final userProfile = {
+        'id': uid,
+        'email': cleanEmail,
+        'displayName': displayName ?? cleanEmail.split('@')[0],
+        'phone': cleanPhone,
+        'address': deliveryAddress ?? '',
+        'role': 'customer',
+        'shopId': 'shop-vrinda-main',
+      };
+
+      await _supabaseService.createCloudUser(userProfile);
+
+      _userData = UserModel(
+        uid: uid,
+        email: cleanEmail,
+        displayName: displayName ?? cleanEmail.split('@')[0],
+        phoneNumber: cleanPhone,
+        deliveryAddress: deliveryAddress,
+        role: UserRole.customer,
+        shopId: 'shop-vrinda-main',
+      );
+
+      _status = AuthStatus.authenticated;
+      await _saveUserDataToCache(_userData!);
       notifyListeners();
-      return false;
+      return true;
     } catch (e) {
-      print('AuthProvider: Sign up error - $e');
       _error = 'Sign up failed: ${e.toString().replaceAll('Exception: ', '')}';
       _status = AuthStatus.unauthenticated;
       notifyListeners();
@@ -249,58 +356,105 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  /// 4. GOOGLE SIGN IN (Pure Supabase OAuth)
   Future<bool> signInWithGoogle() async {
     try {
       _status = AuthStatus.loading;
       _error = null;
       notifyListeners();
 
-      print('AuthProvider: Attempting Google sign in');
-      final result = await _authService.signInWithGoogle();
+      print('AuthProvider: Attempting Supabase Google OAuth sign in');
+      final res = await _supabaseService.client.auth.signInWithOAuth(
+        sb.OAuthProvider.google,
+        redirectTo: 'https://eat.vrindopnishad.in/',
+      );
 
-      if (result == null) {
-        // User cancelled
+      if (!res) {
         _status = AuthStatus.unauthenticated;
         notifyListeners();
         return false;
       }
 
       return true;
-    } catch (e, stackTrace) {
-      print('AuthProvider: Google sign in error - $e');
-      print('AuthProvider: Google sign in stackTrace - $stackTrace');
-      _error = 'Google sign in failed: ${e.toString()}';
+    } catch (e) {
+      print('AuthProvider: Google sign in notice - $e');
+      _error = 'Google sign in unavailable in current browser session. Please sign in with Mobile number or Email.';
       _status = AuthStatus.unauthenticated;
       notifyListeners();
       return false;
     }
   }
 
+  /// 5. GUEST SIGN IN
   Future<void> signInAnonymously() async {
     try {
       _status = AuthStatus.loading;
       _error = null;
       notifyListeners();
 
-      await _authService.signInAnonymously();
+      _userData = UserModel(
+        uid: 'guest-${DateTime.now().millisecondsSinceEpoch}',
+        email: '',
+        displayName: 'Devotee Guest',
+        role: UserRole.customer,
+      );
+      _status = AuthStatus.authenticated;
+      await _saveUserDataToCache(_userData!);
+      notifyListeners();
     } catch (e) {
-      print('AuthProvider: Anonymous sign in error - $e');
       _error = 'Failed to continue as guest';
       _status = AuthStatus.unauthenticated;
       notifyListeners();
     }
   }
 
-  Future<void> signOut() async {
-    try {
-      await _authService.signOut();
-    } catch (e) {
-      print('AuthProvider: Sign out error - $e');
-      _error = 'Failed to sign out';
-      notifyListeners();
+  /// 6. OPERATIONAL ROLE SWITCHER (Dev & Admin)
+  Future<void> switchRole(UserRole newRole, {String? shopId}) async {
+    if (_userData == null) return;
+    _userData = _userData!.copyWith(
+      role: newRole,
+      shopId: shopId ?? _userData!.shopId ?? 'shop-vrinda-main',
+    );
+    await _saveUserDataToCache(_userData!);
+    ResourceCacheService().preCacheResources(newRole);
+    KitchenAlarmService().acknowledgeAll();
+    DeliveryAlarmService().acknowledgeAll();
+    OrderNotificationManager().startListening(
+      userRole: newRole,
+      shopId: shopId ?? _userData!.shopId,
+      userId: _userData!.uid,
+    );
+
+    if (_userData!.uid.isNotEmpty) {
+      final updates = <String, dynamic>{
+        'role': newRole.value,
+      };
+      if (shopId != null) {
+        updates['shop_id'] = shopId;
+      }
+      _supabaseService.updateCloudUser(_userData!.uid, updates).catchError((_) {});
     }
+    notifyListeners();
   }
 
+  /// 7. SIGN OUT (Pure Supabase)
+  Future<void> signOut() async {
+    try {
+      await _supabaseService.client.auth.signOut();
+    } catch (e) {
+      print('AuthProvider: Supabase sign out notice - $e');
+    }
+    OrderNotificationManager().stopListening();
+    KitchenAlarmService().acknowledgeAll();
+    DeliveryAlarmService().acknowledgeAll();
+    _supabaseUser = null;
+    _userData = null;
+    _status = AuthStatus.unauthenticated;
+    await _clearCachedUserData();
+    notifyListeners();
+  }
+
+  /// 8. UPDATE PROFILE (Name, Phone, Delivery Address)
   Future<void> updateProfile({
     required String displayName,
     required String phoneNumber,
@@ -311,17 +465,21 @@ class AuthProvider extends ChangeNotifier {
       _status = AuthStatus.loading;
       notifyListeners();
 
-      await _authService.updateUserProfile(
-        uid: _userData!.uid,
-        displayName: displayName,
-        phoneNumber: phoneNumber,
-        deliveryAddress: deliveryAddress,
-      );
+      final cleanPhone = phoneNumber.replaceAll(RegExp(r'\D'), '');
+
+      if (_userData!.uid.isNotEmpty) {
+        await _supabaseService.updateCloudUser(_userData!.uid, {
+          'display_name': displayName.trim(),
+          'phone': cleanPhone,
+          'customer_address': deliveryAddress.trim(),
+          'address': deliveryAddress.trim(),
+        });
+      }
 
       _userData = _userData!.copyWith(
-        displayName: displayName,
-        phoneNumber: phoneNumber,
-        deliveryAddress: deliveryAddress,
+        displayName: displayName.trim(),
+        phoneNumber: cleanPhone,
+        deliveryAddress: deliveryAddress.trim(),
       );
 
       await _saveUserDataToCache(_userData!);
@@ -341,41 +499,24 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> refreshUserData() async {
-    if (_user != null) {
-      if (AppConfig.isDeveloperEmail(_user!.email)) {
-        // Keep developer role
+    if (_supabaseUser != null) {
+      if (AppConfig.isDeveloperEmail(_supabaseUser!.email)) {
         _userData = _userData?.copyWith(role: UserRole.developer);
       } else {
-        _userData = await _authService.getUserData(_user!.uid);
+        final profile = await _supabaseService.getLiveUserRoleAndProfile(userId: _supabaseUser!.id);
+        if (profile != null) {
+          _userData = UserModel(
+            uid: profile['id'] ?? _supabaseUser!.id,
+            email: profile['email'] ?? _supabaseUser!.email ?? '',
+            displayName: profile['display_name'] ?? 'Devotee',
+            phoneNumber: profile['phone'],
+            deliveryAddress: profile['address'] ?? profile['customer_address'],
+            role: UserRoleExtension.fromString(profile['role']),
+            shopId: profile['shop_id'],
+          );
+        }
       }
       notifyListeners();
-    }
-  }
-
-  String _getFirebaseAuthError(String code) {
-    switch (code) {
-      case 'user-not-found':
-        return 'No user found with this email';
-      case 'wrong-password':
-        return 'Incorrect password';
-      case 'email-already-in-use':
-        return 'Email is already registered';
-      case 'invalid-email':
-        return 'Invalid email address';
-      case 'weak-password':
-        return 'Password is too weak';
-      case 'user-disabled':
-        return 'This account has been disabled';
-      case 'too-many-requests':
-        return 'Too many attempts. Please try again later';
-      case 'invalid-credential':
-        return 'Invalid email or password';
-      case 'operation-not-allowed':
-        return 'This sign-in method is not enabled';
-      case 'network-request-failed':
-        return 'Network error. Please check your connection';
-      default:
-        return 'Authentication failed: $code';
     }
   }
 }

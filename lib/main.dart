@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
-import 'package:cached_network_image/cached_network_image.dart';
-
-import 'firebase_options.dart';
 import 'config/theme.dart';
 import 'providers/auth_provider.dart';
 import 'providers/cart_provider.dart';
@@ -15,6 +11,7 @@ import 'config/lottie_assets.dart';
 import 'services/notification_service.dart';
 import 'services/hit_soochi_service.dart';
 import 'services/foody_cache_service.dart';
+import 'services/supabase_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,8 +19,8 @@ void main() async {
   // Initialize Foody Cache Service
   await FoodyCacheService().init();
 
-  // Initialize Firebase with platform-specific options
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  // Initialize Supabase Unified Cloud Database & Auth (Zero Firebase)
+  await SupabaseService.init();
 
   // Initialize Notification Service
   await NotificationService().initialize();

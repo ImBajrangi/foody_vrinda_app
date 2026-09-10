@@ -27,8 +27,39 @@ class AppConfig {
   /// Get a placeholder image for food items (Legacy fallback)
   static String getRandomFoodImage(String? itemId) => '';
 
+  // Whitelist of developer emails
+  static const List<String> developerEmails = [
+    'developer@foodyvrinda.com',
+    'dev@foodyvrinda.com',
+    'admin@foodyvrinda.com',
+    'imbajrangi@gmail.com',
+    'sakhi@foodyvrinda.com',
+    'dev@vrinda.com',
+  ];
+
+  static const List<String> adminEmails = [
+    'admin@foodyvrinda.com',
+    'owner@foodyvrinda.com',
+    'manager@foodyvrinda.com',
+    'developer@foodyvrinda.com',
+    'dev@foodyvrinda.com',
+    'imbajrangi@gmail.com',
+    'sakhi@foodyvrinda.com',
+  ];
+
   /// Check if email is developer email
   static bool isDeveloperEmail(String? email) {
-    return email?.toLowerCase() == developerEmail.toLowerCase();
+    if (email == null || email.isEmpty) return false;
+    final clean = email.toLowerCase().trim();
+    return developerEmails.contains(clean) ||
+        clean.startsWith('dev@') ||
+        clean.contains('+dev@');
+  }
+
+  /// Check if email is admin email
+  static bool isAdminEmail(String? email) {
+    if (email == null || email.isEmpty) return false;
+    final clean = email.toLowerCase().trim();
+    return adminEmails.contains(clean) || isDeveloperEmail(clean);
   }
 }

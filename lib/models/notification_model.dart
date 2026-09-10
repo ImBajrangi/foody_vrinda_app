@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 enum NotificationType {
   newOrder,
   orderReady,
@@ -63,39 +61,38 @@ class NotificationModel {
     this.createdAt,
   });
 
-  factory NotificationModel.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>?;
-    if (data == null) {
-      return NotificationModel(id: doc.id, userId: '', title: '', message: '');
+  factory NotificationModel.fromMap(Map<String, dynamic> data) {
+    DateTime? createdAt;
+    if (data['created_at'] != null) {
+      createdAt = DateTime.tryParse(data['created_at'].toString());
+    } else if (data['createdAt'] != null) {
+      createdAt = DateTime.tryParse(data['createdAt'].toString());
     }
 
     return NotificationModel(
-      id: doc.id,
-      userId: data['userId'] ?? '',
-      title: data['title'] ?? '',
-      message: data['message'] ?? '',
-      type: NotificationTypeExtension.fromString(data['type']),
-      orderId: data['orderId'],
-      shopId: data['shopId'],
-      isRead: data['isRead'] ?? false,
-      createdAt: data['createdAt'] != null
-          ? (data['createdAt'] as Timestamp).toDate()
-          : null,
+      id: data['id']?.toString() ?? '',
+      userId: data['user_id']?.toString() ?? data['userId']?.toString() ?? '',
+      title: data['title']?.toString() ?? '',
+      message: data['message']?.toString() ?? '',
+      type: NotificationTypeExtension.fromString(data['type']?.toString()),
+      orderId: data['order_id']?.toString() ?? data['orderId']?.toString(),
+      shopId: data['shop_id']?.toString() ?? data['shopId']?.toString(),
+      isRead: data['is_read'] ?? data['isRead'] ?? false,
+      createdAt: createdAt,
     );
   }
 
-  Map<String, dynamic> toFirestore() {
+  Map<String, dynamic> toMap() {
     return {
-      'userId': userId,
+      'id': id,
+      'user_id': userId,
       'title': title,
       'message': message,
       'type': type.value,
-      'orderId': orderId,
-      'shopId': shopId,
-      'isRead': isRead,
-      'createdAt': createdAt != null
-          ? Timestamp.fromDate(createdAt!)
-          : FieldValue.serverTimestamp(),
+      'order_id': orderId,
+      'shop_id': shopId,
+      'is_read': isRead,
+      'created_at': createdAt?.toUtc().toIso8601String(),
     };
   }
 

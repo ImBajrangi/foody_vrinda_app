@@ -191,13 +191,18 @@ class _HomeScreenState extends State<HomeScreen> {
                     ).animate().fadeIn(duration: 400.ms).shimmer(duration: 1500.ms, color: AppTheme.primaryOrange.withValues(alpha: 0.15)),
                     const SizedBox(height: 2),
                     Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(
-                          subGreeting,
-                          style: TextStyle(
-                            color: AppTheme.textSecondary,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
+                        Flexible(
+                          child: Text(
+                            subGreeting,
+                            style: TextStyle(
+                              color: AppTheme.textSecondary,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                         const SizedBox(width: 4),
@@ -1863,25 +1868,29 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildLottieProfile() {
+    final initials = Provider.of<AuthProvider>(
+          context,
+          listen: false,
+        ).userData?.initials ??
+        'V';
     return Container(
-      color: AppTheme.primaryOrange.withValues(alpha: 0.1),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            const Color(0xFFE0FF33).withValues(alpha: 0.25),
+            AppTheme.primaryOrange.withValues(alpha: 0.15),
+          ],
+        ),
+      ),
       child: Center(
-        child: Lottie.network(
-          LottieAssets.profile,
-          width: 80,
-          height: 80,
-          fit: BoxFit.contain,
-          errorBuilder: (context, error, stackTrace) => Text(
-            Provider.of<AuthProvider>(
-                  context,
-                  listen: false,
-                ).userData?.initials ??
-                'U',
-            style:       TextStyle(
-              fontSize: 32,
-              fontWeight: FontWeight.bold,
-              color: AppTheme.primaryOrange,
-            ),
+        child: Text(
+          initials,
+          style: const TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.w900,
+            color: Color(0xFFE0FF33),
           ),
         ),
       ),

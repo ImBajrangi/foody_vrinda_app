@@ -1,82 +1,74 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/review_model.dart';
+import 'supabase_service.dart';
+import '../config/supabase_config.dart';
 
 class ReviewService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final SupabaseService _supabase = SupabaseService();
 
   /// Get stream of reviews for a shop (ordered by date, newest first)
   Stream<List<ReviewModel>> getReviews(String shopId, {int limit = 10}) {
-    return _firestore
-        .collection('reviews')
-        .where('shopId', isEqualTo: shopId)
-        .orderBy('createdAt', descending: true)
-        .limit(limit)
-        .snapshots()
-        .map(
-          (snapshot) => snapshot.docs
-              .map((doc) => ReviewModel.fromFirestore(doc))
-              .toList(),
-        );
+    return _supabase.client
+        .from(SupabaseConfig.reviewsTable)
+        .stream(primaryKey: ['id'])
+        .eq('shop_id', shopId)
+        .map((records) {
+          final list = records.map((data) => ReviewModel.fromMap(data)).toList();
+          list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          return list.take(limit).toList();
+        })
+        .handleError((_) => <ReviewModel>[]);
   }
 
   /// Add a new review
   Future<void> addReview(ReviewModel review) async {
-    final batch = _firestore.batch();
-
-    // Add the review
-    final reviewRef = _firestore.collection('reviews').doc();
-    batch.set(reviewRef, review.toFirestore());
-
-    // Update shop's rating and count
-    final shopRef = _firestore.collection('shops').doc(review.shopId);
-    final shopDoc = await shopRef.get();
-
-    if (shopDoc.exists) {
-      final shopData = shopDoc.data() as Map<String, dynamic>;
-      final currentRating = (shopData['rating'] ?? 0.0).toDouble();
-      final currentCount = shopData['ratingCount'] ?? 0;
-
-      // Calculate new average
-      final newCount = currentCount + 1;
-      final newRating =
-          ((currentRating * currentCount) + review.rating) / newCount;
-
-      batch.update(shopRef, {'rating': newRating, 'ratingCount': newCount});
+    try {
+      await _supabase.client.from(SupabaseConfig.reviewsTable).insert(review.toMap());
+    } catch (e) {
+      print('ReviewService.addReview error: $e');
     }
-
-    await batch.commit();
   }
 
   /// Check if user has already reviewed this shop
   Future<bool> hasUserReviewed(String shopId, String userId) async {
-    final snapshot = await _firestore
-        .collection('reviews')
-        .where('shopId', isEqualTo: shopId)
-        .where('userId', isEqualTo: userId)
-        .limit(1)
-        .get();
-
-    return snapshot.docs.isNotEmpty;
+    try {
+      final res = await _supabase.client
+          .from(SupabaseConfig.reviewsTable)
+          .select('id')
+          .eq('shop_id', shopId)
+          .eq('user_id', userId)
+          .limit(1);
+      return res.isNotEmpty;
+    } catch (_) {
+      return false;
+    }
   }
 
   /// Get pending order count for a shop
   Future<int> getPendingOrderCount(String shopId) async {
-    final snapshot = await _firestore
-        .collection('orders')
-        .where('shopId', isEqualTo: shopId)
-        .where('status', whereIn: ['new', 'preparing', 'ready_for_pickup'])
-        .get();
-
-    return snapshot.docs.length;
+    try {
+      final res = await _supabase.client
+          .from(SupabaseConfig.ordersTable)
+          .select('id')
+          .eq('shop_id', shopId)
+          .inFilter('status', ['new', 'preparing', 'ready_for_pickup']);
+      return res.length;
+    } catch (_) {
+      return 0;
+    }
   }
 
   /// Stream pending order count for live updates
   Stream<int> streamPendingOrderCount(String shopId) {
-    return _firestore
-        .collection('orders')
-        .where('shopId', isEqualTo: shopId)
-        .where('status', whereIn: ['new', 'preparing', 'ready_for_pickup'])
-        .snapshots()
-        .map((snapshot) => snapshot.docs.length);
+    return _supabase.client
+        .from(SupabaseConfig.ordersTable)
+        .stream(primaryKey: ['id'])
+        .eq('shop_id', shopId)
+        .map((records) {
+          return records.where((r) {
+            final st = r['status']?.toString() ?? '';
+            return ['new', 'preparing', 'ready_for_pickup'].contains(st);
+          }).length;
+        })
+        .handleError((_) => 0);
   }
 }

@@ -131,10 +131,9 @@ class NotificationService {
       macOS: iosDetails,
     );
 
-    final String title = 'New Order!';
-    final String body = shopName != null
-        ? '$customerName ordered ₹${amount.toStringAsFixed(0)} from $shopName'
-        : '$customerName ordered ₹${amount.toStringAsFixed(0)}';
+    final String shortId = orderId.length > 5 ? orderId.substring(orderId.length - 5).toUpperCase() : orderId;
+    final String title = 'Order #$shortId Placed';
+    final String body = '₹${amount.toStringAsFixed(0)} • $customerName';
 
     await _notifications.show(
       orderId.hashCode, // Unique ID based on order
@@ -173,10 +172,14 @@ class NotificationService {
       macOS: iosDetails,
     );
 
+    final String shortId = orderId.length > 5 ? orderId.substring(orderId.length - 5).toUpperCase() : orderId;
+    final String title = 'Order #$shortId Ready';
+    final String body = 'Packed & ready for dispatch';
+
     await _notifications.show(
       orderId.hashCode,
-      'Ready for Delivery!',
-      'Order for $customerName is ready. Deliver to: $address',
+      title,
+      body,
       details,
       payload: orderId,
     );
@@ -210,9 +213,12 @@ class NotificationService {
       macOS: iosDetails,
     );
 
+    final String shortId = orderId.length > 5 ? orderId.substring(orderId.length - 5).toUpperCase() : orderId;
+    final String title = 'Order #$shortId $status';
+
     await _notifications.show(
       orderId.hashCode,
-      'Order ${status.replaceAll('_', ' ').toUpperCase()}',
+      title,
       message,
       details,
       payload: orderId,

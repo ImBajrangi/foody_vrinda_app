@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../services/supabase_service.dart';
+import '../../services/shop_service.dart';
 import '../../config/theme.dart';
 import '../../models/order_model.dart';
 import '../../models/user_model.dart';
@@ -799,7 +800,7 @@ class _DashboardViewState extends State<DashboardView> {
               try {
                 await _orderService.settleCash(
                   order.id,
-                  authProvider.user?.uid ?? 'unknown',
+                  authProvider.userData?.uid ?? authProvider.user?.id ?? 'unknown',
                   authProvider.userData?.displayName ?? 'Owner',
                 );
                 if (mounted) {
@@ -1071,11 +1072,7 @@ class _DashboardViewState extends State<DashboardView> {
           ),
           const SizedBox(height: 16),
           StreamBuilder<ShopModel?>(
-            stream: FirebaseFirestore.instance
-                .collection('shops')
-                .doc(shopId)
-                .snapshots()
-                .map((doc) => doc.exists ? ShopModel.fromFirestore(doc) : null),
+            stream: ShopService().shopStream(shopId),
             builder: (context, snapshot) {
               final shop = snapshot.data;
               final showQueue = shop?.showOrderQueue ?? false;
@@ -1108,10 +1105,12 @@ class _DashboardViewState extends State<DashboardView> {
                       Switch(
                         value: showQueue,
                         onChanged: (value) async {
-                          await FirebaseFirestore.instance
-                              .collection('shops')
-                              .doc(shopId)
-                              .update({'showOrderQueue': value});
+                          try {
+                            await SupabaseService().client
+                                .from('foody_shops')
+                                .update({'show_order_queue': value})
+                                .eq('id', shopId);
+                          } catch (_) {}
                         },
                         activeThumbColor: AppTheme.primaryOrange,
                       ),
@@ -1144,10 +1143,12 @@ class _DashboardViewState extends State<DashboardView> {
                       Switch(
                         value: shop?.showWaitTime ?? false,
                         onChanged: (value) async {
-                          await FirebaseFirestore.instance
-                              .collection('shops')
-                              .doc(shopId)
-                              .update({'showWaitTime': value});
+                          try {
+                            await SupabaseService().client
+                                .from('foody_shops')
+                                .update({'show_wait_time': value})
+                                .eq('id', shopId);
+                          } catch (_) {}
                         },
                         activeThumbColor: AppTheme.primaryOrange,
                       ),
@@ -1156,6 +1157,7 @@ class _DashboardViewState extends State<DashboardView> {
                   if (shop?.showWaitTime ?? false) ...[
                     const SizedBox(height: 16),
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Expanded(
                           child: Text(
@@ -1175,12 +1177,12 @@ class _DashboardViewState extends State<DashboardView> {
                                 onPressed: () async {
                                   final current = shop?.estimatedWaitTime ?? 15;
                                   if (current > 5) {
-                                    await FirebaseFirestore.instance
-                                        .collection('shops')
-                                        .doc(shopId)
-                                        .update({
-                                          'estimatedWaitTime': current - 5,
-                                        });
+                                    try {
+                                      await SupabaseService().client
+                                          .from('foody_shops')
+                                          .update({'estimated_wait_time': current - 5})
+                                          .eq('id', shopId);
+                                    } catch (_) {}
                                   }
                                 },
                               ),
@@ -1195,12 +1197,12 @@ class _DashboardViewState extends State<DashboardView> {
                                 icon: const Icon(Icons.add, size: 20),
                                 onPressed: () async {
                                   final current = shop?.estimatedWaitTime ?? 15;
-                                  await FirebaseFirestore.instance
-                                      .collection('shops')
-                                      .doc(shopId)
-                                      .update({
-                                        'estimatedWaitTime': current + 5,
-                                      });
+                                  try {
+                                    await SupabaseService().client
+                                        .from('foody_shops')
+                                        .update({'estimated_wait_time': current + 5})
+                                        .eq('id', shopId);
+                                  } catch (_) {}
                                 },
                               ),
                             ],
@@ -1239,7 +1241,7 @@ class _DashboardViewState extends State<DashboardView> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
+                            const Text(
                               'Minimum Order Amount',
                               style: TextStyle(fontWeight: FontWeight.w500),
                             ),
@@ -1265,12 +1267,12 @@ class _DashboardViewState extends State<DashboardView> {
                               onPressed: () async {
                                 final current = shop?.minimumOrderAmount ?? 0;
                                 if (current >= 50) {
-                                  await FirebaseFirestore.instance
-                                      .collection('shops')
-                                      .doc(shopId)
-                                      .update({
-                                        'minimumOrderAmount': current - 50,
-                                      });
+                                  try {
+                                    await SupabaseService().client
+                                        .from('foody_shops')
+                                        .update({'minimum_order_amount': current - 50})
+                                        .eq('id', shopId);
+                                  } catch (_) {}
                                 }
                               },
                             ),
@@ -1286,12 +1288,12 @@ class _DashboardViewState extends State<DashboardView> {
                               onPressed: () async {
                                 final current = shop?.minimumOrderAmount ?? 0;
                                 if (current < 1000) {
-                                  await FirebaseFirestore.instance
-                                      .collection('shops')
-                                      .doc(shopId)
-                                      .update({
-                                        'minimumOrderAmount': current + 50,
-                                      });
+                                  try {
+                                    await SupabaseService().client
+                                        .from('foody_shops')
+                                        .update({'minimum_order_amount': current + 50})
+                                        .eq('id', shopId);
+                                  } catch (_) {}
                                 }
                               },
                             ),
@@ -1309,7 +1311,7 @@ class _DashboardViewState extends State<DashboardView> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
+                            const Text(
                               'Delivery Charge',
                               style: TextStyle(fontWeight: FontWeight.w500),
                             ),
@@ -1335,10 +1337,12 @@ class _DashboardViewState extends State<DashboardView> {
                               onPressed: () async {
                                 final current = shop?.deliveryCharge ?? 0;
                                 if (current >= 10) {
-                                  await FirebaseFirestore.instance
-                                      .collection('shops')
-                                      .doc(shopId)
-                                      .update({'deliveryCharge': current - 10});
+                                  try {
+                                    await SupabaseService().client
+                                        .from('foody_shops')
+                                        .update({'delivery_charge': current - 10})
+                                        .eq('id', shopId);
+                                  } catch (_) {}
                                 }
                               },
                             ),
@@ -1354,10 +1358,12 @@ class _DashboardViewState extends State<DashboardView> {
                               onPressed: () async {
                                 final current = shop?.deliveryCharge ?? 0;
                                 if (current < 200) {
-                                  await FirebaseFirestore.instance
-                                      .collection('shops')
-                                      .doc(shopId)
-                                      .update({'deliveryCharge': current + 10});
+                                  try {
+                                    await SupabaseService().client
+                                        .from('foody_shops')
+                                        .update({'delivery_charge': current + 10})
+                                        .eq('id', shopId);
+                                  } catch (_) {}
                                 }
                               },
                             ),
@@ -1375,7 +1381,7 @@ class _DashboardViewState extends State<DashboardView> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
+                            const Text(
                               'GST Percentage',
                               style: TextStyle(fontWeight: FontWeight.w500),
                             ),
@@ -1401,10 +1407,12 @@ class _DashboardViewState extends State<DashboardView> {
                               onPressed: () async {
                                 final current = shop?.gstPercentage ?? 5;
                                 if (current >= 1) {
-                                  await FirebaseFirestore.instance
-                                      .collection('shops')
-                                      .doc(shopId)
-                                      .update({'gstPercentage': current - 1});
+                                  try {
+                                    await SupabaseService().client
+                                        .from('foody_shops')
+                                        .update({'gst_percentage': current - 1})
+                                        .eq('id', shopId);
+                                  } catch (_) {}
                                 }
                               },
                             ),
@@ -1420,10 +1428,12 @@ class _DashboardViewState extends State<DashboardView> {
                               onPressed: () async {
                                 final current = shop?.gstPercentage ?? 5;
                                 if (current < 18) {
-                                  await FirebaseFirestore.instance
-                                      .collection('shops')
-                                      .doc(shopId)
-                                      .update({'gstPercentage': current + 1});
+                                  try {
+                                    await SupabaseService().client
+                                        .from('foody_shops')
+                                        .update({'gst_percentage': current + 1})
+                                        .eq('id', shopId);
+                                  } catch (_) {}
                                 }
                               },
                             ),

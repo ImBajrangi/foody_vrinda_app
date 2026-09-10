@@ -119,6 +119,19 @@ class LottieAssets {
     bool animate = true,
     Widget Function(BuildContext, Object, StackTrace?)? errorBuilder,
   }) {
+    final effectiveErrorBuilder = errorBuilder ??
+        (context, error, stackTrace) => SizedBox(
+              width: width,
+              height: height,
+              child: Center(
+                child: Icon(
+                  Icons.restaurant_menu_rounded,
+                  size: ((width ?? height ?? 32) * 0.6).clamp(16.0, 48.0),
+                  color: const Color(0xFFFF8A00).withValues(alpha: 0.6),
+                ),
+              ),
+            );
+
     if (source.startsWith('http')) {
       return Lottie.network(
         source,
@@ -127,7 +140,7 @@ class LottieAssets {
         fit: fit,
         repeat: repeat,
         animate: animate,
-        errorBuilder: errorBuilder,
+        errorBuilder: effectiveErrorBuilder,
       );
     } else {
       return Lottie.asset(
@@ -137,7 +150,7 @@ class LottieAssets {
         fit: fit,
         repeat: repeat,
         animate: animate,
-        errorBuilder: errorBuilder,
+        errorBuilder: effectiveErrorBuilder,
       );
     }
   }

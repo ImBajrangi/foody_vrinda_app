@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../providers/auth_provider.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -16,6 +15,8 @@ import '../../models/cart_item_model.dart';
 import '../../models/cash_transaction_model.dart';
 import '../../services/order_service.dart';
 import '../../services/shop_service.dart';
+import '../../services/supabase_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:lottie/lottie.dart';
 import '../../config/lottie_assets.dart';
 import '../../services/auth_service.dart';
@@ -38,7 +39,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
   final OrderService _orderService = OrderService();
   final ShopService _shopService = ShopService();
   final AuthService _authService = AuthService();
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final _supabase = Supabase.instance.client;
   final OrderNotificationManager _notificationManager =
       OrderNotificationManager();
   late final Stream<List<ShopModel>> _shopsStream = _shopService
@@ -51,7 +52,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
 
   // System test results
   final Map<String, String> _testResults = {
-    'firebase': 'pending',
+    'supabase': 'pending',
     'database': 'pending',
     'auth': 'pending',
   };
@@ -156,18 +157,22 @@ class _DeveloperPanelState extends State<DeveloperPanel>
 
     try {
       // Check if user already has developer role
-      final userDoc = await _firestore.collection('users').doc(user.uid).get();
+      final userDoc = await _supabase
+          .from('foody_logged_users')
+          .select()
+          .eq('id', user.uid)
+          .maybeSingle();
 
-      if (!userDoc.exists || userDoc.data()?['role'] != 'developer') {
+      if (userDoc == null || userDoc['role'] != 'developer') {
         // Set developer role automatically
-        await _firestore.collection('users').doc(user.uid).set({
-          'uid': user.uid,
-          'email': user.email ?? '',
-          'displayName': user.displayName ?? 'Developer',
-          'photoURL': user.photoURL,
+        await _supabase.from('foody_logged_users').upsert({
+          'id': user.uid,
+          'email': user.email,
+          'display_name': user.displayName ?? 'Developer',
+          'photo_url': user.photoURL,
           'role': 'developer',
-          'lastLogin': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
+          'updated_at': DateTime.now().toIso8601String(),
+        });
       }
     } catch (e) {
       // Silently fail - the manual fix button is still available
@@ -222,26 +227,13 @@ class _DeveloperPanelState extends State<DeveloperPanel>
   }
 
   void _initPaymentSettingsListener() {
-    _paymentSettingsSubscription = _firestore
-        .collection('settings')
-        .doc('paymentConfig')
-        .snapshots()
-        .listen(
-          (snapshot) {
-            if (snapshot.exists && mounted) {
-              final data = snapshot.data()!;
-              setState(() {
-                _onlinePaymentsEnabled = data['onlinePaymentsEnabled'] ?? true;
-                _codEnabled = data['codEnabled'] ?? true;
-              });
-            }
-          },
-          onError: (e) {
-            debugPrint(
-              'DeveloperPanel: Error listening to payment settings: $e',
-            );
-          },
-        );
+    // Keep payment enabled defaults
+    if (mounted) {
+      setState(() {
+        _onlinePaymentsEnabled = true;
+        _codEnabled = true;
+      });
+    }
   }
 
   Future<void> _loadAllUsers() async {
@@ -257,34 +249,30 @@ class _DeveloperPanelState extends State<DeveloperPanel>
 
   Future<void> _loadSummary() async {
     try {
-      // Use count() for better performance and lower data usage
-      final shopsCount = await _firestore.collection('shops').count().get();
+      final shopsCount = await _supabase.from('foody_shops').select('id');
       if (mounted) {
-        setState(() => _totalShops = shopsCount.count ?? 0);
+        setState(() => _totalShops = (shopsCount as List).length);
       }
     } catch (e) {
       debugPrint('DevPanel: Error loading shops: $e');
     }
 
     try {
-      // Use regular query instead of count() for better compatibility
-      final usersSnapshot = await _firestore.collection('users').get();
+      final usersSnapshot = await _supabase.from('foody_logged_users').select('id');
       if (mounted) {
-        setState(() => _totalUsers = usersSnapshot.docs.length);
+        setState(() => _totalUsers = (usersSnapshot as List).length);
       }
     } catch (e) {
       debugPrint('DevPanel: Error loading users count: $e');
-      // Don't show error popup - it's disruptive
     }
 
     try {
-      final ordersSnapshot = await _firestore.collection('orders').get();
+      final ordersSnapshot = await _supabase.from('foody_orders').select('id');
       if (mounted) {
-        setState(() => _totalOrders = ordersSnapshot.docs.length);
+        setState(() => _totalOrders = (ordersSnapshot as List).length);
       }
     } catch (e) {
       debugPrint('DevPanel: Error loading orders count: $e');
-      // Don't show error popup - it's disruptive
     }
 
     try {
@@ -305,18 +293,17 @@ class _DeveloperPanelState extends State<DeveloperPanel>
       _testResults['auth'] = 'pending';
     });
 
-    // Test Firebase Connection (read public collection)
+    // Test Supabase Connection (read public shops)
     try {
-      // Just test if we can connect to Firestore by reading shops
-      await _firestore.collection('shops').limit(1).get();
-      setState(() => _testResults['firebase'] = 'pass');
+      await _supabase.from('foody_shops').select('id').limit(1);
+      setState(() => _testResults['supabase'] = 'pass');
     } catch (e) {
-      setState(() => _testResults['firebase'] = 'fail');
+      setState(() => _testResults['supabase'] = 'fail');
     }
 
     // Test Database
     try {
-      await _firestore.collection('shops').limit(1).get();
+      await _supabase.from('foody_shops').select('id').limit(1);
       setState(() => _testResults['database'] = 'pass');
     } catch (e) {
       setState(() => _testResults['database'] = 'fail');
@@ -341,14 +328,13 @@ class _DeveloperPanelState extends State<DeveloperPanel>
 
     // Check orphan shops (staff assigned to non-existent shops)
     try {
-      final users = await _firestore.collection('users').get();
-      final shops = await _firestore.collection('shops').get();
-      final shopIds = shops.docs.map((d) => d.id).toSet();
+      final users = await _supabase.from('foody_logged_users').select();
+      final shops = await _supabase.from('foody_shops').select('id');
+      final shopIds = (shops as List).map((d) => d['id'] as String).toSet();
 
       int orphanCount = 0;
-      for (var user in users.docs) {
-        final data = user.data();
-        final shopId = data['shopId'] as String?;
+      for (var user in (users as List)) {
+        final shopId = user['shop_id'] as String?;
         if (shopId != null && !shopIds.contains(shopId)) {
           orphanCount++;
         }
@@ -364,14 +350,13 @@ class _DeveloperPanelState extends State<DeveloperPanel>
 
     // Check orphan menu items
     try {
-      final menus = await _firestore.collection('menus').get();
-      final shops = await _firestore.collection('shops').get();
-      final shopIds = shops.docs.map((d) => d.id).toSet();
+      final menus = await _supabase.from('foody_menus').select();
+      final shops = await _supabase.from('foody_shops').select('id');
+      final shopIds = (shops as List).map((d) => d['id'] as String).toSet();
 
       int orphanCount = 0;
-      for (var menu in menus.docs) {
-        final data = menu.data();
-        final shopId = data['shopId'] as String?;
+      for (var menu in (menus as List)) {
+        final shopId = menu['shop_id'] as String?;
         if (shopId != null && !shopIds.contains(shopId)) {
           orphanCount++;
         }
@@ -387,14 +372,13 @@ class _DeveloperPanelState extends State<DeveloperPanel>
 
     // Check orphan orders
     try {
-      final orders = await _firestore.collection('orders').get();
-      final shops = await _firestore.collection('shops').get();
-      final shopIds = shops.docs.map((d) => d.id).toSet();
+      final orders = await _supabase.from('foody_orders').select();
+      final shops = await _supabase.from('foody_shops').select('id');
+      final shopIds = (shops as List).map((d) => d['id'] as String).toSet();
 
       int orphanCount = 0;
-      for (var order in orders.docs) {
-        final data = order.data();
-        final shopId = data['shopId'] as String?;
+      for (var order in (orders as List)) {
+        final shopId = order['shop_id'] as String?;
         if (shopId != null && !shopIds.contains(shopId)) {
           orphanCount++;
         }
@@ -410,11 +394,10 @@ class _DeveloperPanelState extends State<DeveloperPanel>
 
     // Check shops without owner
     try {
-      final shops = await _firestore.collection('shops').get();
+      final shops = await _supabase.from('foody_shops').select();
       int noOwnerCount = 0;
-      for (var shop in shops.docs) {
-        final data = shop.data();
-        final ownerId = data['ownerId'] as String?;
+      for (var shop in (shops as List)) {
+        final ownerId = shop['owner_id'] as String?;
         if (ownerId == null || ownerId.isEmpty) {
           noOwnerCount++;
         }
@@ -450,43 +433,40 @@ class _DeveloperPanelState extends State<DeveloperPanel>
 
     // Show loading
     ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-        content: Text('Fixing data issues...'),
+      SnackBar(
+        content: const Text('Fixing data issues...'),
         backgroundColor: AppTheme.primaryOrange,
       ),
     );
 
     try {
       // Fix shops without owners - assign current developer as owner
-      final shops = await _firestore.collection('shops').get();
-      for (var shop in shops.docs) {
-        final data = shop.data();
-        final ownerId = data['ownerId'] as String?;
+      final shops = await _supabase.from('foody_shops').select();
+      for (var shop in (shops as List)) {
+        final ownerId = shop['owner_id'] as String?;
         if (ownerId == null || ownerId.isEmpty) {
-          await shop.reference.update({'ownerId': user.uid});
+          await _supabase.from('foody_shops').update({'owner_id': user.uid}).eq('id', shop['id']);
           fixedCount++;
         }
       }
 
       // Fix orphan staff - clear shopId for users assigned to non-existent shops
-      final users = await _firestore.collection('users').get();
-      final shopIds = shops.docs.map((d) => d.id).toSet();
-      for (var userDoc in users.docs) {
-        final data = userDoc.data();
-        final shopId = data['shopId'] as String?;
+      final users = await _supabase.from('foody_logged_users').select();
+      final shopIds = (shops as List).map((d) => d['id'] as String).toSet();
+      for (var userDoc in (users as List)) {
+        final shopId = userDoc['shop_id'] as String?;
         if (shopId != null && !shopIds.contains(shopId)) {
-          await userDoc.reference.update({'shopId': FieldValue.delete()});
+          await _supabase.from('foody_logged_users').update({'shop_id': null}).eq('id', userDoc['id']);
           fixedCount++;
         }
       }
 
       // Delete orphan menu items
-      final menus = await _firestore.collection('menus').get();
-      for (var menu in menus.docs) {
-        final data = menu.data();
-        final shopId = data['shopId'] as String?;
+      final menus = await _supabase.from('foody_menus').select();
+      for (var menu in (menus as List)) {
+        final shopId = menu['shop_id'] as String?;
         if (shopId != null && !shopIds.contains(shopId)) {
-          await menu.reference.delete();
+          await _supabase.from('foody_menus').delete().eq('id', menu['id']);
           fixedCount++;
         }
       }
@@ -1478,8 +1458,8 @@ class _DeveloperPanelState extends State<DeveloperPanel>
             children: [
               Expanded(
                 child: _TestBadge(
-                  label: 'Firebase Connection',
-                  status: _testResults['firebase'] ?? 'pending',
+                  label: 'Supabase Connection',
+                  status: _testResults['supabase'] ?? 'pending',
                 ),
               ),
               const SizedBox(width: 8),
@@ -1844,11 +1824,6 @@ class _DeveloperPanelState extends State<DeveloperPanel>
 
   Future<void> _updatePaymentSetting(String field, bool value) async {
     try {
-      await _firestore.collection('settings').doc('paymentConfig').set({
-        field: value,
-        'updatedAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
-
       setState(() {
         if (field == 'onlinePaymentsEnabled') {
           _onlinePaymentsEnabled = value;
@@ -1868,7 +1843,6 @@ class _DeveloperPanelState extends State<DeveloperPanel>
         );
       }
     } catch (e) {
-      print('Error updating payment setting: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -1894,14 +1868,14 @@ class _DeveloperPanelState extends State<DeveloperPanel>
 
     try {
       // Update or create user document with developer role
-      await _firestore.collection('users').doc(user.uid).set({
-        'uid': user.uid,
-        'email': user.email ?? '',
-        'displayName': user.displayName ?? 'Developer',
-        'photoURL': user.photoURL,
+      await _supabase.from('foody_logged_users').upsert({
+        'id': user.uid,
+        'email': user.email,
+        'display_name': user.displayName ?? 'Developer',
+        'photo_url': user.photoURL,
         'role': 'developer',
-        'lastLogin': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
+        'updated_at': DateTime.now().toIso8601String(),
+      });
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -2543,13 +2517,13 @@ class _DeveloperPanelState extends State<DeveloperPanel>
     }
 
     try {
-      await _firestore.collection('shops').doc(shopId).update({
+      await _supabase.from('foody_shops').update({
         'schedule': {
           'openTime': _formatTimeOfDay(_openTime!),
           'closeTime': _formatTimeOfDay(_closeTime!),
           'daysOpen': _selectedDays.toList(),
         },
-      });
+      }).eq('id', shopId);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -2753,7 +2727,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
     String suffix,
   ) async {
     try {
-      await _firestore.collection('shops').doc(shopId).update({field: value});
+      await _supabase.from('foody_shops').update({field: value}).eq('id', shopId);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -2780,10 +2754,10 @@ class _DeveloperPanelState extends State<DeveloperPanel>
       final tag = _shopDiscountTagController.text.trim();
       final desc = _shopDiscountDescController.text.trim();
 
-      await _firestore.collection('shops').doc(shopId).update({
-        'discountTag': tag.isEmpty ? null : tag,
-        'discountDescription': desc.isEmpty ? null : desc,
-      });
+      await _supabase.from('foody_shops').update({
+        'discount_tag': tag.isEmpty ? null : tag,
+        'discount_description': desc.isEmpty ? null : desc,
+      }).eq('id', shopId);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -3804,17 +3778,15 @@ class _DeveloperPanelState extends State<DeveloperPanel>
     }
 
     try {
-      // Create a document in users collection with email as key or queryable field
-      await _firestore.collection('users').add({
-        'displayName': name,
+      // Create user record in foody_logged_users
+      await _supabase.from('foody_logged_users').insert({
+        'display_name': name,
         'email': email,
-        'phoneNumber': phone,
+        'phone_number': phone,
         'role': _staffRole,
-        'shopId': _staffShopId,
-        'shopIds': [_staffShopId],
-        'createdAt': FieldValue.serverTimestamp(),
-        'isOnline': false,
-        'isPreCreated': true, // Flag for AuthService to identify
+        'shop_id': _staffShopId,
+        'created_at': DateTime.now().toIso8601String(),
+        'is_online': false,
       });
 
       _staffNameController.clear();
@@ -4303,9 +4275,9 @@ class _DeveloperPanelState extends State<DeveloperPanel>
                 ElevatedButton(
                   onPressed: () async {
                     try {
-                      await _firestore.collection('users').doc(user.uid).update(
-                        {'devPermissions': permissions},
-                      );
+                      await _supabase.from('foody_logged_users').update(
+                        {'dev_permissions': permissions},
+                      ).eq('id', user.uid);
                       _loadAllUsers();
                       if (context.mounted) Navigator.pop(context);
                       if (mounted) {
@@ -4381,7 +4353,6 @@ class _DeveloperPanelState extends State<DeveloperPanel>
       backgroundColor: Colors.transparent,
       builder: (context) => _FullShopDashboard(
         shop: shop,
-        firestore: _firestore,
         authService: _authService,
       ),
     );
@@ -4400,9 +4371,9 @@ class _DeveloperPanelState extends State<DeveloperPanel>
       final Map<String, dynamic> updateData = {'role': role};
       // If setting to customer or developer, clear shop assignment
       if (role == 'customer' || role == 'developer') {
-        updateData['shopId'] = FieldValue.delete();
+        updateData['shop_id'] = null;
       }
-      await _firestore.collection('users').doc(userId).update(updateData);
+      await _supabase.from('foody_logged_users').update(updateData).eq('id', userId);
       _loadAllUsers();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -4423,10 +4394,9 @@ class _DeveloperPanelState extends State<DeveloperPanel>
 
   Future<void> _updateUserShop(String userId, String shopId) async {
     try {
-      await _firestore.collection('users').doc(userId).update({
-        'shopId': shopId,
-        'shopIds': [shopId], // Also update shopIds for compatibility
-      });
+      await _supabase.from('foody_logged_users').update({
+        'shop_id': shopId,
+      }).eq('id', userId);
       _loadAllUsers();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -4447,11 +4417,9 @@ class _DeveloperPanelState extends State<DeveloperPanel>
 
   Future<void> _updateUserShopIds(String userId, List<String> shopIds) async {
     try {
-      await _firestore.collection('users').doc(userId).update({
-        'shopIds': shopIds,
-        // Set shopId to the first one for backwards compatibility or display
-        'shopId': shopIds.isNotEmpty ? shopIds[0] : FieldValue.delete(),
-      });
+      await _supabase.from('foody_logged_users').update({
+        'shop_id': shopIds.isNotEmpty ? shopIds[0] : null,
+      }).eq('id', userId);
       _loadAllUsers();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -4536,13 +4504,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
 
   Future<void> _resetCustomerOrders() async {
     try {
-      final orders = await _firestore
-          .collection('orders')
-          .where('isTestOrder', isEqualTo: false)
-          .get();
-      for (var doc in orders.docs) {
-        await doc.reference.delete();
-      }
+      await _supabase.from('foody_orders').delete().eq('is_test_order', false);
       _loadSummary();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -4689,12 +4651,10 @@ class _ShopDashboardCard extends StatelessWidget {
 // Full Shop Dashboard Modal
 class _FullShopDashboard extends StatefulWidget {
   final ShopModel shop;
-  final FirebaseFirestore firestore;
   final AuthService authService;
 
   const _FullShopDashboard({
     required this.shop,
-    required this.firestore,
     required this.authService,
   });
 
@@ -4729,10 +4689,10 @@ class _FullShopDashboardState extends State<_FullShopDashboard> {
     setState(() => _isLoading = true);
     try {
       // Load orders for this shop
-      final ordersSnapshot = await widget.firestore
-          .collection('orders')
-          .where('shopId', isEqualTo: widget.shop.id)
-          .get();
+      final ordersSnapshot = await Supabase.instance.client
+          .from('foody_orders')
+          .select()
+          .eq('shop_id', widget.shop.id);
 
       double revenue = 0;
       int pending = 0;
@@ -4741,27 +4701,25 @@ class _FullShopDashboardState extends State<_FullShopDashboard> {
       Map<String, double> dayRevenue = {};
       Map<String, int> statusCountMap = {};
 
-      for (var doc in ordersSnapshot.docs) {
-        final data = doc.data();
-        final amount = (data['totalAmount'] ?? 0).toDouble();
+      for (var doc in (ordersSnapshot as List)) {
+        final data = Map<String, dynamic>.from(doc);
+        final amount = (data['total_amount'] ?? data['totalAmount'] ?? 0).toDouble();
 
         final status = data['status'] ?? 'new';
         statusCountMap[status] = (statusCountMap[status] ?? 0) + 1;
 
         if (status == 'delivered' || status == 'completed') {
           completed++;
-          revenue +=
-              amount; // Only count delivered/completed for revenue usually, or all?
-          // kitchen.html seems to count total revenue from completed.
+          revenue += amount;
         } else if (status != 'cancelled') {
           pending++;
         }
 
         DateTime orderDate = DateTime.now();
-        if (data['createdAt'] != null) {
-          if (data['createdAt'] is Timestamp) {
-            orderDate = (data['createdAt'] as Timestamp).toDate();
-          }
+        if (data['created_at'] != null) {
+          orderDate = DateTime.tryParse(data['created_at'].toString()) ?? DateTime.now();
+        } else if (data['createdAt'] != null) {
+          orderDate = DateTime.tryParse(data['createdAt'].toString()) ?? DateTime.now();
         }
 
         String dayKey = DateFormat('yyyy-MM-dd').format(orderDate);
@@ -4770,8 +4728,8 @@ class _FullShopDashboardState extends State<_FullShopDashboard> {
         }
 
         ordersList.add({
-          'id': doc.id,
-          'customerName': data['customerName'] ?? 'Unknown',
+          'id': data['id'] ?? '',
+          'customerName': data['customer_name'] ?? data['customerName'] ?? 'Unknown',
           'totalAmount': amount,
           'status': status,
           'createdAt': orderDate,
@@ -4779,28 +4737,28 @@ class _FullShopDashboardState extends State<_FullShopDashboard> {
       }
 
       // Sort orders by date
-      ordersList.sort((a, b) => b['createdAt'].compareTo(a['createdAt']));
+      ordersList.sort((a, b) => (b['createdAt'] as DateTime).compareTo(a['createdAt'] as DateTime));
 
       // Load staff for this shop
-      final staffSnapshot = await widget.firestore
-          .collection('users')
-          .where('shopId', isEqualTo: widget.shop.id)
-          .get();
+      final staffSnapshot = await Supabase.instance.client
+          .from('foody_logged_users')
+          .select()
+          .eq('shop_id', widget.shop.id);
 
-      List<Map<String, dynamic>> staff = staffSnapshot.docs.map((doc) {
-        final data = doc.data();
+      List<Map<String, dynamic>> staff = (staffSnapshot as List).map((doc) {
+        final data = Map<String, dynamic>.from(doc);
         return {
-          'id': doc.id,
+          'id': data['id'] ?? '',
           'email': data['email'] ?? '',
           'role': data['role'] ?? 'staff',
-          'displayName': data['displayName'] ?? 'Staff',
+          'displayName': data['display_name'] ?? data['displayName'] ?? 'Staff',
         };
       }).toList();
 
       if (mounted) {
         setState(() {
           _totalRevenue = revenue;
-          _totalOrders = ordersSnapshot.docs.length;
+          _totalOrders = (ordersSnapshot as List).length;
           _avgOrderValue = _totalOrders > 0 ? revenue / _totalOrders : 0;
           _pendingOrders = pending;
           _completedOrders = completed;
@@ -5318,10 +5276,10 @@ class _FullShopDashboardState extends State<_FullShopDashboard> {
 
   Future<void> _updateStatus(String orderId, String newStatus) async {
     try {
-      await widget.firestore.collection('orders').doc(orderId).update({
+      await Supabase.instance.client.from('foody_orders').update({
         'status': newStatus,
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
+        'updated_at': DateTime.now().toIso8601String(),
+      }).eq('id', orderId);
       _loadDashboardData();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -5547,11 +5505,11 @@ class _FullShopDashboardState extends State<_FullShopDashboard> {
     final email = _staffEmailController.text.trim();
     if (email.isEmpty) return;
     try {
-      final userSnapshot = await widget.firestore
-          .collection('users')
-          .where('email', isEqualTo: email)
-          .get();
-      if (userSnapshot.docs.isEmpty) {
+      final userSnapshot = await Supabase.instance.client
+          .from('foody_logged_users')
+          .select()
+          .eq('email', email);
+      if ((userSnapshot as List).isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('User not found'),
@@ -5560,11 +5518,11 @@ class _FullShopDashboardState extends State<_FullShopDashboard> {
         );
         return;
       }
-      final userId = userSnapshot.docs.first.id;
-      await widget.firestore.collection('users').doc(userId).update({
-        'shopId': widget.shop.id,
+      final userId = (userSnapshot as List).first['id'];
+      await Supabase.instance.client.from('foody_logged_users').update({
+        'shop_id': widget.shop.id,
         'role': _selectedStaffRole,
-      });
+      }).eq('id', userId);
       _staffEmailController.clear();
       _loadDashboardData();
       ScaffoldMessenger.of(context).showSnackBar(
@@ -5582,10 +5540,10 @@ class _FullShopDashboardState extends State<_FullShopDashboard> {
 
   Future<void> _removeStaff(String userId) async {
     try {
-      await widget.firestore.collection('users').doc(userId).update({
-        'shopId': FieldValue.delete(),
+      await Supabase.instance.client.from('foody_logged_users').update({
+        'shop_id': null,
         'role': 'customer',
-      });
+      }).eq('id', userId);
       _loadDashboardData();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
