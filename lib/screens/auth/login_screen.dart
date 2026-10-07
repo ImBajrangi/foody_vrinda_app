@@ -789,7 +789,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text('OPERATIONAL SWITCHER', style: TextStyle(color: Color(0xFFE0FF33), fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
-                    Text('DEVELOPER ROOT', style: TextStyle(color: Color(0xFFA1A1AA), fontSize: 9.5, fontWeight: FontWeight.bold)),
+                    Text('DEVELOPER', style: TextStyle(color: Color(0xFFA1A1AA), fontSize: 9.5, fontWeight: FontWeight.bold)),
                   ],
                 ),
                 const SizedBox(height: 10),
