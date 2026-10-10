@@ -1879,7 +1879,7 @@ class _HomeScreenState extends State<HomeScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            const Color(0xFFE0FF33).withValues(alpha: 0.25),
+            const Color(0xFFCB785C).withValues(alpha: 0.25),
             AppTheme.primaryOrange.withValues(alpha: 0.15),
           ],
         ),
@@ -1890,7 +1890,7 @@ class _HomeScreenState extends State<HomeScreen> {
           style: const TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.w900,
-            color: Color(0xFFE0FF33),
+            color: Color(0xFFCB785C),
           ),
         ),
       ),

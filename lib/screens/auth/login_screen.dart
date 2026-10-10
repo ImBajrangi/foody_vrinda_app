@@ -304,12 +304,12 @@ class _LoginScreenState extends State<LoginScreen> {
             color: const Color(0xFF1E1B1C),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: const Color(0xFFE0FF33).withValues(alpha: 0.3),
+              color: const Color(0xFFCB785C).withValues(alpha: 0.3),
               width: 1.5,
             ),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFFE0FF33).withValues(alpha: 0.15),
+                color: const Color(0xFFCB785C).withValues(alpha: 0.15),
                 blurRadius: 12,
               ),
             ],
@@ -319,14 +319,14 @@ class _LoginScreenState extends State<LoginScreen> {
                 ? Text(
                     user?.initials ?? 'V',
                     style: const TextStyle(
-                      color: Color(0xFFE0FF33),
+                      color: Color(0xFFCB785C),
                       fontWeight: FontWeight.w900,
                       fontSize: 18,
                     ),
                   )
                 : const Icon(
                     Icons.restaurant_menu_rounded,
-                    color: Color(0xFFE0FF33),
+                    color: Color(0xFFCB785C),
                     size: 22,
                   ),
           ),
@@ -460,7 +460,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     fillColor: const Color(0xFF221F20),
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(10),
-                                      borderSide: const BorderSide(color: Color(0xFFE0FF33)),
+                                      borderSide: const BorderSide(color: Color(0xFFCB785C)),
                                     ),
                                   ),
                                 ),
@@ -468,7 +468,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               const SizedBox(width: 6),
                               IconButton(
                                 onPressed: _saveProfileEdits,
-                                icon: const Icon(Icons.check, color: Color(0xFFE0FF33), size: 20),
+                                icon: const Icon(Icons.check, color: Color(0xFFCB785C), size: 20),
                               ),
                             ],
                           )
@@ -500,14 +500,14 @@ class _LoginScreenState extends State<LoginScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFE0FF33).withValues(alpha: 0.12),
+                      color: const Color(0xFFCB785C).withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(999),
-                      border: Border.all(color: const Color(0xFFE0FF33).withValues(alpha: 0.3)),
+                      border: Border.all(color: const Color(0xFFCB785C).withValues(alpha: 0.3)),
                     ),
                     child: Text(
                       user.role.value.toUpperCase(),
                       style: const TextStyle(
-                        color: Color(0xFFE0FF33),
+                        color: Color(0xFFCB785C),
                         fontSize: 10,
                         fontWeight: FontWeight.w900,
                         letterSpacing: 0.6,
@@ -546,7 +546,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         children: [
                           const Row(
                             children: [
-                              Icon(Icons.phone_iphone_rounded, color: Color(0xFFE0FF33), size: 14),
+                              Icon(Icons.phone_iphone_rounded, color: Color(0xFFCB785C), size: 14),
                               SizedBox(width: 4),
                               Text('MOBILE', style: TextStyle(color: Color(0xFF71717A), fontSize: 9.5, fontWeight: FontWeight.bold)),
                             ],
@@ -582,7 +582,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           children: [
                             const Row(
                               children: [
-                                Icon(Icons.location_on_outlined, color: Color(0xFFE0FF33), size: 14),
+                                Icon(Icons.location_on_outlined, color: Color(0xFFCB785C), size: 14),
                                 SizedBox(width: 4),
                                 Text('ADDRESS', style: TextStyle(color: Color(0xFF71717A), fontSize: 9.5, fontWeight: FontWeight.bold)),
                               ],
@@ -612,7 +612,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   decoration: BoxDecoration(
                     color: const Color(0xFF141213),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFFE0FF33).withValues(alpha: 0.3)),
+                    border: Border.all(color: const Color(0xFFCB785C).withValues(alpha: 0.3)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -667,7 +667,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ElevatedButton(
                             onPressed: _saveProfileEdits,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFE0FF33),
+                              backgroundColor: const Color(0xFFCB785C),
                               foregroundColor: Colors.black,
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -695,10 +695,10 @@ class _LoginScreenState extends State<LoginScreen> {
                           width: 32,
                           height: 32,
                           decoration: BoxDecoration(
-                            color: const Color(0xFFE0FF33).withValues(alpha: 0.1),
+                            color: const Color(0xFFCB785C).withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: const Icon(Icons.auto_awesome, color: Color(0xFFE0FF33), size: 16),
+                          child: const Icon(Icons.auto_awesome, color: Color(0xFFCB785C), size: 16),
                         ),
                         const SizedBox(width: 10),
                         const Column(
@@ -780,7 +780,7 @@ class _LoginScreenState extends State<LoginScreen> {
             decoration: BoxDecoration(
               color: const Color(0xFF181617),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0xFFE0FF33).withValues(alpha: 0.3)),
+              border: Border.all(color: const Color(0xFFCB785C).withValues(alpha: 0.3)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -788,7 +788,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 const Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('OPERATIONAL SWITCHER', style: TextStyle(color: Color(0xFFE0FF33), fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
+                    Text('OPERATIONAL SWITCHER', style: TextStyle(color: Color(0xFFCB785C), fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
                     Text('DEVELOPER', style: TextStyle(color: Color(0xFFA1A1AA), fontSize: 9.5, fontWeight: FontWeight.bold)),
                   ],
                 ),
@@ -827,7 +827,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.sync_alt, color: Color(0xFFE0FF33), size: 16),
+                      Icon(Icons.sync_alt, color: Color(0xFFCB785C), size: 16),
                       SizedBox(width: 8),
                       Text('Switch Account', style: TextStyle(color: Colors.white, fontSize: 12.5, fontWeight: FontWeight.w700)),
                     ],
@@ -874,9 +874,9 @@ class _LoginScreenState extends State<LoginScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFE0FF33) : const Color(0xFF221F20),
+          color: isSelected ? const Color(0xFFCB785C) : const Color(0xFF221F20),
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: isSelected ? const Color(0xFFE0FF33) : Colors.white10),
+          border: Border.all(color: isSelected ? const Color(0xFFCB785C) : Colors.white10),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -911,9 +911,9 @@ class _LoginScreenState extends State<LoginScreen> {
               padding: EdgeInsets.only(bottom: 12),
               child: Row(
                 children: [
-                  Icon(Icons.arrow_back, color: Color(0xFFE0FF33), size: 16),
+                  Icon(Icons.arrow_back, color: Color(0xFFCB785C), size: 16),
                   SizedBox(width: 6),
-                  Text('Back to active profile', style: TextStyle(color: Color(0xFFE0FF33), fontSize: 12, fontWeight: FontWeight.bold)),
+                  Text('Back to active profile', style: TextStyle(color: Color(0xFFCB785C), fontSize: 12, fontWeight: FontWeight.bold)),
                 ],
               ),
             ),
@@ -972,7 +972,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     _buildStepDot(3, 'Delivery'),
                   ],
                 ),
-                Text('$_signupStep/3', style: const TextStyle(color: Color(0xFFE0FF33), fontWeight: FontWeight.w900, fontSize: 12)),
+                Text('$_signupStep/3', style: const TextStyle(color: Color(0xFFCB785C), fontWeight: FontWeight.w900, fontSize: 12)),
               ],
             ),
           ),
@@ -991,7 +991,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             child: Row(
               children: [
-                const Text('+91', style: TextStyle(color: Color(0xFFE0FF33), fontWeight: FontWeight.w900, fontSize: 15)),
+                const Text('+91', style: TextStyle(color: Color(0xFFCB785C), fontWeight: FontWeight.w900, fontSize: 15)),
                 const SizedBox(width: 12),
                 const SizedBox(height: 24, child: VerticalDivider(color: Colors.white24, width: 1)),
                 const SizedBox(width: 12),
@@ -1026,11 +1026,11 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Container(
               height: 52,
               decoration: BoxDecoration(
-                color: const Color(0xFFE0FF33),
+                color: const Color(0xFFCB785C),
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFFE0FF33).withValues(alpha: 0.3),
+                    color: const Color(0xFFCB785C).withValues(alpha: 0.3),
                     blurRadius: 16,
                     offset: const Offset(0, 4),
                   ),
@@ -1106,11 +1106,11 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Container(
               height: 52,
               decoration: BoxDecoration(
-                color: const Color(0xFFE0FF33),
+                color: const Color(0xFFCB785C),
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFFE0FF33).withValues(alpha: 0.3),
+                    color: const Color(0xFFCB785C).withValues(alpha: 0.3),
                     blurRadius: 16,
                     offset: const Offset(0, 4),
                   ),
@@ -1151,7 +1151,7 @@ class _LoginScreenState extends State<LoginScreen> {
             },
             child: Text(
               _isSignup ? 'Already have an account? Sign In' : 'New devotee? Create Account in 3 Steps',
-              style: const TextStyle(color: Color(0xFFE0FF33), fontSize: 12.5, fontWeight: FontWeight.bold),
+              style: const TextStyle(color: Color(0xFFCB785C), fontSize: 12.5, fontWeight: FontWeight.bold),
             ),
           ),
         ),
@@ -1244,7 +1244,7 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 14, color: isSelected ? const Color(0xFFE0FF33) : const Color(0xFF71717A)),
+            Icon(icon, size: 14, color: isSelected ? const Color(0xFFCB785C) : const Color(0xFF71717A)),
             const SizedBox(width: 6),
             Text(
               title,
@@ -1271,13 +1271,13 @@ class _LoginScreenState extends State<LoginScreen> {
           height: 22,
           decoration: BoxDecoration(
             color: isActive
-                ? const Color(0xFFE0FF33)
-                : (isDone ? const Color(0xFFE0FF33).withValues(alpha: 0.2) : Colors.white10),
+                ? const Color(0xFFCB785C)
+                : (isDone ? const Color(0xFFCB785C).withValues(alpha: 0.2) : Colors.white10),
             shape: BoxShape.circle,
           ),
           child: Center(
             child: isDone
-                ? const Icon(Icons.check, size: 12, color: Color(0xFFE0FF33))
+                ? const Icon(Icons.check, size: 12, color: Color(0xFFCB785C))
                 : Text(
                     '$step',
                     style: TextStyle(
@@ -1306,7 +1306,7 @@ class _LoginScreenState extends State<LoginScreen> {
       width: 14,
       height: 2,
       margin: const EdgeInsets.symmetric(horizontal: 4),
-      color: _signupStep > step ? const Color(0xFFE0FF33) : Colors.white12,
+      color: _signupStep > step ? const Color(0xFFCB785C) : Colors.white12,
     );
   }
 
