@@ -28,6 +28,8 @@ import '../developer/developer_panel.dart';
 import '../search/search_screen.dart';
 import '../order/order_history_screen.dart';
 import '../settings/notification_settings_screen.dart';
+import '../rewards/fv_rewards_sheet.dart';
+import '../../services/fv_wallet_service.dart';
 import '../../services/order_notification_manager.dart';
 import '../../config/emoji_to_icon.dart';
 import '../../widgets/pressable_scale.dart';
@@ -220,6 +222,49 @@ class _HomeScreenState extends State<HomeScreen> {
               // Actions
               Row(
                 children: [
+                  // FV Prasad Rewards Pill
+                  if (_selectedViewIndex == 0)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 6),
+                      child: PressableScale(
+                        onTap: () => FVRewardsSheet.show(context),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1E1B1C),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: const Color(0xFFFFD000).withValues(alpha: 0.6),
+                              width: 1.2,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFFFFD000).withValues(alpha: 0.15),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.stars_rounded, size: 15, color: Color(0xFFFFD000)),
+                              SizedBox(width: 4),
+                              Text(
+                                '150 FV',
+                                style: TextStyle(
+                                  color: Color(0xFFFFD000),
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: -0.2,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+
                   // Cart badge (for customers)
                   if (_selectedViewIndex == 0 && cartProvider.isNotEmpty)
                     PressableScale(
@@ -2207,6 +2252,34 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     if (userData != null) ...[
                       _buildProfileTile(
+                        icon: Icons.stars_rounded,
+                        title: 'Prasad Rewards & Dynasty',
+                        subtitle: 'Earn FV coins, unlock tiers & redeem prasad',
+                        trailing: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFD000).withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: const Color(0xFFFFD000).withValues(alpha: 0.4),
+                              width: 1,
+                            ),
+                          ),
+                          child: const Text(
+                            '150 FV',
+                            style: TextStyle(
+                              color: Color(0xFFFFD000),
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                        onTap: () {
+                          FVRewardsSheet.show(context);
+                        },
+                      ),
+                      const Divider(height: 1, indent: 56),
+                      _buildProfileTile(
                         icon: Icons.receipt_long_rounded,
                         title: 'My Orders',
                         subtitle: 'Check history and tracking status',
@@ -2515,6 +2588,7 @@ class _HomeScreenState extends State<HomeScreen> {
     required String title,
     required String subtitle,
     required VoidCallback onTap,
+    Widget? trailing,
   }) {
     return Material(
       color: Colors.transparent,
@@ -2536,7 +2610,7 @@ class _HomeScreenState extends State<HomeScreen> {
           subtitle,
           style:       TextStyle(fontSize: 12, color: AppTheme.textSecondary),
         ),
-        trailing:       Icon(Icons.chevron_right, size: 20, color: AppTheme.textTertiary),
+        trailing: trailing ?? Icon(Icons.chevron_right, size: 20, color: AppTheme.textTertiary),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       ),
     );

@@ -20,6 +20,7 @@ import '../order/order_tracking_screen.dart';
 import '../auth/login_screen.dart';
 import '../../config/telegram_page_route.dart';
 import '../../models/order_model.dart';
+import '../../services/fv_wallet_service.dart';
 
 class CartScreen extends StatefulWidget {
   final ShopModel? shop;
@@ -48,6 +49,10 @@ class _CartScreenState extends State<CartScreen> {
   bool _onlinePaymentsEnabled = true;
   bool _codEnabled = true;
 
+  // FV Points & Dynasty Rewards
+  bool _useFvPoints = false;
+  double _availableFvPoints = 0.0;
+
   // Store order details for use after payment success
   String? _pendingCustomerName;
   String? _pendingCustomerPhone;
@@ -61,11 +66,29 @@ class _CartScreenState extends State<CartScreen> {
     super.initState();
     _initializeRazorpay();
     _initPaymentSettingsListener();
+    _loadWalletPoints();
     if (widget.shop != null) {
       _shop = widget.shop;
       _shopLoading = false;
     } else {
       _loadShop();
+    }
+  }
+
+  Future<void> _loadWalletPoints() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final userId = authProvider.userData?.uid ?? authProvider.user?.id;
+    if (userId != null && userId.isNotEmpty) {
+      try {
+        final wallet = await FVWalletService().getWalletDashboard(userId);
+        if (mounted && wallet != null) {
+          setState(() {
+            _availableFvPoints = wallet.availablePoints;
+          });
+        }
+      } catch (e) {
+        debugPrint('CartScreen: Error loading wallet points - $e');
+      }
     }
   }
 
@@ -798,10 +821,15 @@ class _CartScreenState extends State<CartScreen> {
       backgroundColor: Colors.transparent,
       builder: (sheetContext) => StatefulBuilder(
         builder: (context, setSheetState) {
+          final fvDiscount = _useFvPoints
+              ? (_availableFvPoints * FVWalletService.exchangeRate).clamp(0.0, total)
+              : 0.0;
+          final finalTotal = (total - fvDiscount).clamp(0.0, double.infinity);
+
           return Container(
-            decoration:       BoxDecoration(
+            decoration: BoxDecoration(
               color: AppTheme.cardBackground,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
             ),
             padding: const EdgeInsets.all(20),
             child: Column(
@@ -823,7 +851,7 @@ class _CartScreenState extends State<CartScreen> {
                 // Title
                 Row(
                   children: [
-                          Icon(
+                    Icon(
                       Icons.receipt_long,
                       color: AppTheme.primaryOrange,
                       size: 24,
@@ -857,7 +885,7 @@ class _CartScreenState extends State<CartScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                                  Text(
+                            Text(
                               'Delivery To',
                               style: TextStyle(
                                 fontSize: 11,
@@ -911,7 +939,7 @@ class _CartScreenState extends State<CartScreen> {
                             ),
                             child: Text(
                               '${item.quantity}x',
-                              style:       TextStyle(
+                              style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: AppTheme.primaryOrange,
                                 fontSize: 12,
@@ -938,6 +966,88 @@ class _CartScreenState extends State<CartScreen> {
                   ),
                 ),
                 const Divider(height: 24),
+
+                // FV Points Redemption Option
+                if (_availableFvPoints >= 10) ...[
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1E1B1C),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: _useFvPoints
+                            ? const Color(0xFFFFD000)
+                            : const Color(0xFF383435),
+                        width: 1.2,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(7),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFD000).withValues(alpha: 0.15),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.stars_rounded, color: Color(0xFFFFD000), size: 18),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  const Text(
+                                    'Redeem FV Points',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFFFD000).withValues(alpha: 0.2),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Text(
+                                      '${_availableFvPoints.toInt()} pts',
+                                      style: const TextStyle(
+                                        color: Color(0xFFFFD000),
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Text(
+                                'Save ₹${(_availableFvPoints * FVWalletService.exchangeRate).toStringAsFixed(0)} on this order',
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: Color(0xFFA8A29E),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Switch(
+                          value: _useFvPoints,
+                          activeColor: const Color(0xFFFFD000),
+                          onChanged: (val) {
+                            setSheetState(() => _useFvPoints = val);
+                            setState(() => _useFvPoints = val);
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+
                 // Pricing Breakdown
                 _buildPriceRow('Subtotal', subtotal),
                 if (gstPercentage > 0)
@@ -947,6 +1057,12 @@ class _CartScreenState extends State<CartScreen> {
                   ),
                 if (deliveryCharge > 0)
                   _buildPriceRow('Delivery Charge', deliveryCharge),
+                if (_useFvPoints && fvDiscount > 0)
+                  _buildPriceRow(
+                    'FV Points Discount',
+                    fvDiscount,
+                    isDiscount: true,
+                  ),
                 const SizedBox(height: 8),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -959,8 +1075,8 @@ class _CartScreenState extends State<CartScreen> {
                       ),
                     ),
                     Text(
-                      '₹${total.toStringAsFixed(0)}',
-                      style:       TextStyle(
+                      '₹${finalTotal.toStringAsFixed(0)}',
+                      style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 20,
                         color: AppTheme.primaryOrange,
@@ -1032,7 +1148,7 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
-  Widget _buildPriceRow(String label, double amount) {
+  Widget _buildPriceRow(String label, double amount, {bool isDiscount = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -1040,11 +1156,19 @@ class _CartScreenState extends State<CartScreen> {
         children: [
           Text(
             label,
-            style:       TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+            style: TextStyle(
+              color: isDiscount ? const Color(0xFF10B981) : AppTheme.textSecondary,
+              fontSize: 13,
+              fontWeight: isDiscount ? FontWeight.w600 : FontWeight.normal,
+            ),
           ),
           Text(
-            '₹${amount.toStringAsFixed(0)}',
-            style: const TextStyle(fontSize: 13),
+            '${isDiscount ? "- " : ""}₹${amount.abs().toStringAsFixed(0)}',
+            style: TextStyle(
+              fontSize: 13,
+              color: isDiscount ? const Color(0xFF10B981) : null,
+              fontWeight: isDiscount ? FontWeight.w700 : FontWeight.normal,
+            ),
           ),
         ],
       ),
@@ -1336,7 +1460,18 @@ class _CartScreenState extends State<CartScreen> {
     final deliveryCharge = _shop?.deliveryCharge ?? 0.0;
     final gstPercentage = _shop?.gstPercentage ?? 5.0;
     final gstAmount = subtotal * (gstPercentage / 100);
-    final totalAmount = subtotal + deliveryCharge + gstAmount;
+    final totalAmountRaw = subtotal + deliveryCharge + gstAmount;
+
+    final fvDiscount = _useFvPoints
+        ? (_availableFvPoints * FVWalletService.exchangeRate).clamp(0.0, totalAmountRaw)
+        : 0.0;
+    final totalAmount = (totalAmountRaw - fvDiscount).clamp(0.0, double.infinity);
+
+    // If order total is 0 (fully covered by FV Points), complete order directly without gateway!
+    if (totalAmount <= 0) {
+      await _createOrder(paymentId: 'FV_POINTS_WALLET');
+      return;
+    }
 
     // Calculate total in paise (Razorpay expects amount in smallest currency unit)
     final totalAmountInPaise = (totalAmount * 100).toInt();
@@ -1381,7 +1516,12 @@ class _CartScreenState extends State<CartScreen> {
     final deliveryCharge = _shop?.deliveryCharge ?? 0.0;
     final gstPercentage = _shop?.gstPercentage ?? 5.0;
     final gstAmount = subtotal * (gstPercentage / 100);
-    final totalAmount = subtotal + deliveryCharge + gstAmount;
+    final totalAmountRaw = subtotal + deliveryCharge + gstAmount;
+
+    final fvDiscount = _useFvPoints
+        ? (_availableFvPoints * FVWalletService.exchangeRate).clamp(0.0, totalAmountRaw)
+        : 0.0;
+    final totalAmount = (totalAmountRaw - fvDiscount).clamp(0.0, double.infinity);
 
     try {
       final orderId = await _orderService.createOrder(
@@ -1402,6 +1542,26 @@ class _CartScreenState extends State<CartScreen> {
       );
 
       debugPrint('CartScreen: Order created successfully - $orderId');
+
+      // Deduct redeemed FV Points in wallet ledger if used
+      if (_useFvPoints && fvDiscount > 0) {
+        final userId = authProvider.userData?.uid ?? authProvider.user?.id;
+        if (userId != null && userId.isNotEmpty) {
+          final pointsToRedeem = (_availableFvPoints).clamp(
+            0.0,
+            totalAmountRaw * FVWalletService.pointsPerRupee,
+          );
+          try {
+            await FVWalletService().redeemPoints(
+              userId: userId,
+              points: pointsToRedeem,
+              orderId: orderId,
+            );
+          } catch (e) {
+            debugPrint('CartScreen: Error redeeming points in wallet - $e');
+          }
+        }
+      }
 
       // Sync profile details back to Firestore if they were modified/filled during checkout
       if (authProvider.isAuthenticated) {

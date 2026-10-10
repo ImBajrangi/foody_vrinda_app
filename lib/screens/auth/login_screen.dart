@@ -7,6 +7,7 @@ import '../../providers/auth_provider.dart';
 import '../../models/user_model.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../rewards/fv_rewards_sheet.dart';
 
 /// Master Authentication & Devotee Profile View
 /// Directly synchronized with Foody Vrinda Web v3 (AuthModal.jsx)
@@ -685,53 +686,77 @@ class _LoginScreenState extends State<LoginScreen> {
               const Divider(color: Colors.white10, height: 1),
               const SizedBox(height: 12),
 
-              // Prasad Rewards Strip
+              // Prasad Rewards Strip (Interactive Button matching web AuthModal)
               Row(
                 children: [
                   Expanded(
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 32,
-                          height: 32,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFCB785C).withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Icon(Icons.auto_awesome, color: Color(0xFFCB785C), size: 16),
+                    child: PressableScale(
+                      onTap: () => FVRewardsSheet.show(context),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFD000).withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: const Color(0xFFFFD000).withValues(alpha: 0.3)),
                         ),
-                        const SizedBox(width: 10),
-                        const Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        child: Row(
                           children: [
-                            Text('150 Coins', style: TextStyle(color: Colors.white, fontSize: 12.5, fontWeight: FontWeight.bold)),
-                            Text('₹15 savings on orders', style: TextStyle(color: Color(0xFF10B981), fontSize: 10, fontWeight: FontWeight.w500)),
+                            Container(
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFD000).withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Icon(Icons.workspace_premium, color: Color(0xFFFFD000), size: 18),
+                            ),
+                            const SizedBox(width: 8),
+                            const Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('150 Coins', style: TextStyle(color: Color(0xFFFFD000), fontSize: 12.5, fontWeight: FontWeight.bold)),
+                                  Text('₹15 savings ➔', style: TextStyle(color: Color(0xFF10B981), fontSize: 10, fontWeight: FontWeight.w600)),
+                                ],
+                              ),
+                            ),
                           ],
                         ),
-                      ],
+                      ),
                     ),
                   ),
+                  const SizedBox(width: 8),
                   Expanded(
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 32,
-                          height: 32,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF06B6D4).withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(10),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF06B6D4).withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: const Color(0xFF06B6D4).withValues(alpha: 0.2)),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 32,
+                            height: 32,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF06B6D4).withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(Icons.verified_user_outlined, color: Color(0xFF06B6D4), size: 18),
                           ),
-                          child: const Icon(Icons.verified_user_outlined, color: Color(0xFF06B6D4), size: 16),
-                        ),
-                        const SizedBox(width: 10),
-                        const Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Dham Express', style: TextStyle(color: Colors.white, fontSize: 12.5, fontWeight: FontWeight.bold)),
-                            Text('Priority Bhog Prep', style: TextStyle(color: Color(0xFF06B6D4), fontSize: 10, fontWeight: FontWeight.w500)),
-                          ],
-                        ),
-                      ],
+                          const SizedBox(width: 8),
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Dham Express', style: TextStyle(color: Colors.white, fontSize: 12.5, fontWeight: FontWeight.bold)),
+                                Text('Priority Bhog', style: TextStyle(color: Color(0xFF06B6D4), fontSize: 10, fontWeight: FontWeight.w500)),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -742,7 +767,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
         const SizedBox(height: 12),
 
-        // 2. SHORTCUTS (WhatsApp Channel)
+        // 2. SHORTCUTS (Rewards & WhatsApp Channel)
         Container(
           decoration: BoxDecoration(
             color: const Color(0xFF181617),
@@ -751,6 +776,22 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           child: Column(
             children: [
+              ListTile(
+                dense: true,
+                leading: const Icon(Icons.workspace_premium, color: Color(0xFFFFD000), size: 20),
+                title: const Text('Prasad Rewards & Perks', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w700)),
+                trailing: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFD000).withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(color: const Color(0xFFFFD000).withValues(alpha: 0.4)),
+                  ),
+                  child: const Text('150 FV', style: TextStyle(color: Color(0xFFFFD000), fontSize: 10, fontWeight: FontWeight.bold)),
+                ),
+                onTap: () => FVRewardsSheet.show(context),
+              ),
+              const Divider(color: Colors.white10, height: 1),
               ListTile(
                 dense: true,
                 leading: const Icon(Icons.chat_bubble_outline, color: Color(0xFF10B981), size: 20),

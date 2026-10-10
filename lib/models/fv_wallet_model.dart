@@ -1,5 +1,5 @@
-/// Foody Vrinda — FV Points & Wallet Models (Schema Parity with Web v3)
-/// 1 FV Point = ₹0.10, 50 FV Points = ₹5.00
+// Foody Vrinda — FV Points & Wallet Models (Schema Parity with Web v3)
+// 1 FV Point = ₹0.10, 50 FV Points = ₹5.00
 
 class FVWalletModel {
   final String userId;

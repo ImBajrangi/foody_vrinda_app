@@ -68,15 +68,15 @@ class AppTheme {
   // Dynamic Theme Method
   static void updateThemeColors(String mode) {
     if (mode == 'dark') {
-      primaryOrange = const Color(0xFFF59E0B); // Gold/Amber accent
-      background = const Color(0xFF0F172A); // slate-900
-      cardBackground = const Color(0xFF1E293B); // slate-800
-      surfaceElevated = const Color(0xFF1E293B);
-      inputBackground = const Color(0xFF1E293B);
-      textPrimary = const Color(0xFFF8FAFC); // slate-50
-      textSecondary = const Color(0xFF94A3B8); // slate-400
-      textTertiary = const Color(0xFF64748B); // slate-500
-      border = const Color(0xFF334155); // slate-700
+      primaryOrange = const Color(0xFFFFD000); // Radiant Yellow / Gold accent
+      background = const Color(0xFF1E1B1C); // Obsidian Luxury Canvas
+      cardBackground = const Color(0xFF282526); // Elevated Card Surface
+      surfaceElevated = const Color(0xFF2E2B2C);
+      inputBackground = const Color(0xFF151314); // Recessed Input Surface
+      textPrimary = const Color(0xFFFAF5EB); // Warm Ivory Display Text
+      textSecondary = const Color(0xFFA8A29E); // Muted Stone Body Text
+      textTertiary = const Color(0xFF78716C);
+      border = const Color(0xFF383435); // Obsidian Subtle Border
     } else {
       cardBackground = Colors.white;
       surfaceElevated = const Color(0xFFFFFFFF);
@@ -128,7 +128,7 @@ class AppTheme {
   
   // Premium Dark Gradient
   static const LinearGradient darkGradient = LinearGradient(
-    colors: [Color(0xFF1F2937), Color(0xFF111827)],
+    colors: [Color(0xFF282526), Color(0xFF1E1B1C)],
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
   );
@@ -141,10 +141,10 @@ class AppTheme {
     final brightness = isDark ? Brightness.dark : Brightness.light;
     final baseTextTheme = isDark ? ThemeData.dark().textTheme : ThemeData.light().textTheme;
 
-    final displayTextColor = isDark ? const Color(0xFFF8FAFC) : textPrimary;
-    final bodyTextColor = isDark ? const Color(0xFFE2E8F0) : textPrimary;
-    final secondaryTextColor = isDark ? const Color(0xFF94A3B8) : textSecondary;
-    final tertiaryTextColor = isDark ? const Color(0xFF64748B) : textTertiary;
+    final displayTextColor = isDark ? const Color(0xFFFAF5EB) : textPrimary;
+    final bodyTextColor = isDark ? const Color(0xFFE7E5E4) : textPrimary;
+    final secondaryTextColor = isDark ? const Color(0xFFA8A29E) : textSecondary;
+    final tertiaryTextColor = isDark ? const Color(0xFF78716C) : textTertiary;
 
     return ThemeData(
       useMaterial3: true,

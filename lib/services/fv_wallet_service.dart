@@ -21,6 +21,56 @@ class FVWalletService {
 
   double rupeesToPoints(double rupees) => (rupees * pointsPerRupee).ceilToDouble();
 
+  /// Privacy-compliant display name mask for public leaderboards
+  /// Prevents leaking full names, student IDs, phone numbers, or email handles
+  static String maskLeaderboardName(String? name, [bool isSelf = false]) {
+    if (isSelf) return name != null && name.trim().isNotEmpty ? name.trim() : 'You';
+    if (name == null || name.trim().isEmpty) return 'Foody Devotee';
+
+    String clean = name.trim();
+
+    // 1. Strip student roll number / alphanumeric registration IDs (e.g., '24F2004883 Bajrangi SHARMA')
+    clean = clean.replaceFirst(RegExp(r'^[0-9][0-9A-Za-z_-]{4,}\s+', caseSensitive: false), '');
+
+    // 2. Strip internal user role wrappers
+    if (clean.toLowerCase().contains('chef_')) return 'Kitchen Chef';
+    if (clean.toLowerCase().startsWith('user (')) {
+      clean = clean.replaceFirst(RegExp(r'^user\s*\((.*?)\)', caseSensitive: false), r'$1');
+    }
+
+    // 3. Test/Auto-generated accounts with trailing digits (e.g. 'vrindatest31514')
+    if (RegExp(r'^[a-zA-Z]+[0-9]{3,}$').hasMatch(clean)) {
+      return 'Devotee •••${clean.substring(clean.length - 3)}';
+    }
+
+    // 4. Phone numbers
+    final digitsOnly = clean.replaceAll(RegExp(r'\D'), '');
+    if (digitsOnly.length >= 10) {
+      return 'Devotee •••${digitsOnly.substring(digitsOnly.length - 4)}';
+    }
+
+    // 5. Email addresses
+    if (clean.contains('@')) {
+      final userPart = clean.split('@').first;
+      return 'Devotee •••${userPart.length >= 3 ? userPart.substring(userPart.length - 3) : userPart}';
+    }
+
+    // 6. Multi-word names: First name + Last name initial masked (e.g. 'Kunvar Singh' -> 'Kunvar S***')
+    final parts = clean.split(RegExp(r'\s+'));
+    if (parts.length >= 2) {
+      final first = parts[0];
+      final lastInitial = parts[1].isNotEmpty ? parts[1][0].toUpperCase() : '';
+      return '$first $lastInitial***';
+    }
+
+    // 7. Single word names (e.g. 'Bajrangi' -> 'Baj***')
+    if (clean.length > 3) {
+      return '${clean.substring(0, 3)}***';
+    }
+
+    return '$clean***';
+  }
+
   /// Provision wallet for user upon signup with referral code
   Future<Map<String, dynamic>> initUserWallet(
     String userId, {
@@ -106,14 +156,11 @@ class FVWalletService {
   Future<List<FVCommunityLink>> getCommunityLinks({String role = 'all'}) async {
     try {
       var query = _client.from('foody_community_links').select().eq('is_active', true);
-      final res = await query;
-      if (res is List) {
-        return res
-            .map((item) => FVCommunityLink.fromJson(Map<String, dynamic>.from(item as Map)))
-            .where((link) => link.targetRole == 'all' || link.targetRole == role)
-            .toList();
-      }
-      return [];
+      final List<dynamic> res = await query;
+      return res
+          .map((item) => FVCommunityLink.fromJson(Map<String, dynamic>.from(item as Map)))
+          .where((link) => link.targetRole == 'all' || link.targetRole == role)
+          .toList();
     } catch (e) {
       print('FVWalletService.getCommunityLinks error: $e');
       return [
