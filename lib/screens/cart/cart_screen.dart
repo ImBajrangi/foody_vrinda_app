@@ -46,7 +46,7 @@ class _CartScreenState extends State<CartScreen> {
   bool _shopLoading = true;
 
   // Payment settings
-  bool _onlinePaymentsEnabled = true;
+  bool _onlinePaymentsEnabled = false;
   bool _codEnabled = true;
 
   // FV Points & Dynasty Rewards
@@ -58,7 +58,7 @@ class _CartScreenState extends State<CartScreen> {
   String? _pendingCustomerPhone;
   String? _pendingDeliveryAddress;
   ll2.LatLng? _deliveryLocation; // Store coordinates for distance calculation
-  PaymentMethod? _selectedPaymentMethod;
+  PaymentMethod? _selectedPaymentMethod = PaymentMethod.cash;
   StreamSubscription? _paymentSettingsSubscription;
 
   @override
@@ -141,8 +141,11 @@ class _CartScreenState extends State<CartScreen> {
                 if (match.isNotEmpty) {
                   final data = match.first;
                   setState(() {
-                    _onlinePaymentsEnabled = data['onlinePaymentsEnabled'] ?? data['online_payments_enabled'] ?? true;
+                    _onlinePaymentsEnabled = data['onlinePaymentsEnabled'] ?? data['online_payments_enabled'] ?? false;
                     _codEnabled = data['codEnabled'] ?? data['cod_enabled'] ?? true;
+                    if (!_onlinePaymentsEnabled && _selectedPaymentMethod == PaymentMethod.online) {
+                      _selectedPaymentMethod = PaymentMethod.cash;
+                    }
                   });
                 }
               }

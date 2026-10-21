@@ -123,7 +123,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
   List<UserModel> _allUsers = [];
 
   // Payment settings
-  bool _onlinePaymentsEnabled = true;
+  bool _onlinePaymentsEnabled = false;
   bool _codEnabled = true;
   String? _selectedAuditShopId;
   String? _selectedPricingShopId;
@@ -230,7 +230,7 @@ class _DeveloperPanelState extends State<DeveloperPanel>
     // Keep payment enabled defaults
     if (mounted) {
       setState(() {
-        _onlinePaymentsEnabled = true;
+        _onlinePaymentsEnabled = false;
         _codEnabled = true;
       });
     }
