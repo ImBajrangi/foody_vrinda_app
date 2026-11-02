@@ -142,6 +142,7 @@ class OrderItem {
 
 class OrderModel {
   final String id;
+  final String? orderToken;
   final String shopId;
   final String? userId;
   final String customerName;
@@ -172,6 +173,7 @@ class OrderModel {
 
   OrderModel({
     required this.id,
+    this.orderToken,
     required this.shopId,
     this.userId,
     required this.customerName,
@@ -201,8 +203,23 @@ class OrderModel {
     this.updatedAt,
   });
 
+  /// Authoritative Unified Order Token (#FV-XXXX)
+  String get displayToken {
+    if (orderToken != null && orderToken!.trim().isNotEmpty) {
+      final clean = orderToken!.trim().toUpperCase();
+      if (clean.startsWith('#')) return clean;
+      if (clean.startsWith('FV-')) return '#$clean';
+      return '#FV-$clean';
+    }
+    final cleanId = id.replaceAll(RegExp(r'^ord[-_]', caseSensitive: false), '').replaceAll(RegExp(r'^fv_handshake_', caseSensitive: false), '');
+    final digits = cleanId.replaceAll(RegExp(r'\D'), '');
+    final suffix = digits.length >= 4 ? digits.substring(digits.length - 4) : (cleanId.length >= 4 ? cleanId.substring(cleanId.length - 4).toUpperCase() : '1080');
+    return '#FV-$suffix';
+  }
+
   factory OrderModel.fromMap(Map<String, dynamic> data, [String? id]) {
     final orderId = id ?? data['id']?.toString() ?? '';
+    final token = (data['order_token'] ?? data['orderToken'] ?? data['order_short_code'] ?? data['orderShortCode'])?.toString();
     final itemsList = data['items'] as List<dynamic>?;
     final items = itemsList
             ?.map((item) => OrderItem.fromMap(item as Map<String, dynamic>))
@@ -242,6 +259,7 @@ class OrderModel {
 
     return OrderModel(
       id: orderId,
+      orderToken: token,
       shopId: (data['shop_id'] ?? data['shopId'] ?? '').toString(),
       userId: (data['user_id'] ?? data['userId'])?.toString(),
       customerName: (data['customer_name'] ?? data['customerName'] ?? '').toString(),
@@ -269,6 +287,7 @@ class OrderModel {
   Map<String, dynamic> toMap() {
     return {
       'id': id,
+      'order_short_code': orderToken ?? displayToken.replaceAll('#', ''),
       'shop_id': shopId,
       'user_id': userId,
       'customer_name': customerName,
@@ -300,6 +319,7 @@ class OrderModel {
 
   OrderModel copyWith({
     String? id,
+    String? orderToken,
     String? shopId,
     String? userId,
     String? customerName,
@@ -330,6 +350,7 @@ class OrderModel {
   }) {
     return OrderModel(
       id: id ?? this.id,
+      orderToken: orderToken ?? this.orderToken,
       shopId: shopId ?? this.shopId,
       userId: userId ?? this.userId,
       customerName: customerName ?? this.customerName,

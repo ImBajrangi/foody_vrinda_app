@@ -268,9 +268,11 @@ class SupabaseService {
     try {
       final orderId = orderData['id'] ??
           'order-${DateTime.now().millisecondsSinceEpoch}-${(1000 + (DateTime.now().microsecond % 9000))}';
+      final orderToken = orderData['orderToken'] ?? orderData['order_token'] ?? orderData['orderShortCode'] ?? orderData['order_short_code'] ?? 'FV-${(1000 + (DateTime.now().microsecond % 9000))}';
 
       final Map<String, dynamic> payload = {
         'id': orderId,
+        'order_short_code': orderToken,
         'shop_id': orderData['shopId'] ?? orderData['shop_id'] ?? 'shop-vrinda-main',
         'user_id': orderData['userId'] ?? orderData['user_id'] ?? 'guest',
         'customer_name': orderData['customerName'] ?? orderData['customer_name'] ?? 'Devotee',
