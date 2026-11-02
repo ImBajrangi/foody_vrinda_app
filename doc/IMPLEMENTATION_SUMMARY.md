@@ -67,7 +67,7 @@
    flutter build apk  # or flutter build ios
    ```
 
-## 🎯 How to Use
+## How to Use
 
 ### Basic Usage
 

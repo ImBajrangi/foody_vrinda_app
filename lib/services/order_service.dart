@@ -203,8 +203,11 @@ class OrderService {
       final orders = records
           .map((data) => OrderModel.fromMap(data))
           .where((o) =>
-              o.status == OrderStatus.readyForPickup ||
-              o.status == OrderStatus.outForDelivery)
+              o.fulfillmentType != FulfillmentType.pickup &&
+              (o.status == OrderStatus.newOrder ||
+               o.status == OrderStatus.preparing ||
+               o.status == OrderStatus.readyForPickup ||
+               o.status == OrderStatus.outForDelivery))
           .toList();
       orders.sort((a, b) => (b.createdAt ?? DateTime.now()).compareTo(a.createdAt ?? DateTime.now()));
       return orders;
@@ -221,8 +224,11 @@ class OrderService {
               .where((r) => shopIds.contains(r['shop_id'] ?? r['shopId']))
               .map((data) => OrderModel.fromMap(data))
               .where((o) =>
-                  o.status == OrderStatus.readyForPickup ||
-                  o.status == OrderStatus.outForDelivery)
+                  o.fulfillmentType != FulfillmentType.pickup &&
+                  (o.status == OrderStatus.newOrder ||
+                   o.status == OrderStatus.preparing ||
+                   o.status == OrderStatus.readyForPickup ||
+                   o.status == OrderStatus.outForDelivery))
               .toList();
           orders.sort((a, b) => (b.createdAt ?? DateTime.now()).compareTo(a.createdAt ?? DateTime.now()));
           return orders;

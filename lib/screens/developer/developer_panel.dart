@@ -4107,32 +4107,102 @@ class _DeveloperPanelState extends State<DeveloperPanel>
                                   ),
                                 ],
                               ),
-                            if (user.role == UserRole.delivery)
+                            if (user.role == UserRole.delivery) ...[
                               Row(
                                 children: [
-                                  Text(
-                                    'Shops: ${user.shopIds?.length ?? 0} assigned',
-                                    style: const TextStyle(fontSize: 12),
+                                  // Duty Status Pill
+                                  InkWell(
+                                    onTap: () => _toggleDeliveryDuty(user.uid, user.isOnline),
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: user.isOnline
+                                            ? AppTheme.success.withValues(alpha: 0.12)
+                                            : Colors.grey.withValues(alpha: 0.12),
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                          color: user.isOnline
+                                              ? AppTheme.success.withValues(alpha: 0.3)
+                                              : Colors.grey.withValues(alpha: 0.3),
+                                        ),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Container(
+                                            width: 6,
+                                            height: 6,
+                                            decoration: BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              color: user.isOnline ? AppTheme.success : Colors.grey,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            user.isOnline ? 'On Duty' : 'Off Duty',
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.bold,
+                                              color: user.isOnline ? AppTheme.success : Colors.grey,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  // Approval Toggle Button
+                                  InkWell(
+                                    onTap: () => _toggleDeliveryApproval(user.uid, user.deliveryStatus),
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: user.isDeliveryApproved
+                                            ? AppTheme.success.withValues(alpha: 0.12)
+                                            : AppTheme.error.withValues(alpha: 0.12),
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                          color: user.isDeliveryApproved
+                                              ? AppTheme.success.withValues(alpha: 0.3)
+                                              : AppTheme.error.withValues(alpha: 0.3),
+                                        ),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            user.isDeliveryApproved ? Icons.check_circle : Icons.block,
+                                            size: 12,
+                                            color: user.isDeliveryApproved ? AppTheme.success : AppTheme.error,
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            user.isDeliveryApproved ? 'Approved' : 'Suspended',
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.bold,
+                                              color: user.isDeliveryApproved ? AppTheme.success : AppTheme.error,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
                                   ),
                                   const Spacer(),
                                   TextButton.icon(
-                                    onPressed: () =>
-                                        _showMultiShopSelectionDialog(user),
-                                    icon: const Icon(
-                                      Icons.edit_location_alt_outlined,
-                                      size: 14,
-                                    ),
-                                    label: const Text(
-                                      'Manage',
-                                      style: TextStyle(fontSize: 11),
-                                    ),
+                                    onPressed: () => _showMultiShopSelectionDialog(user),
+                                    icon: const Icon(Icons.edit_location_alt_outlined, size: 14),
+                                    label: const Text('Shops', style: TextStyle(fontSize: 11)),
                                     style: TextButton.styleFrom(
                                       padding: EdgeInsets.zero,
-                                      minimumSize: const Size(60, 30),
+                                      minimumSize: const Size(50, 30),
                                     ),
                                   ),
                                 ],
                               ),
+                            ],
                             if (user.role == UserRole.owner)
                               Row(
                                 children: [
@@ -4380,6 +4450,48 @@ class _DeveloperPanelState extends State<DeveloperPanel>
           SnackBar(
             content: Text('User role updated to $role'),
             backgroundColor: AppTheme.success,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: AppTheme.error),
+        );
+      }
+    }
+  Future<void> _toggleDeliveryApproval(String userId, String currentStatus) async {
+    final nextStatus = currentStatus == 'suspended' ? 'approved' : 'suspended';
+    try {
+      await SupabaseService().setDeliveryPartnerStatus(userId, nextStatus);
+      _loadAllUsers();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Delivery Sarathi ${nextStatus == "approved" ? "Approved & Activated" : "Suspended"}'),
+            backgroundColor: nextStatus == 'approved' ? AppTheme.success : AppTheme.error,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: AppTheme.error),
+        );
+      }
+    }
+  }
+
+  Future<void> _toggleDeliveryDuty(String userId, bool currentOnline) async {
+    final nextOnline = !currentOnline;
+    try {
+      await SupabaseService().updateUserOnlineStatus(userId, nextOnline);
+      _loadAllUsers();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Rider duty status updated to ${nextOnline ? "On Duty (Available)" : "Off Duty (Offline)"}'),
+            backgroundColor: nextOnline ? AppTheme.success : AppTheme.textSecondary,
           ),
         );
       }

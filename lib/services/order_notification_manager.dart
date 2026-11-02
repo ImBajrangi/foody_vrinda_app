@@ -115,6 +115,8 @@ class OrderNotificationManager {
               userRole == UserRole.owner ||
               userRole == UserRole.developer) {
             KitchenAlarmService().triggerAlarm(order.id);
+          } else if (userRole == UserRole.delivery && order.fulfillmentType != FulfillmentType.pickup) {
+            DeliveryAlarmService().triggerAlarm(order.id);
           }
         } else if (order.status == OrderStatus.readyForPickup) {
           if (userRole == UserRole.delivery ||
@@ -158,6 +160,14 @@ class OrderNotificationManager {
           userRole: userRole,
         );
         KitchenAlarmService().triggerAlarm(order.id);
+      } else if (userRole == UserRole.delivery && order.fulfillmentType != FulfillmentType.pickup) {
+        _notificationService.showNewOrderNotification(
+          orderId: order.id,
+          customerName: order.customerName,
+          amount: order.totalAmount,
+          userRole: userRole,
+        );
+        DeliveryAlarmService().triggerAlarm(order.id);
       }
     } else if (order.status == OrderStatus.readyForPickup) {
       if (userRole == UserRole.delivery ||

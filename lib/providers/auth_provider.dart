@@ -152,6 +152,9 @@ class AuthProvider extends ChangeNotifier {
             deliveryAddress: liveProfile['address'] ?? liveProfile['customer_address'],
             role: UserRoleExtension.fromString(liveProfile['role']),
             shopId: liveProfile['shop_id'],
+            isOnline: liveProfile['is_active'] ?? liveProfile['is_online'] ?? liveProfile['isOnline'] ?? false,
+            deliveryStatus: liveProfile['delivery_status'] ?? 'approved',
+            deliveryType: liveProfile['delivery_type'] ?? 'independent',
           );
         } else {
           _userData = UserModel(
@@ -209,6 +212,9 @@ class AuthProvider extends ChangeNotifier {
         shopIds: profile['shop_ids'] != null
             ? List<String>.from(profile['shop_ids'])
             : (profile['shop_id'] != null ? [profile['shop_id']] : ['shop-vrinda-main']),
+        isOnline: profile['is_active'] ?? profile['is_online'] ?? profile['isOnline'] ?? false,
+        deliveryStatus: profile['delivery_status'] ?? 'approved',
+        deliveryType: profile['delivery_type'] ?? 'independent',
       );
 
       _status = AuthStatus.authenticated;
@@ -513,10 +519,22 @@ class AuthProvider extends ChangeNotifier {
             deliveryAddress: profile['address'] ?? profile['customer_address'],
             role: UserRoleExtension.fromString(profile['role']),
             shopId: profile['shop_id'],
+            isOnline: profile['is_active'] ?? profile['is_online'] ?? profile['isOnline'] ?? false,
+            deliveryStatus: profile['delivery_status'] ?? 'approved',
+            deliveryType: profile['delivery_type'] ?? 'independent',
           );
         }
       }
       notifyListeners();
     }
+  }
+
+  /// Update delivery online/duty status
+  Future<void> updateDeliveryOnlineStatus(bool isOnline) async {
+    if (_userData == null) return;
+    _userData = _userData!.copyWith(isOnline: isOnline);
+    await _saveUserDataToCache(_userData!);
+    await _supabaseService.updateUserOnlineStatus(_userData!.uid, isOnline);
+    notifyListeners();
   }
 }

@@ -45,6 +45,14 @@ class _DeliveryViewState extends State<DeliveryView> {
     _shopsStream = _shopService.getShops();
     _initNotifications();
     _initAlarmListener();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      if (authProvider.userData != null && mounted) {
+        setState(() {
+          _isOnline = authProvider.userData!.isOnline;
+        });
+      }
+    });
   }
 
   void _initAlarmListener() {
@@ -78,7 +86,7 @@ class _DeliveryViewState extends State<DeliveryView> {
     setState(() => _isTogglingStatus = true);
 
     try {
-      await SupabaseService().updateCloudUser(userId, {'isOnline': value});
+      await authProvider.updateDeliveryOnlineStatus(value);
       setState(() => _isOnline = value);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -87,7 +95,7 @@ class _DeliveryViewState extends State<DeliveryView> {
               children: [
                 Icon(value ? Icons.wifi : Icons.wifi_off, color: Colors.white),
                 const SizedBox(width: 8),
-                Text(value ? 'You are now online' : 'You are now offline'),
+                Text(value ? 'You are now ON DUTY (Available)' : 'You are now OFF DUTY (Break mode)'),
               ],
             ),
             backgroundColor: value ? AppTheme.success : AppTheme.textSecondary,
@@ -147,6 +155,40 @@ class _DeliveryViewState extends State<DeliveryView> {
     final isDeveloper = userData?.role == UserRole.developer;
     final isDelivery = userData?.role == UserRole.delivery;
 
+    // Verification check for delivery staff
+    if (isDelivery && userData != null && !userData.isDeliveryApproved) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppTheme.error.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.shield_outlined, size: 48, color: AppTheme.error),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Delivery Account Pending / Suspended',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Your Delivery Sarathi account is currently ${userData.deliveryStatus}. Please contact store owner or platform developer for approval.',
+                style: const TextStyle(fontSize: 14, color: AppTheme.textSecondary),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     if (isDeveloper) {
       if (_showAllShops || _selectedShopId == null) {
         return _buildAllShopsDelivery(userData, isDeveloper);
@@ -156,8 +198,11 @@ class _DeliveryViewState extends State<DeliveryView> {
     } else if (isDelivery) {
       if (shopIds != null && shopIds.isNotEmpty) {
         return _buildMultiShopDelivery(shopIds, userData, isDeveloper);
-      } else if (shopId != null) {
+      } else if (shopId != null && shopId.isNotEmpty && shopId != 'all') {
         return _buildSingleShopDelivery(shopId, userData, isDeveloper);
+      } else {
+        // Independent delivery sarathis roam all platform kitchens!
+        return _buildAllShopsDelivery(userData, isDeveloper);
       }
     }
 

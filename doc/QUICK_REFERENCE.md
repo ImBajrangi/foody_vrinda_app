@@ -90,7 +90,7 @@ ios/Runner/                 ← Add CAF files via Xcode
 | `ios/NOTIFICATION_SOUNDS_SETUP.md` | 🍎 iOS setup |
 | `lib/examples/notification_usage_example.dart` | 💡 Code examples |
 
-## 🎯 Role-Sound Mapping
+## Role-Sound Mapping
 
 | User Role | Sound File | When Triggered |
 |-----------|------------|----------------|

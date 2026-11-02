@@ -43,6 +43,8 @@ class UserModel {
   final String? shopId;
   final List<String>? shopIds; // For delivery staff multi-shop support
   final bool isOnline; // For delivery availability status
+  final String deliveryStatus; // 'approved' | 'pending' | 'suspended'
+  final String deliveryType; // 'independent' | 'shop'
   final DateTime? createdAt;
   final DateTime? lastLogin;
   final List<String> devPermissions; // Permissions for dev panel features
@@ -58,6 +60,8 @@ class UserModel {
     this.shopId,
     this.shopIds,
     this.isOnline = false,
+    this.deliveryStatus = 'approved',
+    this.deliveryType = 'independent',
     this.createdAt,
     this.lastLogin,
     this.devPermissions = const [],
@@ -76,6 +80,8 @@ class UserModel {
       'shopId': shopId,
       'shopIds': shopIds,
       'isOnline': isOnline,
+      'deliveryStatus': deliveryStatus,
+      'deliveryType': deliveryType,
       'createdAt': createdAt?.toIso8601String(),
       'lastLogin': lastLogin?.toIso8601String(),
       'devPermissions': devPermissions,
@@ -96,7 +102,9 @@ class UserModel {
       shopIds: json['shopIds'] != null
           ? List<String>.from(json['shopIds'])
           : null,
-      isOnline: json['isOnline'] ?? false,
+      isOnline: json['isOnline'] ?? json['is_active'] ?? false,
+      deliveryStatus: json['deliveryStatus'] ?? json['delivery_status'] ?? 'approved',
+      deliveryType: json['deliveryType'] ?? json['delivery_type'] ?? 'independent',
       createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'])
           : null,
@@ -120,6 +128,8 @@ class UserModel {
     String? shopId,
     List<String>? shopIds,
     bool? isOnline,
+    String? deliveryStatus,
+    String? deliveryType,
     DateTime? createdAt,
     DateTime? lastLogin,
     List<String>? devPermissions,
@@ -135,11 +145,15 @@ class UserModel {
       shopId: shopId ?? this.shopId,
       shopIds: shopIds ?? this.shopIds,
       isOnline: isOnline ?? this.isOnline,
+      deliveryStatus: deliveryStatus ?? this.deliveryStatus,
+      deliveryType: deliveryType ?? this.deliveryType,
       createdAt: createdAt ?? this.createdAt,
       lastLogin: lastLogin ?? this.lastLogin,
       devPermissions: devPermissions ?? this.devPermissions,
     );
   }
+
+  bool get isDeliveryApproved => deliveryStatus != 'suspended' && deliveryStatus != 'pending';
 
   bool get isStaff =>
       role == UserRole.kitchen ||

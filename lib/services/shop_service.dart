@@ -154,6 +154,13 @@ class ShopService {
   /// Delete shop
   Future<void> deleteShop(String shopId) async {
     try {
+      // 1. Delete associated menus to ensure strict shop isolation (never leak to fallback/other shops)
+      await _supabase.client
+          .from('foody_menus')
+          .delete()
+          .eq('shop_id', shopId);
+
+      // 2. Delete the shop itself
       await _supabase.client
           .from('foody_shops')
           .delete()
@@ -162,6 +169,7 @@ class ShopService {
       print('ShopService.deleteShop error: $e');
     }
     _shopCache.remove(shopId);
+    _menuCache.remove(shopId);
     _cachedShops?.removeWhere((s) => s.id == shopId);
   }
 

@@ -31,6 +31,9 @@ class AuthService {
           deliveryAddress: profile['address'] ?? profile['customer_address'],
           role: UserRoleExtension.fromString(profile['role']),
           shopId: profile['shop_id'],
+          isOnline: profile['is_active'] ?? profile['is_online'] ?? profile['isOnline'] ?? false,
+          deliveryStatus: profile['delivery_status'] ?? 'approved',
+          deliveryType: profile['delivery_type'] ?? 'independent',
         );
       }
       return null;
@@ -86,6 +89,9 @@ class AuthService {
         deliveryAddress: u['address'] ?? u['customer_address'],
         role: UserRoleExtension.fromString(u['role']),
         shopId: u['shop_id'],
+        isOnline: u['is_active'] ?? u['is_online'] ?? u['isOnline'] ?? false,
+        deliveryStatus: u['delivery_status'] ?? 'approved',
+        deliveryType: u['delivery_type'] ?? 'independent',
       )).toList();
     } catch (e) {
       print('AuthService.getAllUsers error: $e');

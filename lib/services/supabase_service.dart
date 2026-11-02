@@ -596,6 +596,20 @@ class SupabaseService {
     final payload = Map<String, dynamic>.from(updates);
     payload['updated_at'] = nowIso;
 
+    // Normalize property names across mobile & web schemas
+    if (payload.containsKey('isOnline')) {
+      final val = payload.remove('isOnline');
+      payload['is_active'] = val;
+    }
+    if (payload.containsKey('deliveryStatus')) {
+      final val = payload.remove('deliveryStatus');
+      payload['delivery_status'] = val;
+    }
+    if (payload.containsKey('deliveryType')) {
+      final val = payload.remove('deliveryType');
+      payload['delivery_type'] = val;
+    }
+
     try {
       await client
           .from(SupabaseConfig.loggedUsersTable)
@@ -613,6 +627,26 @@ class SupabaseService {
     } catch (e) {
       print('SupabaseService.updateCloudUser usersTable notice: $e');
     }
+  }
+
+  /// Atomic update for delivery partner verification status (Approve / Suspend)
+  Future<void> setDeliveryPartnerStatus(String userId, String status, [String? type]) async {
+    final payload = <String, dynamic>{
+      'delivery_status': status,
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
+    };
+    if (type != null) payload['delivery_type'] = type;
+    await updateCloudUser(userId, payload);
+  }
+
+  /// Atomic update for delivery partner availability (On Duty / Off Duty)
+  Future<void> updateUserOnlineStatus(String userId, bool isOnline, [Map<String, dynamic>? coords]) async {
+    final payload = <String, dynamic>{
+      'is_active': isOnline,
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
+    };
+    if (coords != null) payload['coordinates'] = coords;
+    await updateCloudUser(userId, payload);
   }
 
   /// Get or sync user profile
