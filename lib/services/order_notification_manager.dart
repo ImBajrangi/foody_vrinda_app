@@ -19,8 +19,11 @@ class OrderNotificationManager {
   final NotificationService _notificationService = NotificationService();
 
   StreamSubscription<List<Map<String, dynamic>>>? _ordersSubscription;
+  StreamSubscription<List<Map<String, dynamic>>>? _notificationsSubscription;
   final Map<String, OrderStatus> _knownOrderStatusMap = {};
+  final Set<String> _knownNotificationIds = {};
   bool _isFirstLoad = true;
+  bool _isFirstLoadNotifs = true;
   UserRole? _currentUserRole;
   String? _currentShopId;
   String? _currentUserId;
@@ -51,7 +54,9 @@ class OrderNotificationManager {
     _currentShopId = shopId;
     _currentUserId = userId;
     _isFirstLoad = true;
+    _isFirstLoadNotifs = true;
     _knownOrderStatusMap.clear();
+    _knownNotificationIds.clear();
 
     await _initNotifications();
 
@@ -68,6 +73,23 @@ class OrderNotificationManager {
       );
     } catch (e) {
       debugPrint('OrderNotificationManager failed to attach stream: $e');
+    }
+
+    try {
+      var notifStream = _supabase.client
+          .from(SupabaseConfig.notificationsTable)
+          .stream(primaryKey: ['id'])
+          .order('created_at', ascending: false)
+          .limit(25);
+
+      _notificationsSubscription = notifStream.listen(
+        (records) => _handleNotificationsSnapshot(records, shopId, userRole, userId),
+        onError: (error) {
+          debugPrint('OrderNotificationManager Notifications Stream Error: $error');
+        },
+      );
+    } catch (e) {
+      debugPrint('OrderNotificationManager failed to attach notifications stream: $e');
     }
   }
 
@@ -256,11 +278,85 @@ class OrderNotificationManager {
     }
   }
 
+  void _handleNotificationsSnapshot(
+    List<Map<String, dynamic>> records,
+    String? shopId,
+    UserRole userRole,
+    String? userId,
+  ) {
+    if (_isFirstLoadNotifs) {
+      for (final r in records) {
+        final id = r['id']?.toString();
+        if (id != null) _knownNotificationIds.add(id);
+      }
+      _isFirstLoadNotifs = false;
+      return;
+    }
+
+    for (final r in records) {
+      final notifId = r['id']?.toString() ?? '';
+      if (notifId.isEmpty || _knownNotificationIds.contains(notifId)) continue;
+      _knownNotificationIds.add(notifId);
+
+      final targetRole = (r['role']?.toString() ?? 'all').toLowerCase();
+      final targetShop = r['shop_id']?.toString() ?? 'all';
+      final targetUser = r['user_id']?.toString();
+
+      // Filter by User
+      if (targetUser != null && targetUser.isNotEmpty && targetUser != userId) {
+        continue;
+      }
+
+      // Filter by Shop
+      if (targetShop != 'all' && shopId != null && targetShop != shopId) {
+        continue;
+      }
+
+      // Filter by Role
+      bool roleMatch = false;
+      if (targetRole == 'all') {
+        roleMatch = true;
+      } else if (targetRole == 'staff') {
+        roleMatch = [UserRole.owner, UserRole.kitchen, UserRole.delivery].contains(userRole);
+      } else if (targetRole == userRole.value) {
+        roleMatch = true;
+      } else if ((targetRole == 'rider' || targetRole == 'delivery') && userRole == UserRole.delivery) {
+        roleMatch = true;
+      }
+
+      if (!roleMatch) continue;
+
+      // Trigger Direct System Phone Notification in Notification Tray
+      final title = r['title']?.toString() ?? 'Foody Vrinda Notice';
+      final message = r['message']?.toString() ?? '';
+      final priority = (r['priority']?.toString() ?? 'normal').toLowerCase();
+
+      _notificationService.showNotification(
+        title: title,
+        body: message,
+        userRole: userRole,
+      );
+
+      // If priority is urgent or emergency, also trigger role alarm
+      if (priority == 'urgent' || priority == 'emergency') {
+        if (userRole == UserRole.kitchen) {
+          KitchenAlarmService().triggerAlarm('alert', orderId: r['order_id']?.toString() ?? notifId);
+        } else if (userRole == UserRole.delivery) {
+          DeliveryAlarmService().triggerAlarm('alert', orderId: r['order_id']?.toString() ?? notifId);
+        }
+      }
+    }
+  }
+
   Future<void> stopListening() async {
     await _ordersSubscription?.cancel();
     _ordersSubscription = null;
+    await _notificationsSubscription?.cancel();
+    _notificationsSubscription = null;
     _knownOrderStatusMap.clear();
+    _knownNotificationIds.clear();
     _isFirstLoad = true;
+    _isFirstLoadNotifs = true;
     _currentUserRole = null;
     _currentShopId = null;
     _currentUserId = null;

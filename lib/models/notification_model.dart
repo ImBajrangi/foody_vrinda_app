@@ -3,6 +3,7 @@ enum NotificationType {
   orderReady,
   orderCompleted,
   staffAdded,
+  staffCustom,
   general,
 }
 
@@ -17,6 +18,8 @@ extension NotificationTypeExtension on NotificationType {
         return 'order_completed';
       case NotificationType.staffAdded:
         return 'staff_added';
+      case NotificationType.staffCustom:
+        return 'staff_custom';
       case NotificationType.general:
         return 'general';
     }
@@ -32,6 +35,9 @@ extension NotificationTypeExtension on NotificationType {
         return NotificationType.orderCompleted;
       case 'staff_added':
         return NotificationType.staffAdded;
+      case 'staff_custom':
+      case 'staff_broadcast':
+        return NotificationType.staffCustom;
       default:
         return NotificationType.general;
     }
@@ -46,6 +52,13 @@ class NotificationModel {
   final NotificationType type;
   final String? orderId;
   final String? shopId;
+  final String? role;
+  final String? priority;
+  final String? sound;
+  final String? category;
+  final String? senderId;
+  final String? senderName;
+  final Map<String, dynamic>? data;
   final bool isRead;
   final DateTime? createdAt;
 
@@ -57,6 +70,13 @@ class NotificationModel {
     this.type = NotificationType.general,
     this.orderId,
     this.shopId,
+    this.role,
+    this.priority,
+    this.sound,
+    this.category,
+    this.senderId,
+    this.senderName,
+    this.data,
     this.isRead = false,
     this.createdAt,
   });
@@ -77,7 +97,14 @@ class NotificationModel {
       type: NotificationTypeExtension.fromString(data['type']?.toString()),
       orderId: data['order_id']?.toString() ?? data['orderId']?.toString(),
       shopId: data['shop_id']?.toString() ?? data['shopId']?.toString(),
-      isRead: data['is_read'] ?? data['isRead'] ?? false,
+      role: data['role']?.toString(),
+      priority: data['priority']?.toString(),
+      sound: data['sound']?.toString(),
+      category: data['category']?.toString(),
+      senderId: data['sender_id']?.toString() ?? data['senderId']?.toString(),
+      senderName: data['sender_name']?.toString() ?? data['senderName']?.toString(),
+      data: data['data'] is Map<String, dynamic> ? data['data'] : null,
+      isRead: data['is_read'] ?? data['isRead'] ?? data['read'] ?? false,
       createdAt: createdAt,
     );
   }
@@ -91,6 +118,13 @@ class NotificationModel {
       'type': type.value,
       'order_id': orderId,
       'shop_id': shopId,
+      'role': role,
+      'priority': priority,
+      'sound': sound,
+      'category': category,
+      'sender_id': senderId,
+      'sender_name': senderName,
+      'data': data,
       'is_read': isRead,
       'created_at': createdAt?.toUtc().toIso8601String(),
     };
@@ -104,6 +138,13 @@ class NotificationModel {
     NotificationType? type,
     String? orderId,
     String? shopId,
+    String? role,
+    String? priority,
+    String? sound,
+    String? category,
+    String? senderId,
+    String? senderName,
+    Map<String, dynamic>? data,
     bool? isRead,
     DateTime? createdAt,
   }) {
@@ -113,6 +154,19 @@ class NotificationModel {
       title: title ?? this.title,
       message: message ?? this.message,
       type: type ?? this.type,
+      orderId: orderId ?? this.orderId,
+      shopId: shopId ?? this.shopId,
+      role: role ?? this.role,
+      priority: priority ?? this.priority,
+      sound: sound ?? this.sound,
+      category: category ?? this.category,
+      senderId: senderId ?? this.senderId,
+      senderName: senderName ?? this.senderName,
+      data: data ?? this.data,
+      isRead: isRead ?? this.isRead,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
       orderId: orderId ?? this.orderId,
       shopId: shopId ?? this.shopId,
       isRead: isRead ?? this.isRead,
