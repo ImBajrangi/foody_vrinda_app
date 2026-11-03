@@ -168,6 +168,9 @@ class OrderModel {
   final bool isUnreachable;
   final double? customerLatitude;
   final double? customerLongitude;
+  final String? deliveryOtp;
+  final String? pickupOtp;
+  final DateTime? deliveryOtpUsedAt;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -199,9 +202,23 @@ class OrderModel {
     this.isUnreachable = false,
     this.customerLatitude,
     this.customerLongitude,
+    this.deliveryOtp,
+    this.pickupOtp,
+    this.deliveryOtpUsedAt,
     this.createdAt,
     this.updatedAt,
   });
+
+  /// Decoupled, Independent Working OTP (Expires when verified / delivered)
+  String? get activeOtp {
+    if (status == OrderStatus.completed || status == OrderStatus.cancelled || deliveryOtpUsedAt != null) {
+      return null;
+    }
+    if (deliveryOtp != null && deliveryOtp!.trim().isNotEmpty) {
+      return deliveryOtp!.trim();
+    }
+    return null;
+  }
 
   /// Authoritative Unified Order Token (#FV-XXXX)
   String get displayToken {
@@ -257,6 +274,13 @@ class OrderModel {
       updatedAt = DateTime.tryParse(data['updatedAt'].toString());
     }
 
+    DateTime? deliveryOtpUsedAt;
+    if (data['delivery_otp_used_at'] != null) {
+      deliveryOtpUsedAt = DateTime.tryParse(data['delivery_otp_used_at'].toString());
+    } else if (data['deliveryOtpUsedAt'] != null) {
+      deliveryOtpUsedAt = DateTime.tryParse(data['deliveryOtpUsedAt'].toString());
+    }
+
     return OrderModel(
       id: orderId,
       orderToken: token,
@@ -279,6 +303,9 @@ class OrderModel {
       settledBy: (data['settled_by'] ?? data['settledBy'])?.toString(),
       customerLatitude: lat,
       customerLongitude: lng,
+      deliveryOtp: (data['delivery_otp'] ?? data['deliveryOtp'])?.toString(),
+      pickupOtp: (data['pickup_otp'] ?? data['pickupOtp'])?.toString(),
+      deliveryOtpUsedAt: deliveryOtpUsedAt,
       createdAt: createdAt,
       updatedAt: updatedAt,
     );
@@ -305,6 +332,9 @@ class OrderModel {
       'cash_status': cashStatus.value,
       'collected_by': collectedBy,
       'settled_by': settledBy,
+      'delivery_otp': deliveryOtp,
+      'pickup_otp': pickupOtp,
+      'delivery_otp_used_at': deliveryOtpUsedAt?.toUtc().toIso8601String(),
       'cash_collected_at': cashCollectedAt?.toUtc().toIso8601String(),
       'cash_settled_at': cashSettledAt?.toUtc().toIso8601String(),
       'returned_at': returnedAt?.toUtc().toIso8601String(),
@@ -345,6 +375,9 @@ class OrderModel {
     bool? isUnreachable,
     double? customerLatitude,
     double? customerLongitude,
+    String? deliveryOtp,
+    String? pickupOtp,
+    DateTime? deliveryOtpUsedAt,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -376,6 +409,9 @@ class OrderModel {
       isUnreachable: isUnreachable ?? this.isUnreachable,
       customerLatitude: customerLatitude ?? this.customerLatitude,
       customerLongitude: customerLongitude ?? this.customerLongitude,
+      deliveryOtp: deliveryOtp ?? this.deliveryOtp,
+      pickupOtp: pickupOtp ?? this.pickupOtp,
+      deliveryOtpUsedAt: deliveryOtpUsedAt ?? this.deliveryOtpUsedAt,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
